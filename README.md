@@ -6,6 +6,41 @@ These are general-purpose definitions: they reference *roles* (linter, test suit
 
 See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here.
 
+## Install (Claude Code plugin)
+
+This repo is a Claude Code plugin marketplace. Installing it gives you the
+`/review-pr` skill plus all seven agents as subagents.
+
+```
+/plugin marketplace add cleanunicorn/agents-library
+/plugin install agents-library@agents-library
+```
+
+Then start a new session. The agents become subagents (e.g. `architect`,
+`refactor`, `testforge`) and the review skill is available as
+`/agents-library:review-pr`.
+
+Outside a session, the same works from the CLI:
+
+```
+claude plugin marketplace add cleanunicorn/agents-library
+claude plugin install agents-library@agents-library
+```
+
+To update later, push to the repo and run `/plugin marketplace update agents-library`.
+
+## The PR Review Skill
+
+[`review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
+before you finalize it — the reviewer you start in a fresh agent after
+implementing a change. It orients on the project, computes the local branch
+diff, fans out nine specialized review sub-agents (correctness, architecture,
+dead code, docs, refactor, testing, UX polish, security, conventions),
+consolidates their findings into one ranked list, and then either applies a
+chosen subset or runs an autonomous improve-until-converged loop — every applied
+fix gated on the project's lint and tests. No GitHub remote required; it works
+on the local diff before a PR exists.
+
 ## The Agents
 
 | Agent | Emoji | Focus |
