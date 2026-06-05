@@ -156,6 +156,12 @@ Presented to the user as:
    remains. On stop, summarize total commits made and any 🟢 findings left for
    the user.
 
+The loop is **stateless across invocations**: hitting the 3-round cap is not
+terminal. The user can simply re-invoke the skill to run another set of rounds
+on the now-updated branch — each invocation re-orients and re-reviews from the
+current diff, so a fresh run naturally continues where the last one stopped. On
+stop, the summary tells the user this is an option.
+
 ## Error handling
 
 - **No diff** (branch even with main): report nothing to review and stop.
