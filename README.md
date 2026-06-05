@@ -17,8 +17,7 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 ```
 
 Then start a new session. The agents become subagents (e.g. `architect`,
-`refactor`, `testforge`) and the review skill is available as
-`/agents-library:review-pr`.
+`refactor`, `testforge`) and the review skill is available as `/review-pr`.
 
 Outside a session, the same works from the CLI:
 
