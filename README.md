@@ -4,6 +4,8 @@ A set of stack-agnostic, single-purpose coding agents. Each agent does **one sma
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
+See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here.
+
 ## The Agents
 
 | Agent | Emoji | Focus |
