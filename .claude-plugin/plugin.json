@@ -7,8 +7,5 @@
     "email": "lucadanielcostin@gmail.com"
   },
   "homepage": "https://github.com/cleanunicorn/agents-library",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/cleanunicorn/agents-library.git"
-  }
+  "repository": "https://github.com/cleanunicorn/agents-library.git"
 }
