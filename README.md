@@ -9,7 +9,7 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr` skill plus all seven agents as subagents.
+`/review-pr` and `/batch-merge-prs` skills plus all seven agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -17,7 +17,8 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 ```
 
 Then start a new session. The agents become subagents (e.g. `architect`,
-`refactor`, `testforge`) and the review skill is available as `/review-pr`.
+`refactor`, `testforge`) and the skills are available as `/review-pr` and
+`/batch-merge-prs`.
 
 Outside a session, the same works from the CLI:
 
@@ -39,6 +40,19 @@ consolidates their findings into one ranked list, and then either applies a
 chosen subset or runs an autonomous improve-until-converged loop — every applied
 fix gated on the project's lint and tests. No GitHub remote required; it works
 on the local diff before a PR exists.
+
+## The Batch PR Merge Skill
+
+[`batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
+pull requests and collects the trivial ones onto a branch you name. It lists
+every open PR, fans out one review sub-agent per PR that reads the diff and
+judges it across four lenses (size/scope, change type, mergeability/CI, and an
+actual correctness read), then recommends include / review / skip with
+reasoning. It consolidates the verdicts into one ranked decision table, lets you
+pick which to take, and locally `git merge`s the chosen PRs into your target
+branch — aborting cleanly on conflict — before reporting a final ledger. The
+sub-agents only assess; you confirm what merges. Nothing is pushed and no PRs are
+closed on GitHub. Requires the `gh` CLI.
 
 ## The Agents
 
