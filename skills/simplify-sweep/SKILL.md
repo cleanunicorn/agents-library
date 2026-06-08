@@ -154,7 +154,9 @@ Ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply.
 - **(b) Autonomous loop** — apply all significant findings, re-scan, repeat until
-  convergence or the round cap (see loop rules).
+  convergence or the round cap (see loop rules). On a whole-repo target this can
+  run long: each round gates every fix and then re-surveys — say so before
+  starting it so the user opts in knowingly.
 - **(c) Stop** — report only; change nothing.
 
 ## Phase 6 — Implement (paths a and b)
