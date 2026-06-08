@@ -32,7 +32,7 @@ To update later, push to the repo and run `/plugin marketplace update agents-lib
 
 ## The PR Review Skill
 
-[`review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
+[`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
 before you finalize it — the reviewer you start in a fresh agent after
 implementing a change. It orients on the project, computes the local branch
 diff, fans out nine specialized review sub-agents (correctness, architecture,
@@ -44,7 +44,7 @@ on the local diff before a PR exists.
 
 ## The Batch PR Merge Skill
 
-[`batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
+[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
 pull requests and collects the trivial ones onto a branch you name. It lists
 every open PR, fans out one review sub-agent per PR that reads the diff and
 judges it across four lenses (size/scope, change type, mergeability/CI, and an
@@ -57,7 +57,7 @@ closed on GitHub. Requires the `gh` CLI.
 
 ## The Simplify Sweep Skill
 
-[`simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
+[`/simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
 the whole repository, a path/glob, or the current branch diff — for
 **behavior-preserving** simplification opportunities. It orients on the project,
 builds and shards a scan surface (so a whole-repo scan stays tractable), and fans
@@ -71,7 +71,7 @@ diff-scoped review. No `gh` or remote required.
 
 ## The Describe Codebase Skill
 
-[`describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
+[`/describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
 counterpart to `review-pr`: it explains how a codebase is shaped so you can get
 your bearings. It orients on the project, fans out read-only explorer sub-agents
 across three lenses (layering & entry points — including config, auth, and error
