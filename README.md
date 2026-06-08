@@ -9,7 +9,8 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr` and `/batch-merge-prs` skills plus all seven agents as subagents.
+`/review-pr`, `/batch-merge-prs`, and `/describe-codebase` skills plus all seven
+agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -17,8 +18,8 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 ```
 
 Then start a new session. The agents become subagents (e.g. `architect`,
-`refactor`, `testforge`) and the skills are available as `/review-pr` and
-`/batch-merge-prs`.
+`refactor`, `testforge`) and the skills are available as `/review-pr`,
+`/batch-merge-prs`, and `/describe-codebase`.
 
 Outside a session, the same works from the CLI:
 
@@ -53,6 +54,21 @@ pick which to take, and locally `git merge`s the chosen PRs into your target
 branch — aborting cleanly on conflict — before reporting a final ledger. The
 sub-agents only assess; you confirm what merges. Nothing is pushed and no PRs are
 closed on GitHub. Requires the `gh` CLI.
+
+## The Describe Codebase Skill
+
+[`describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
+counterpart to `review-pr`: it explains how a codebase is shaped so you can get
+your bearings. It orients on the project, fans out read-only explorer sub-agents
+across three lenses (layering & entry points — including config, auth, and error
+handling — data & persistence, and conventions & build), and consolidates their
+findings into one skimmable orientation brief where every claim carries a
+`file:line` reference. It supports three scopes: the whole repository (default),
+a path/glob for a single subsystem, or a feature/flow trace that follows one
+execution path end to end. The brief is shown in the conversation; you can
+optionally persist it to a new `ARCHITECTURE.md` or append it to `AGENTS.md`. It
+never modifies code and writes a doc only on your explicit confirmation. No `gh`
+or remote required.
 
 ## The Agents
 
