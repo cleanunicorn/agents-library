@@ -9,8 +9,8 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr`, `/batch-merge-prs`, and `/describe-codebase` skills plus all seven
-agents as subagents.
+`/review-pr`, `/batch-merge-prs`, `/simplify-sweep`, and `/describe-codebase`
+skills plus all seven agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -19,7 +19,7 @@ agents as subagents.
 
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
-`/batch-merge-prs`, and `/describe-codebase`.
+`/batch-merge-prs`, `/simplify-sweep`, and `/describe-codebase`.
 
 Outside a session, the same works from the CLI:
 
@@ -54,6 +54,20 @@ pick which to take, and locally `git merge`s the chosen PRs into your target
 branch — aborting cleanly on conflict — before reporting a final ledger. The
 sub-agents only assess; you confirm what merges. Nothing is pushed and no PRs are
 closed on GitHub. Requires the `gh` CLI.
+
+## The Simplify Sweep Skill
+
+[`simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
+the whole repository, a path/glob, or the current branch diff — for
+**behavior-preserving** simplification opportunities. It orients on the project,
+builds and shards a scan surface (so a whole-repo scan stays tractable), and fans
+out parallel sub-agents across four lenses (redundancy & dead code, complexity &
+structure, clarity & idiom, and docs simplification). It consolidates and ranks
+their findings into one list, presents them for you to pick from, and then either
+applies a chosen subset or runs an autonomous improve-until-converged loop —
+every applied fix gated on the project's lint and tests and behavior-preserving
+by construction. It's the whole-codebase counterpart to `review-pr`'s
+diff-scoped review. No `gh` or remote required.
 
 ## The Describe Codebase Skill
 
