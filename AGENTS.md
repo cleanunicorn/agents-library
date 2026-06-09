@@ -95,3 +95,33 @@ No subagents for serial or trivial work.
 Add a section below, per project, capturing what an agent can't infer quickly:
 the concrete lint/format/test/build commands, the layout and layering, the
 auth and configuration model, and the test layout and naming conventions.
+
+## Project-specific section — this repository
+
+This repo is a **Claude Code plugin marketplace**: markdown agent/skill
+definitions plus JSON manifests. There is no runtime, database, or build —
+"behavior" is the prose contracts that Claude Code loads and executes.
+
+- **Layout** — `agents/<name>.md` are 7 standalone subagents (frontmatter +
+  role). `skills/<name>/SKILL.md` are 4 orchestrators that fan out to
+  sub-prompt files in `domains/` (review-pr, simplify-sweep), `lenses/`
+  (describe-codebase), or `references/` (batch-merge-prs).
+- **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
+  parallel* → Phase 2 *consolidate/rank* → later phases *apply or persist*.
+- **Config / manifests** — identity in `.claude-plugin/plugin.json`; the
+  marketplace registry (single entry, `source: "."`) in
+  `.claude-plugin/marketplace.json`; enabled plugins in `.claude/settings.json`.
+- **No auth / error handling / logging / database / migrations** — agents
+  inspect *target* projects for these; this repo holds none. The only durable
+  per-project state is the per-agent journals in `agents/journals/`.
+- **Schemas** — the `{name, description}` frontmatter on every agent/skill, and
+  the in-skill finding records sub-agents return (`{id, severity, domain,
+  location, problem, fix, effort}` for review-pr; `{lens, topic, location,
+  detail}` for describe-codebase).
+- **Adding a component** — agents/skills are auto-discovered by directory; create
+  the file(s) and add a README entry. No manifest edit needed.
+- **Commands** — lint/format/test/build: none. Quality is enforced by the prose
+  bars in this guide and each SKILL.md, not automation.
+
+**Start here:** README.md → AGENTS.md → agents/architect.md →
+skills/review-pr/SKILL.md → skills/review-pr/domains/correctness.md
