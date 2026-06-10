@@ -117,7 +117,8 @@ definitions plus JSON manifests. There is no runtime, database, or build —
 - **Schemas** — the `{name, description}` frontmatter on every agent/skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
   location, problem, fix, effort}` for review-pr; `{lens, topic, location,
-  detail}` for describe-codebase).
+  detail}` for describe-codebase; `{issue, recommendation, kind, validity,
+  evidence, labels, …}` verdicts for triage-issues).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — lint/format/test/build: none. Quality is enforced by the prose
