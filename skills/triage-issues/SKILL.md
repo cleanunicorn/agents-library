@@ -269,6 +269,11 @@ security report, angry long-waiting contributor, legal/licensing question).
 ## Error handling
 
 - **`gh` missing/unauthenticated:** stop in Phase 0; this skill needs it.
+- **Another Phase 0 command fails:** `gh issue list` failing is fatal — it is
+  the work list; report the error and stop. If `gh repo view` or
+  `gh label list` fails, say so and ask whether to continue (triage works
+  without labels; duplicate search degrades to the issue list). Missing
+  guidance files are not an error — note it and continue.
 - **No issues in scope:** report nothing to triage and stop.
 - **A sub-agent fails:** mark that issue "not assessed," continue with the
   others, and list it in Phase 2 so the user knows it was not judged.
