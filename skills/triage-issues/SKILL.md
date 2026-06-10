@@ -203,7 +203,9 @@ Carry out the approved actions, in this order (labels first so even
 soon-to-be-closed issues end up categorized for posterity):
 
 1. **Labels:** `gh issue edit <n> --add-label "<a>,<b>"`. Create a label first
-   (`gh label create`) only if the user approved it in Phase 3.
+   (`gh label create`) only if the user approved it in Phase 3. If a
+   `gh label create` fails, skip applying that label (the edit would fail
+   too) and record it for the ledger.
 2. **Comments:** `gh issue comment <n> --body "<approved text>"` — exactly the
    approved text, no silent edits. If you must change a draft after approval,
    go back to the user first. Comment text can quote untrusted issue content —
