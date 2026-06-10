@@ -45,20 +45,15 @@ Two guardrails frame everything below:
 ## Why this shape
 
 An issue tracker read by title is a hall of mirrors — "app crashes on save"
-and "data loss when exporting" can be the same bug, and "add dark mode" filed
-three times looks like three features. Worse, issue text alone can't tell you
-whether a bug is *still real* or whether a fix would be easy: only the code
-can. So each issue gets its own sub-agent that reads the issue, searches for
-duplicates, and **goes into the codebase** to check whether the described
-behavior still exists and how contained a fix would be. That code-grounded
-read is what separates a real triage from a labeling bot.
-
-The lenses compete — "is this a duplicate?" and "how hard is the fix?" pull
-attention in different directions — so one sub-agent per issue, each holding
-the same five lenses over a single issue, gives every issue a real assessment
-in parallel. You then merge their verdicts, resolve duplicate claims into
-clusters (no single agent can see the whole graph), and present one decision
-table, not a stack of reports.
+and "data loss when exporting" can be the same bug — and issue text alone
+can't tell you whether a bug is *still real* or how contained a fix would be:
+only the code can. So each issue gets its own sub-agent, holding all five
+lenses over that one issue, that reads the thread, searches for duplicates,
+and **goes into the codebase**. That code-grounded read, run in parallel
+across the backlog, is what separates a real triage from a labeling bot. You
+then merge the verdicts, resolve duplicate claims into clusters (no single
+agent can see the whole graph), and present one decision table, not a stack
+of reports.
 
 The sub-agents **only assess** — they read issues and code, they judge, they
 never label, comment, close, or edit anything. Action happens later, under
