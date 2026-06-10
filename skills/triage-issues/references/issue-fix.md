@@ -60,6 +60,11 @@ Bail out — push nothing, open nothing — when:
 - somebody is already on it: a linked open PR appeared, or new commits
   conflict with your fix.
 
+If a bail-out condition appears only after you've pushed — or `gh pr create`
+fails after the push — delete the remote branch
+(`git push origin --delete <branch>`) so nothing orphaned lingers, and say
+so in your report.
+
 A bail-out report says: what you tried, what you found, and what you'd
 recommend instead (re-triage as `larger`, close as already-fixed, wait for
 the existing PR). That report is a useful deliverable — treat it as success

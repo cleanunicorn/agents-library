@@ -353,9 +353,10 @@ definitions of each value live in `references/issue-assessment.md`
   in the table, show the conflict, let the user decide.
 - **A write action fails in Phase 4:** record it, continue with the remaining
   actions, report it in the Phase 6 ledger.
-- **A fix sub-agent fails or bails out:** nothing was pushed, so there is
-  nothing to undo — report it in the ledger with the reason, remove its
-  worktree, and leave the issue open and triaged for a human.
+- **A fix sub-agent fails or bails out:** the fix contract has it push
+  nothing — or delete its remote branch if it bailed after pushing — so
+  there is nothing to undo. Report it in the ledger with the reason, remove
+  its worktree, and leave the issue open and triaged for a human.
 - **A fix can't pass the project's tests:** the contract says no PR — the
   fixer reports what it tried and why it's stuck instead of pushing red.
 - **The repo has no labels at all:** triage still works (the table is the
