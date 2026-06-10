@@ -268,13 +268,9 @@ reason:         one line on why this recommendation
 risks:          short note on anything that gives pause (empty if none)
 ```
 
-`recommendation` collapses the lenses: **easy-win** = valid, well-understood,
-and a contained fix the agent located in the code; **larger** = valid and
-worth doing but not contained; **needs-info** = can't be assessed without more
-from the reporter; **duplicate** = same underlying defect/request as an
-earlier issue; **close** = already fixed, invalid, or describes behavior that
-no longer exists; **flag** = something the user must see personally (possible
-security report, angry long-waiting contributor, legal/licensing question).
+`recommendation` collapses the five lenses into one action; the authoritative
+definitions of each value live in `references/issue-assessment.md`
+("Collapsing to a recommendation") — don't restate them here.
 
 ## Error handling
 
