@@ -103,9 +103,9 @@ definitions plus JSON manifests. There is no runtime, database, or build —
 "behavior" is the prose contracts that Claude Code loads and executes.
 
 - **Layout** — `agents/<name>.md` are 7 standalone subagents (frontmatter +
-  role). `skills/<name>/SKILL.md` are 4 orchestrators that fan out to
+  role). `skills/<name>/SKILL.md` are 5 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, simplify-sweep), `lenses/`
-  (describe-codebase), or `references/` (batch-merge-prs).
+  (describe-codebase), or `references/` (batch-merge-prs, triage-issues).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → Phase 2 *consolidate/rank* → later phases *apply or persist*.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`; the
@@ -117,7 +117,8 @@ definitions plus JSON manifests. There is no runtime, database, or build —
 - **Schemas** — the `{name, description}` frontmatter on every agent/skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
   location, problem, fix, effort}` for review-pr; `{lens, topic, location,
-  detail}` for describe-codebase).
+  detail}` for describe-codebase; `{issue, recommendation, kind, validity,
+  evidence, labels, …}` verdicts for triage-issues).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — lint/format/test/build: none. Quality is enforced by the prose

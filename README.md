@@ -9,8 +9,8 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr`, `/batch-merge-prs`, `/simplify-sweep`, and `/describe-codebase`
-skills plus all seven agents as subagents.
+`/review-pr`, `/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
+`/describe-codebase` skills plus all seven agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -19,7 +19,8 @@ skills plus all seven agents as subagents.
 
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
-`/batch-merge-prs`, `/simplify-sweep`, and `/describe-codebase`.
+`/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
+`/describe-codebase`.
 
 Outside a session, the same works from the CLI:
 
@@ -54,6 +55,28 @@ pick which to take, and locally `git merge`s the chosen PRs into your target
 branch — aborting cleanly on conflict — before reporting a final ledger. The
 sub-agents only assess; you confirm what merges. Nothing is pushed and no PRs are
 closed on GitHub. Requires the `gh` CLI.
+
+## The Issue Triage Skill
+
+[`/triage-issues`](skills/triage-issues/SKILL.md) triages the project's open
+GitHub issues into a ranked action plan. It lists the untriaged open issues and
+fans out one assessment sub-agent per issue that reads the full thread *and the
+actual codebase*, judging it across five lenses (validity — does the bug still
+exist in the code? — completeness, classification, two-stage duplicate
+detection, and a code-grounded effort estimate). It resolves the duplicate
+claims into clusters, consolidates everything into one ranked decision table
+(easy wins, duplicates, needs-info, larger work, close-candidates), and lets
+you pick which actions to take. Only after your per-group confirmation does it
+write to GitHub: applying labels from the repo's existing vocabulary, posting
+issue-specific needs-more-info comments (exact text shown first), closing
+confirmed duplicates and already-fixed issues with references, and **fixing
+the easy wins you approve** — one fix sub-agent per issue, each in its own git
+worktree, reproducing the issue with a failing test first, gating on the
+project's lint and tests, and opening **one pull request per issue** (`Fixes
+#n`). Nothing is ever committed to the default branch; a fixer that discovers
+its issue isn't actually easy bails out with a report instead of forcing a PR.
+The assessment sub-agents only assess; you confirm every write. Requires the
+`gh` CLI.
 
 ## The Simplify Sweep Skill
 

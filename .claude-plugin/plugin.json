@@ -1,6 +1,6 @@
 {
   "name": "agents-library",
-  "description": "A multi-domain PR review skill (/review-pr) plus a set of stack-agnostic, single-purpose coding subagents — architecture, dead code, docs, refactor, security, tests, and UX polish.",
+  "description": "Five orchestrator skills — /review-pr, /batch-merge-prs, /triage-issues, /simplify-sweep, and /describe-codebase — plus a set of stack-agnostic, single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, and UX polish.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com"
