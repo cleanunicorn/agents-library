@@ -277,6 +277,10 @@ security report, angry long-waiting contributor, legal/licensing question).
 - **No issues in scope:** report nothing to triage and stop.
 - **A sub-agent fails:** mark that issue "not assessed," continue with the
   others, and list it in Phase 2 so the user knows it was not judged.
+- **A verdict is incomplete or inconsistent** — an `easy-win` without
+  `evidence`, a `needs-info` without a `comment_draft`, a `duplicate` without
+  `duplicate_of`: treat it as a failed assessment and mark the issue "not
+  assessed" rather than acting on a verdict that didn't earn trust.
 - **Search rate limit:** many parallel sub-agents running `gh search issues`
   can trip GitHub's search rate limit. The assessment file tells them to fall
   back to the issue list they were given and note it in `risks` — don't
