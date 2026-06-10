@@ -256,7 +256,8 @@ effort:         <rough size: lines/files/layers touched, or "unknown">
 evidence:       file:line or commit reference backing validity/effort
                 ("src/export.rs:112", "fixed in a1b2c3d"); for not-found, a
                 brief note on what was searched — empty only for n/a
-labels:         labels to add, from the repo's existing vocabulary
+labels:         labels to add, from the repo's existing vocabulary (empty if
+                none fit — fewer labels beats wrong labels)
 comment_draft:  the specific question to ask (only for needs-info)
 summary:        one line on what the issue reports or asks
 reason:         one line on why this recommendation
