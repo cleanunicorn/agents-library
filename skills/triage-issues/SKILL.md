@@ -205,7 +205,10 @@ answer.
 ## Phase 4 — Act (remote, only what was approved)
 
 Carry out the approved actions, in this order (labels first so even
-soon-to-be-closed issues end up categorized for posterity):
+soon-to-be-closed issues end up categorized for posterity). Narrate as you
+go — one short line per action (`Labeled #47`, `Closed #52 as duplicate of
+#31`) so the user sees progress and catches failures as they happen, not
+only in the Phase 5 ledger:
 
 1. **Labels:** `gh issue edit <n> --add-label "<a>,<b>"`. Create a label first
    (`gh label create`) only if the user approved it in Phase 3. If a
