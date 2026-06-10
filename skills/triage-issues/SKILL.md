@@ -191,8 +191,11 @@ comment lands in contributors' inboxes and can't be unsent:
 Flags get no automated action — they exist precisely so the user handles them
 personally; just make sure each one was seen.
 
-Offer the easy default ("apply all of the above?") but let them drop or edit
-any item. If the repo had no triage label convention, this is where you
+Offer the easy default ("apply all of the above?") and accept answers at any
+granularity: a whole group ("all labels", "no closures"), a single issue
+("skip #47"), or an edit ("reword the #58 comment to ..."). Restate the final
+action list back if anything was dropped or changed, so what runs in Phase 4
+is unambiguous. If the repo had no triage label convention, this is where you
 propose a minimal one (e.g. a `triaged` label plus kind labels) — creating
 labels is also a write and also needs approval. Nothing is written until they
 answer.
