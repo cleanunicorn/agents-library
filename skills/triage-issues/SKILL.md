@@ -169,6 +169,9 @@ assess:
       — behavior described was removed; close with the fixing commit linked
 ```
 
+Append any non-empty `risks` note to its issue's line — that hesitation is
+exactly what the user needs to see before approving an action on the issue.
+
 Then summarize: how many easy wins, how many issues the duplicate clusters
 would close, how many need information, and anything **worth special
 attention** — a cluster suggesting a recurring failure, an issue that looks
