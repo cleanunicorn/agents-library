@@ -206,7 +206,10 @@ soon-to-be-closed issues end up categorized for posterity):
    (`gh label create`) only if the user approved it in Phase 3.
 2. **Comments:** `gh issue comment <n> --body "<approved text>"` — exactly the
    approved text, no silent edits. If you must change a draft after approval,
-   go back to the user first.
+   go back to the user first. Comment text can quote untrusted issue content —
+   pass it shell-safely (write it to a temp file and use `--body-file`, or
+   pipe it via `--body-file -`) so backticks or `$(...)` in it are never
+   interpreted by the shell.
 3. **Duplicate closures:** `gh issue close <n> --duplicate-of <m>` — GitHub
    records the duplicate relationship and links the cluster. Post the approved
    closure comment first if it says more than "duplicate of #<m>".
