@@ -200,15 +200,15 @@ comment lands in contributors' inboxes and can't be unsent:
    those remote writes.
 
 Flags get no automated action — they exist precisely so the user handles them
-personally. List them first, before the four groups, and don't carry out any
+personally. List them first, before the five groups, and don't carry out any
 Phase 4 action until the user has responded to the flag list (a simple
 "seen" is enough — what matters is that no flag slips past unnoticed).
 
 Offer the easy default ("apply all of the above?") and accept answers at any
 granularity: a whole group ("all labels", "no closures"), a single issue
 ("skip #47"), or an edit ("reword the #58 comment to ..."). Restate the final
-action list back if anything was dropped or changed, so what runs in Phase 4
-is unambiguous. If the repo had no triage label convention, this is where you
+action list back if anything was dropped or changed, so what runs in Phases 4
+and 5 is unambiguous. If the repo had no triage label convention, this is where you
 propose a minimal one (e.g. a `triaged` label plus kind labels) — creating
 labels is also a write and also needs approval. Nothing is written until they
 answer.
