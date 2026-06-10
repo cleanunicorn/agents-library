@@ -20,7 +20,8 @@ Gather what you need yourself:
 - `gh search issues` — your duplicate candidate pool, plus the scoped issue
   list you were given.
 
-Judge across five lenses, then collapse them into one recommendation.
+Judge across five lenses — validity, completeness, classification, the
+duplicate check, and effort — then collapse them into one recommendation.
 
 ## 1. Validity — does the code agree?
 
