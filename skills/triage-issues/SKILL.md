@@ -239,7 +239,9 @@ only in the Phase 6 ledger:
    closure comment first if it says more than "duplicate of #<m>".
 4. **Other closures:** post the approved closure comment, then close with the
    right reason — already-fixed gets `--reason completed`; invalid or
-   obsolete gets `--reason "not planned"`.
+   obsolete gets `--reason "not planned"`. If the closure comment fails to
+   post, don't close — a closure stripped of its approved explanation reads
+   as a silent dismissal; record the failure and leave the issue open.
 
 If any command fails (permissions, rate limit, issue locked), record it and
 continue with the rest — report failures honestly in Phase 6 rather than
