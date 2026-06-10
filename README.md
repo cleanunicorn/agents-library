@@ -68,9 +68,15 @@ claims into clusters, consolidates everything into one ranked decision table
 (easy wins, duplicates, needs-info, larger work, close-candidates), and lets
 you pick which actions to take. Only after your per-group confirmation does it
 write to GitHub: applying labels from the repo's existing vocabulary, posting
-issue-specific needs-more-info comments (exact text shown first), and closing
-confirmed duplicates and already-fixed issues with references. The sub-agents
-only assess; you confirm every write. Requires the `gh` CLI.
+issue-specific needs-more-info comments (exact text shown first), closing
+confirmed duplicates and already-fixed issues with references, and **fixing
+the easy wins you approve** — one fix sub-agent per issue, each in its own git
+worktree, reproducing the issue with a failing test first, gating on the
+project's lint and tests, and opening **one pull request per issue** (`Fixes
+#n`). Nothing is ever committed to the default branch; a fixer that discovers
+its issue isn't actually easy bails out with a report instead of forcing a PR.
+The assessment sub-agents only assess; you confirm every write. Requires the
+`gh` CLI.
 
 ## The Simplify Sweep Skill
 

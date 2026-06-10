@@ -9,13 +9,16 @@ description: >-
   — then recommends an action with evidence. Consolidates the verdicts into
   duplicate clusters and one ranked decision table (easy wins, duplicates,
   needs-info, larger work), lets you pick which actions to take, and then — only
-  after your confirmation — applies labels, posts needs-more-info comments, and
-  closes confirmed duplicates via `gh`. Use this whenever the user wants to
-  triage issues, clean up or groom the issue tracker/backlog, find duplicate
-  issues, find easy wins or good first issues, label or categorize open issues,
-  or figure out what's worth fixing first — even if they don't say the word
-  "skill". Requires the `gh` CLI; never writes to GitHub without explicit
-  per-action confirmation.
+  after your confirmation — applies labels, posts needs-more-info comments,
+  closes confirmed duplicates via `gh`, and fixes the easy wins you approve:
+  one fix sub-agent per issue, each in its own git worktree, each opening its
+  own reviewable pull request that references the issue. Use this whenever the
+  user wants to triage issues, clean up or groom the issue tracker/backlog,
+  find duplicate issues, find and fix easy wins or good first issues, label or
+  categorize open issues, or figure out what's worth fixing first — even if
+  they don't say the word "skill". Requires the `gh` CLI; never writes to
+  GitHub without explicit per-action confirmation, and never commits to the
+  default branch — every fix lands as its own PR.
 ---
 
 # triage-issues
@@ -29,7 +32,9 @@ pieces of work — without reading every issue themselves.
 Your job: list the issues, fan out one assessment sub-agent per issue,
 consolidate their verdicts into duplicate clusters and one ranked decision
 table, let the user pick the actions to take, then carry out **only the
-approved actions** on GitHub and summarize what happened.
+approved actions** on GitHub — including, for the easy wins the user selects,
+fanning out fix sub-agents that each open one pull request per issue — and
+summarize what happened.
 
 Two guardrails frame everything below:
 
@@ -41,6 +46,9 @@ Two guardrails frame everything below:
   posting any comment, show the user its exact text. Before closing anything,
   name the issue and the reason. Labels and closures are reversible; a comment
   in a contributor's inbox is not — treat comment text with the most care.
+  Fixes have their own form of this guardrail: every fix arrives as **its own
+  pull request** on its own branch, never as a commit to the default branch —
+  the PR review is where the user judges the code.
 
 ## Why this shape
 
@@ -55,11 +63,13 @@ then merge the verdicts, resolve duplicate claims into clusters (no single
 agent can see the whole graph), and present one decision table, not a stack
 of reports.
 
-The sub-agents **only assess** — they read issues and code, they judge, they
-never label, comment, close, or edit anything. Action happens later, under
-your control, with the user's explicit approval. Keeping assessment separate
-from action is what makes the verdicts trustworthy and the write step safe to
-reason about.
+The assessment sub-agents **only assess** — they read issues and code, they
+judge, they never label, comment, close, or edit anything. Action happens
+later, under your control, with the user's explicit approval — and fixing is
+its own later still: a separate fan-out of fix sub-agents (Phase 5), one per
+approved easy win, each producing one PR. Keeping assessment, triage actions,
+and fixes in separate stages is what makes the verdicts trustworthy and every
+write step safe to reason about.
 
 ## Phase 0 — Orient (do this once, yourself)
 
@@ -182,6 +192,12 @@ comment lands in contributors' inboxes and can't be unsent:
    one-line justification and the exact closure comment.
 4. **Other closures** — already-fixed (with the commit/release that fixed
    it), invalid, or obsolete, each with the exact closure comment.
+5. **Fixes** — which easy wins to actually fix, each becoming **one pull
+   request per issue** (Phase 5). Offer the 🟢 list as the default; the user
+   can drop any or add a 🔨 one they consider worth attempting (warn that the
+   verdict said it wasn't contained). A fix means: a branch, a commit, a
+   pushed PR that references the issue — so approving here is approving
+   those remote writes.
 
 Flags get no automated action — they exist precisely so the user handles them
 personally. List them first, before the four groups, and don't carry out any
@@ -203,7 +219,7 @@ Carry out the approved actions, in this order (labels first so even
 soon-to-be-closed issues end up categorized for posterity). Narrate as you
 go — one short line per action (`Labeled #47`, `Closed #52 as duplicate of
 #31`) so the user sees progress and catches failures as they happen, not
-only in the Phase 5 ledger:
+only in the Phase 6 ledger:
 
 1. **Labels:** `gh issue edit <n> --add-label "<a>,<b>"`. Create a label first
    (`gh label create`) only if the user approved it in Phase 3. If a
@@ -223,20 +239,61 @@ only in the Phase 5 ledger:
    obsolete gets `--reason "not planned"`.
 
 If any command fails (permissions, rate limit, issue locked), record it and
-continue with the rest — report failures honestly in Phase 5 rather than
+continue with the rest — report failures honestly in Phase 6 rather than
 retrying into a rate limit.
 
-## Phase 5 — Summarize
+## Phase 5 — Fix the approved easy wins (one PR per issue)
+
+Skip this phase entirely if the user approved no fixes. Otherwise, dispatch
+**one fix sub-agent per approved issue, in parallel, each in its own git
+worktree** — parallel fixes in a shared checkout would trample each other, so
+isolation is not optional. Use the Agent tool's worktree isolation if
+available; otherwise create a `git worktree` per fix yourself (the
+`superpowers:using-git-worktrees` pattern) and clean it up after. If more
+than ~5 fixes were approved, confirm before fanning out that wide — each fix
+is a real implementation run, not a quick edit.
+
+Each fix sub-agent's prompt is assembled from three parts:
+
+1. **The shared context** from Phase 0: the project guidance summary, the
+   repo slug, the codebase map, and the project's lint/test commands if you
+   found any.
+2. **The triage verdict** for its one issue — the assessment agent already
+   located the code (`evidence`) and sketched the fix (`reason`); hand that
+   head start over so the fixer doesn't re-derive it.
+3. **The fix contract** — read `references/issue-fix.md` and include it
+   verbatim. That file is the sub-agent's entire instruction set: reproduce
+   first, fix minimally, gate on lint/tests, one branch and one PR per
+   issue, and report honestly when a "win" turns out not to be easy.
+
+The sub-agent does its own branching, committing, pushing, and
+`gh pr create` from inside its worktree, and returns the PR URL (or an
+honest "did not open a PR because..."). As each one finishes, relay the
+result in one line (`#47 → PR #103`, `#52 → no PR: fix not contained`). A
+fix sub-agent that fails or bails out costs nothing on GitHub — no branch
+push, no PR — so failures here are reports, not messes to clean up.
+
+Two boundaries hold no matter what:
+
+- **The default branch is never committed to.** Every fix lives on its own
+  branch and arrives as a PR — the PR review is where a human judges the
+  code; this skill doesn't merge its own fixes.
+- **One issue, one PR.** A fixer that discovers its issue can't be fixed in
+  isolation reports back instead of growing the PR to swallow neighboring
+  problems.
+
+## Phase 6 — Summarize
 
 Report the outcome as a clear ledger:
 
 - **Labeled / commented / closed:** each action that succeeded, as
   `#<n> — <what was done>`.
+- **PRs opened:** each fix as `#<n> → <PR URL>`, plus any fixes that bailed
+  out and why.
 - **Failed:** any action that errored, with the message. (Distinct from
   actions the user chose not to take.)
-- **The remaining backlog:** what's left open and triaged — the easy wins
-  ranked first, since "which of these do you want me to fix?" is the natural
-  next conversation.
+- **The remaining backlog:** what's left open and triaged — including easy
+  wins the user chose not to fix this round.
 - **Untriaged remainder:** anything skipped by scope or batching, so the user
   knows the sweep's boundary.
 
@@ -290,7 +347,12 @@ definitions of each value live in `references/issue-assessment.md`
 - **Conflicting duplicate claims:** don't pick a side — keep both issues open
   in the table, show the conflict, let the user decide.
 - **A write action fails in Phase 4:** record it, continue with the remaining
-  actions, report it in the Phase 5 ledger.
+  actions, report it in the Phase 6 ledger.
+- **A fix sub-agent fails or bails out:** nothing was pushed, so there is
+  nothing to undo — report it in the ledger with the reason, remove its
+  worktree, and leave the issue open and triaged for a human.
+- **A fix can't pass the project's tests:** the contract says no PR — the
+  fixer reports what it tried and why it's stuck instead of pushing red.
 - **The repo has no labels at all:** triage still works (the table is the
   value); propose a minimal label set in Phase 3 instead of inventing labels
   per issue.
