@@ -189,7 +189,9 @@ comment lands in contributors' inboxes and can't be unsent:
    it), invalid, or obsolete, each with the exact closure comment.
 
 Flags get no automated action — they exist precisely so the user handles them
-personally; just make sure each one was seen.
+personally. List them first, before the four groups, and don't carry out any
+Phase 4 action until the user has responded to the flag list (a simple
+"seen" is enough — what matters is that no flag slips past unnoticed).
 
 Offer the easy default ("apply all of the above?") and accept answers at any
 granularity: a whole group ("all labels", "no closures"), a single issue
