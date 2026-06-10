@@ -207,8 +207,9 @@ soon-to-be-closed issues end up categorized for posterity):
 2. **Comments:** `gh issue comment <n> --body "<approved text>"` — exactly the
    approved text, no silent edits. If you must change a draft after approval,
    go back to the user first.
-3. **Duplicate closures:** comment `Duplicate of #<m>` (GitHub links the
-   cluster), then `gh issue close <n> --reason "not planned"`.
+3. **Duplicate closures:** `gh issue close <n> --duplicate-of <m>` — GitHub
+   records the duplicate relationship and links the cluster. Post the approved
+   closure comment first if it says more than "duplicate of #<m>".
 4. **Other closures:** post the approved closure comment, then close with the
    right reason — already-fixed gets `--reason completed`; invalid or
    obsolete gets `--reason "not planned"`.
