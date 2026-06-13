@@ -129,11 +129,17 @@ nine essays.
 Ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply.
-- **(b) Autonomous loop** — apply all significant findings, re-review, repeat
-  until convergence or the round cap (see loop rules).
-- **(c) Stop** — report only; change nothing.
+- **(b) Autonomous loop (significant only)** — apply all 🔴/🟡 findings,
+  re-review, repeat until convergence or the round cap. Skips 🟢 nice-to-haves
+  (see loop rules).
+- **(c) Autonomous loop (everything, including nice-to-haves)** — apply *all*
+  findings including 🟢, re-review, fix again, and keep going until a round
+  surfaces nothing new. Use this when nice-to-haves matter — a 🟢 "nice-to-have"
+  is often a refactor that's actually worth doing. The most thorough path (see
+  loop rules).
+- **(d) Stop** — report only; change nothing.
 
-## Phase 4 — Implement (for paths a and b)
+## Phase 4 — Implement (for paths a, b, and c)
 
 For each accepted finding, in order:
 
@@ -164,24 +170,60 @@ fix:       proposed change, concrete enough to act on
 effort:    small | medium | large
 ```
 
-## Autonomous loop rules (path b)
+## Autonomous loop rules (paths b and c)
+
+Both loop paths repeat the same cycle — apply findings, re-run the full review
+fan-out (Phases 1–2) on the now-updated diff, then apply again — until they
+converge. They differ only in **which findings they apply** and **when they
+stop**.
+
+### Path b — significant only
 
 1. Apply every **significant** finding — severity 🔴 or 🟡. 🟢 findings are
    reported but not auto-applied (they're judgment calls the user should opt
    into). Each fix follows the Phase 4 apply-and-gate steps.
-2. Re-run the full review fan-out (Phases 1–2) on the now-updated diff.
+2. Re-run the full review fan-out on the now-updated diff.
 3. Repeat. **Stop** when either:
    - a review round produces no 🔴/🟡 findings (convergence), **or**
    - three apply-then-re-review rounds have completed (cost bound),
    whichever comes first.
-4. Each round reports: findings applied, the gate result, and what remains. On
-   stop, summarize total commits made and any 🟢 findings left for the user.
 
-The loop is **stateless across invocations**: hitting the 3-round cap is not
-the end of the road. Because each run re-orients and re-reviews from the current
-diff, the user can simply re-invoke this skill to run another set of rounds on
-the updated branch — a fresh run naturally continues where the last one stopped.
-Mention this in the stop summary so the user knows it's an option.
+### Path c — everything, including nice-to-haves
+
+This is the thorough path: it treats 🟢 nice-to-haves as first-class work,
+because a nice-to-have is frequently a refactor that genuinely improves the
+change. It keeps fixing and re-reviewing until the review surfaces **nothing
+new**.
+
+1. Apply **every** finding the round produced — 🔴, 🟡, *and* 🟢. Each fix
+   follows the Phase 4 apply-and-gate steps.
+2. Re-run the full review fan-out on the now-updated diff.
+3. Track findings already addressed across rounds (by location + fix) so you can
+   tell genuinely **new** findings from ones that keep resurfacing. Repeat the
+   apply-then-re-review cycle. **Stop** when either:
+   - a review round produces **no new findings** at any severity — every finding
+     it raises is one already applied or already declined-as-unfixable in an
+     earlier round (full convergence), **or**
+   - **six** apply-then-re-review rounds have completed (a safety bound to
+     prevent an unbounded refactor-chasing loop — refactor findings can beget
+     more refactor findings, so a hard cap matters here even though convergence
+     is the goal),
+   whichever comes first.
+4. If a 🟢 finding is purely cosmetic taste with no clear improvement, or two
+   rounds in a row keep re-proposing the same change you already applied, treat
+   it as addressed and don't churn on it — convergence, not perfection, is the
+   target.
+
+### Common to both paths
+
+- Each round reports: findings applied, the gate result, and what remains. On
+  stop, summarize total commits made and (for path b) any 🟢 findings left for
+  the user.
+- The loop is **stateless across invocations**: hitting the round cap is not the
+  end of the road. Because each run re-orients and re-reviews from the current
+  diff, the user can simply re-invoke this skill to run another set of rounds on
+  the updated branch — a fresh run naturally continues where the last one
+  stopped. Mention this in the stop summary so the user knows it's an option.
 
 ## Error handling
 
