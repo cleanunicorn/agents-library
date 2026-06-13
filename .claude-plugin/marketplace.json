@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "agents-library",
-      "source": ".",
+      "source": "./",
       "description": "Five orchestrator skills (/review-pr, /batch-merge-prs, /triage-issues, /simplify-sweep, /describe-codebase) plus single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, and UX polish.",
       "category": "development",
       "homepage": "https://github.com/cleanunicorn/agents-library"
