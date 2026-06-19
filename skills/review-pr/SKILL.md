@@ -4,9 +4,9 @@ description: >-
   Review the work-in-progress on the current branch before it is finalized —
   the reviewer you start in a fresh agent after implementing a change. Orients
   on the project (AGENTS.md, README, conventions), computes the local branch
-  diff, fans out specialized review sub-agents across nine quality domains
+  diff, fans out specialized review sub-agents across ten quality domains
   (correctness, architecture, dead code, docs, refactor, testing, UX polish,
-  security, conventions), consolidates and ranks their findings, presents them
+  visual design, security, conventions), consolidates and ranks their findings, presents them
   for you to pick from, and then either applies a chosen subset or runs an
   autonomous improve-until-converged loop. Use this whenever the user wants to
   review a PR, review a branch, review their changes before merging, "check what
@@ -19,7 +19,7 @@ description: >-
 
 You are the **orchestrator** of a multi-domain review of the current branch.
 The user has implemented a change and wants a fresh, thorough review before it
-is finalized. Your job is to orient on the project, fan out nine specialized
+is finalized. Your job is to orient on the project, fan out ten specialized
 review sub-agents, consolidate what they find, and help the user act on it.
 
 The review target is always the **local branch diff** — everything on the
@@ -31,10 +31,10 @@ or a remote.
 
 A single reviewer reading a diff top-to-bottom misses things, because "is this
 correct?", "does this fit the architecture?", and "is this tested?" are
-different mental modes that compete for attention. Nine focused sub-agents, each
+different mental modes that compete for attention. Ten focused sub-agents, each
 holding exactly one lens and the same shared project context, find more and
 find it more sharply. You then merge their findings into one ranked list so the
-user sees signal, not nine separate reports.
+user sees signal, not ten separate reports.
 
 The sub-agents **only analyze** — they never edit code. Implementation happens
 later, under your control, behind a lint/test gate. Keeping review and
@@ -45,7 +45,7 @@ changes safe.
 
 Before dispatching anything, build an accurate map of the project and the
 change. You gather this **once** and bundle it into every sub-agent's prompt, so
-the nine agents don't each re-derive the same context.
+the ten agents don't each re-derive the same context.
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and any architecture notes. These tell you the layering,
@@ -70,7 +70,7 @@ nothing to review — say so and stop.
 
 ## Phase 1 — Fan out the review
 
-Dispatch all nine domain sub-agents **in parallel** — issue all the Agent/Task
+Dispatch all ten domain sub-agents **in parallel** — issue all the Agent/Task
 calls in a single message so they run concurrently. (This is the
 `superpowers:dispatching-parallel-agents` pattern.)
 
@@ -86,7 +86,7 @@ Each sub-agent's prompt is assembled from three parts:
    *analysis only; do not modify any files; return findings in this exact
    schema, or an empty list if you find nothing worth raising.*
 
-The nine domains and their files:
+The ten domains and their files:
 
 | Domain | Emoji | File | Looks for |
 |--------|-------|------|-----------|
@@ -96,7 +96,8 @@ The nine domains and their files:
 | Docs | 📝 | `domains/docs.md` | Missing or stale documentation the project expects for the changed surface. |
 | Refactor | 🔧 | `domains/refactor.md` | Simplification, readability, DRY — without changing behavior. |
 | Testing | 🧪 | `domains/testing.md` | Coverage gaps: happy paths, failure paths, edge cases. |
-| UX polish | 🎨 | `domains/ux-polish.md` | User-experience friction (frontend projects; no-op otherwise). |
+| UX polish | 🎨 | `domains/ux-polish.md` | Interaction friction and missing states (frontend projects; no-op otherwise). |
+| Visual design | 🖌️ | `domains/design.md` | Visual-design principles: hierarchy, spacing, type, color/contrast, dark mode, depth (frontend; no-op otherwise). |
 | Security | 🛡️ | `domains/security.md` | Auth guards, error/info leakage, secrets, input validation. |
 | Conventions | 📐 | `domains/conventions.md` | The diff vs the project's own declared rules (AGENTS.md/CLAUDE.md). |
 
@@ -122,7 +123,7 @@ Present a grouped, ID'd list to the user. Each finding renders on one line:
 
 Then summarize: how many findings at each severity, and which domains were
 quiet. Keep it skimmable — the user is choosing what to act on, not reading
-nine essays.
+ten essays.
 
 ## Phase 3 — Decide
 
@@ -163,7 +164,7 @@ Each sub-agent emits findings as records with these fields:
 ```
 id:        <domain>-<n>            e.g. correctness-1
 severity:  critical | important | nice-to-have   (🔴 | 🟡 | 🟢)
-domain:    <one of the nine>
+domain:    <one of the ten>
 location:  path:line
 problem:   one-line description of what's wrong or missing
 fix:       proposed change, concrete enough to act on
