@@ -303,6 +303,12 @@ For each accepted finding, in order:
    finding keeps the history reviewable and lets any single change be reverted —
    which also makes each change cleanly A/B-testable in isolation.
 
+A Phase 3 merged multi-principle entry (one presented entry, one ID, carrying a
+fix per lens) expands here into its per-lens fixes: apply and commit each as if it
+were its own finding — one commit per fix, each scoped to that lens — so "one
+commit per finding, scoped to the lens" still holds. Presenting once is a
+reader-facing convenience, not a change to how fixes are applied.
+
 If a finding is a structural product decision that can't be made as a clean
 in-pattern change, don't force it into a commit — surface it as a recommendation
 with a concrete proposed approach and let the user drive it. If you couldn't find
