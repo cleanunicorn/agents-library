@@ -108,7 +108,9 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   `lenses/` (describe-codebase), or `references/` (batch-merge-prs,
   triage-issues).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
-  parallel* → Phase 2 *consolidate/rank* → later phases *apply or persist*.
+  parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr
+  inserts a *verify* pass (fresh skeptical agents re-check each finding) between
+  fan-out and consolidate, so its consolidate step is Phase 3.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`; the
   marketplace registry (single entry, `source: "."`) in
   `.claude-plugin/marketplace.json`; enabled plugins in `.claude/settings.json`.
@@ -117,10 +119,11 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   per-project state is the per-agent journals in `agents/journals/`.
 - **Schemas** — the `{name, description}` frontmatter on every agent/skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
-  location, problem, fix, effort}` for review-pr; `{id, severity, lens,
-  principle, location, problem, fix, effort}` for review-design; `{lens, topic,
-  location, detail}` for describe-codebase; `{issue, recommendation, kind,
-  validity, evidence, labels, …}` verdicts for triage-issues).
+  location, problem, fix, effort}` for review-pr, which its verify pass then
+  annotates with `{verdict, confidence}`; `{id, severity, lens, principle,
+  location, problem, fix, effort}` for review-design; `{lens, topic, location,
+  detail}` for describe-codebase; `{issue, recommendation, kind, validity,
+  evidence, labels, …}` verdicts for triage-issues).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — lint/format/test/build: none. Quality is enforced by the prose
