@@ -163,14 +163,18 @@ Each sub-agent's prompt is assembled from three parts:
 
 The six lenses and their files:
 
-| Lens | Emoji | File | Principle & what it looks for |
-|------|-------|------|-------------------------------|
-| Decision fatigue & smart defaults | 🎯 | `domains/decision-defaults.md` | Choice overload; blank forms; no preselected common choice; buttons that don't preview the outcome. |
-| Goal-gradient progress | 📈 | `domains/goal-gradient.md` | Starting the user at 0%; empty onboarding; no credit for what's already done; distance emphasized over momentum. |
-| Reciprocity & value-first | 🎁 | `domains/reciprocity.md` | Asking before giving; signup walls before any value; results held hostage; email/payment demanded up front. |
-| Endowment & the IKEA effect | 🔨 | `domains/endowment-ikea.md` | Commitment asked before the user builds/owns anything; nothing to lose by leaving; "Sign up" where "Continue" fits. |
-| Loss aversion & framing | ⚖️ | `domains/loss-aversion.md` | CTAs framed as gains not losses; no stakes for inaction; abstract benefits over concrete things at risk; frictionless "maybe later". |
-| Anchoring & the contrast effect | ⚓ | `domains/anchoring-contrast.md` | Prices/costs shown in isolation; no reference anchor; absolute where relative lands; ordering that sets a bad comparison. |
+| Lens | Emoji | File | ID prefix | Principle & what it looks for |
+|------|-------|------|-----------|-------------------------------|
+| Decision fatigue & smart defaults | 🎯 | `domains/decision-defaults.md` | `defaults` | Choice overload; blank forms; no preselected common choice; buttons that don't preview the outcome. |
+| Goal-gradient progress | 📈 | `domains/goal-gradient.md` | `progress` | Starting the user at 0%; empty onboarding; no credit for what's already done; distance emphasized over momentum. |
+| Reciprocity & value-first | 🎁 | `domains/reciprocity.md` | `reciprocity` | Asking before giving; signup walls before any value; results held hostage; email/payment demanded up front. |
+| Endowment & the IKEA effect | 🔨 | `domains/endowment-ikea.md` | `endowment` | Commitment asked before the user builds/owns anything; nothing to lose by leaving; "Sign up" where "Continue" fits. |
+| Loss aversion & framing | ⚖️ | `domains/loss-aversion.md` | `loss-aversion` | CTAs framed as gains not losses; no stakes for inaction; abstract benefits over concrete things at risk; frictionless "maybe later". |
+| Anchoring & the contrast effect | ⚓ | `domains/anchoring-contrast.md` | `anchoring` | Prices/costs shown in isolation; no reference anchor; absolute where relative lands; ordering that sets a bad comparison. |
+
+The **ID prefix** column is the `<lens>` value each finding's `id` uses (e.g.
+`progress-1` comes from `domains/goal-gradient.md`) — the mapping isn't always the
+filename's leading token, so this column is the lookup.
 
 If a sub-agent fails or returns nothing, note it and continue with the others —
 never block the whole review on one lens.
@@ -235,7 +239,8 @@ Merge all **verified** findings (confirmed and uncertain) into one list:
   into one entry; keep the higher severity. Several lenses will legitimately flag
   the same moment for different reasons — a signup screen can be both a reciprocity
   failure (no value given) and an endowment failure (nothing built). Surface it
-  once, noting both principles.
+  once, noting both principles and carrying both proposed fixes (the lenses often
+  prescribe different changes for the same moment).
 - **Rank** by severity (🔴 → 🟡 → 🟢), then by **expected impact on the target
   metric** — lead with what most changes whether the user finishes the flow.
 - **Assign stable IDs** of the form `<lens>-<n>` (e.g. `defaults-1`,
@@ -368,12 +373,18 @@ they apply** and **when they stop**.
 2. Re-run the full review (fan-out → verify → consolidate) on the updated target.
 3. Track findings already addressed across rounds (by location + fix) so you can
    tell genuinely **new** findings from ones that keep resurfacing. Repeat. **Stop**
-   when either a round produces **no new findings** at any severity (full
-   convergence) or **six** apply-then-re-review rounds have completed (safety
-   bound), whichever comes first.
+   when either a round produces **no new findings** at any severity — every finding
+   it raises is one already applied, or already attempted-and-reverted as an
+   unfixable structural change in an earlier round (full convergence) — or **six**
+   apply-then-re-review rounds have completed (safety bound), whichever comes
+   first. This retirement clause matters here: because attempting a structural
+   finding and reverting it is a first-class outcome (Phase 4), a reverted finding
+   is never applied and would otherwise be re-detected every round, so without it
+   the loop could never reach "no new findings".
 4. If a 🟢 finding is pure taste with no clear improvement, or two rounds in a row
-   re-propose the same change you already applied, treat it as addressed and don't
-   churn — convergence, not perfection, is the target.
+   re-propose the same change you already applied or already reverted as unfixable,
+   treat it as addressed and don't churn — convergence, not perfection, is the
+   target.
 
 ### Common to both paths
 
