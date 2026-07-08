@@ -38,10 +38,11 @@ before you finalize it — the reviewer you start in a fresh agent after
 implementing a change. It orients on the project, computes the local branch
 diff, fans out nine specialized review sub-agents (correctness, architecture,
 dead code, docs, refactor, testing, UX polish, security, conventions),
-consolidates their findings into one ranked list, and then either applies a
-chosen subset or runs an autonomous improve-until-converged loop — every applied
-fix gated on the project's lint and tests. No GitHub remote required; it works
-on the local diff before a PR exists.
+independently verifies every finding with a fresh skeptical agent to screen out
+false positives before you see them, consolidates the survivors into one ranked
+list, and then either applies a chosen subset or runs an autonomous
+improve-until-converged loop — every applied fix gated on the project's lint and
+tests. No GitHub remote required; it works on the local diff before a PR exists.
 
 ## The Batch PR Merge Skill
 

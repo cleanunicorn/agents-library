@@ -6,13 +6,14 @@ description: >-
   on the project (AGENTS.md, README, conventions), computes the local branch
   diff, fans out specialized review sub-agents across nine quality domains
   (correctness, architecture, dead code, docs, refactor, testing, UX polish,
-  security, conventions), consolidates and ranks their findings, presents them
-  for you to pick from, and then either applies a chosen subset or runs an
-  autonomous improve-until-converged loop. Use this whenever the user wants to
-  review a PR, review a branch, review their changes before merging, "check what
-  I just built", clean up a diff, or asks for a pre-merge / pre-PR review — even
-  if they don't say the word "skill". Works on the local diff before a GitHub PR
-  exists; no `gh` or remote required.
+  security, conventions), independently verifies every finding to screen out
+  false positives before you see it, consolidates and ranks the survivors,
+  presents them for you to pick from, and then either applies a chosen subset or
+  runs an autonomous improve-until-converged loop. Use this whenever the user
+  wants to review a PR, review a branch, review their changes before merging,
+  "check what I just built", clean up a diff, or asks for a pre-merge / pre-PR
+  review — even if they don't say the word "skill". Works on the local diff
+  before a GitHub PR exists; no `gh` or remote required.
 ---
 
 # review-pr
@@ -20,7 +21,8 @@ description: >-
 You are the **orchestrator** of a multi-domain review of the current branch.
 The user has implemented a change and wants a fresh, thorough review before it
 is finalized. Your job is to orient on the project, fan out nine specialized
-review sub-agents, consolidate what they find, and help the user act on it.
+review sub-agents, independently verify what they report, consolidate the
+findings that survive, and help the user act on it.
 
 The review target is always the **local branch diff** — everything on the
 current branch that isn't yet in the main branch, plus any uncommitted
@@ -40,6 +42,16 @@ The sub-agents **only analyze** — they never edit code. Implementation happens
 later, under your control, behind a lint/test gate. Keeping review and
 implementation separate is what makes the findings trustworthy and the applied
 changes safe.
+
+But the finders are not infallible. Each is primed to see problems through its
+one lens, so some of what it returns is a false positive — a "bug" the
+surrounding code already prevents, "dead code" that's reached by dynamic
+dispatch, a "missing" test that already exists elsewhere, a convention
+"violation" the project actually permits. Trusting those blindly wastes the
+user's attention, and in the autonomous loop it gets a wrong fix committed. So
+between finding and presenting there is a dedicated **verification** stage:
+every finding is independently re-checked against the real code by a fresh,
+skeptical agent, and only what survives reaches the user.
 
 ## Phase 0 — Orient (do this once, yourself)
 
@@ -62,7 +74,7 @@ the nine agents don't each re-derive the same context.
 4. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — from the docs first, then config files (package.json
    scripts, Makefile, pyproject, etc.). You'll need these for the gate in
-   Phase 4. If you can't find them, you'll ask the user later rather than
+   Phase 5. If you can't find them, you'll ask the user later rather than
    silently skipping verification.
 
 If the branch is even with `<main>` and the working tree is clean, there's
@@ -103,9 +115,59 @@ The nine domains and their files:
 If a sub-agent fails or returns nothing, note it and continue with the others —
 never block the whole review on one domain.
 
-## Phase 2 — Consolidate & present
+## Phase 2 — Verify findings (don't trust the finders blindly)
 
-Merge all findings into one list:
+The finders are optimistic: each is primed to raise problems in its lens, so the
+raw pile they return contains false positives. Never present a finding — and
+never, in the autonomous loop, apply one — on a finder's word alone. Every
+finding is independently re-checked here first.
+
+Dispatch verification sub-agents **in parallel**, the same way you fanned out the
+review. Run one verifier per finding; when the finding count is large, batch
+several low-severity findings into a single verifier. A verifier is a **fresh,
+skeptical** agent that did **not** produce the finding. Its prompt is:
+
+1. **The shared Phase 0 context** — project guidance, conventions, changed-file
+   list.
+2. **The single finding** to check — its location, problem, and proposed fix.
+3. **The verifier instruction:** *You are a skeptical verifier. Do not assume the
+   finding is correct. Open the actual file at the given location and read enough
+   of the surrounding code to judge the claim on its merits — not just the diff
+   hunk the finder saw. Decide three things: is the problem real, is it actually
+   caused by this change, and is the proposed fix correct and safe? Default to
+   `refuted` when the evidence does not clearly support the finding. Return the
+   verdict schema below.*
+
+Reading the **real code**, not the truncated diff hunk, is the point — a finder
+reasoning from a partial hunk is exactly where false positives come from.
+
+Each verifier returns:
+
+```
+verdict:     confirmed | refuted | uncertain
+confidence:  high | medium | low
+rationale:   one line — what the code actually shows
+correction:  (optional) a better fix, when the problem is real but the finder's fix was wrong
+```
+
+Fold the verdicts back into the findings:
+
+- **confirmed** → carries through to Phase 3, tagged ✓ verified.
+- **uncertain** → carries through, tagged ⚠ unverified, so the user knows it's a
+  judgment call — and so the autonomous loop leaves it for the user instead of
+  auto-applying it.
+- **refuted** → dropped from the main list. Keep a short **filtered-out tally**
+  (count, plus each dropped finding's ID and one-line reason) so the user can see
+  what was screened and push back if they disagree. Never silently discard.
+- If a verifier itself fails or comes back inconclusive, treat the finding as
+  **uncertain** rather than dropping it — surface it, don't auto-apply it.
+
+When a verifier supplies a `correction`, replace the finder's `fix` with it
+before moving on — the problem was real, the fix wasn't.
+
+## Phase 3 — Consolidate & present
+
+Merge all **verified** findings (confirmed and uncertain) into one list:
 
 - **Deduplicate across domains.** The same location with the same fix collapses
   into one entry; keep the higher severity. (Several domains will legitimately
@@ -113,33 +175,35 @@ Merge all findings into one list:
 - **Rank** by severity (🔴 → 🟡 → 🟢), then by domain.
 - **Assign stable IDs** of the form `<domain>-<n>` (e.g. `correctness-1`).
 
-Present a grouped, ID'd list to the user. Each finding renders on one line:
+Present a grouped, ID'd list to the user. Each finding renders on one line, with
+its verification tag:
 
 ```
-[correctness-1] 🔴 correctness · src/auth.ts:42 — token expiry uses `<` not `<=`,
-                off-by-one lets expired tokens through — change to `<=` — small
+[correctness-1] ✓ 🔴 correctness · src/auth.ts:42 — token expiry uses `<` not
+                `<=`, off-by-one lets expired tokens through — change to `<=` — small
 ```
 
-Then summarize: how many findings at each severity, and which domains were
-quiet. Keep it skimmable — the user is choosing what to act on, not reading
-nine essays.
+Then summarize: how many findings at each severity, which domains were quiet,
+and how many candidate findings verification filtered out — list those with
+their one-line reasons so the user can challenge the screening. Keep it
+skimmable — the user is choosing what to act on, not reading nine essays.
 
-## Phase 3 — Decide
+## Phase 4 — Decide
 
 Ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply.
-- **(b) Autonomous loop (significant only)** — apply all 🔴/🟡 findings,
+- **(b) Autonomous loop (significant only)** — apply all verified 🔴/🟡 findings,
   re-review, repeat until convergence or the round cap. Skips 🟢 nice-to-haves
   (see loop rules).
 - **(c) Autonomous loop (everything, including nice-to-haves)** — apply *all*
-  findings including 🟢, re-review, fix again, and keep going until a round
-  surfaces nothing new. Use this when nice-to-haves matter — a 🟢 "nice-to-have"
-  is often a refactor that's actually worth doing. The most thorough path (see
-  loop rules).
+  verified findings including 🟢, re-review, fix again, and keep going until a
+  round surfaces nothing new. Use this when nice-to-haves matter — a 🟢
+  "nice-to-have" is often a refactor that's actually worth doing. The most
+  thorough path (see loop rules).
 - **(d) Stop** — report only; change nothing.
 
-## Phase 4 — Implement (for paths a, b, and c)
+## Phase 5 — Implement (for paths a, b, and c)
 
 For each accepted finding, in order:
 
@@ -170,21 +234,32 @@ fix:       proposed change, concrete enough to act on
 effort:    small | medium | large
 ```
 
+Phase 2 verification then annotates each surviving finding with two more fields
+(refuted findings are dropped, not annotated):
+
+```
+verdict:     confirmed | uncertain
+confidence:  high | medium | low
+```
+
 ## Autonomous loop rules (paths b and c)
 
 Both loop paths repeat the same cycle — apply findings, re-run the full review
-fan-out (Phases 1–2) on the now-updated diff, then apply again — until they
-converge. They differ only in **which findings they apply** and **when they
-stop**.
+(fan-out → verify → consolidate, Phases 1–3) on the now-updated diff, then apply
+again — until they converge. Because verification runs every round, the loop only
+ever applies findings that survived it. The paths differ only in **which findings
+they apply** and **when they stop**.
 
 ### Path b — significant only
 
-1. Apply every **significant** finding — severity 🔴 or 🟡. 🟢 findings are
-   reported but not auto-applied (they're judgment calls the user should opt
-   into). Each fix follows the Phase 4 apply-and-gate steps.
-2. Re-run the full review fan-out on the now-updated diff.
+1. Apply every **verified significant** finding — a 🔴 or 🟡 that Phase 2 returned
+   as `confirmed`. 🟢 findings, and any finding left `uncertain` by verification,
+   are reported but not auto-applied (they're judgment calls the user should opt
+   into). Each fix follows the Phase 5 apply-and-gate steps.
+2. Re-run the full review (fan-out → verify → consolidate) on the now-updated
+   diff.
 3. Repeat. **Stop** when either:
-   - a review round produces no 🔴/🟡 findings (convergence), **or**
+   - a review round produces no verified 🔴/🟡 findings (convergence), **or**
    - three apply-then-re-review rounds have completed (cost bound),
    whichever comes first.
 
@@ -195,9 +270,11 @@ because a nice-to-have is frequently a refactor that genuinely improves the
 change. It keeps fixing and re-reviewing until the review surfaces **nothing
 new**.
 
-1. Apply **every** finding the round produced — 🔴, 🟡, *and* 🟢. Each fix
-   follows the Phase 4 apply-and-gate steps.
-2. Re-run the full review fan-out on the now-updated diff.
+1. Apply **every verified** finding the round produced — 🔴, 🟡, *and* 🟢 — that
+   verification marked `confirmed`. Findings left `uncertain` are reported for
+   the user, not auto-applied. Each fix follows the Phase 5 apply-and-gate steps.
+2. Re-run the full review (fan-out → verify → consolidate) on the now-updated
+   diff.
 3. Track findings already addressed across rounds (by location + fix) so you can
    tell genuinely **new** findings from ones that keep resurfacing. Repeat the
    apply-then-re-review cycle. **Stop** when either:
@@ -216,9 +293,9 @@ new**.
 
 ### Common to both paths
 
-- Each round reports: findings applied, the gate result, and what remains. On
-  stop, summarize total commits made and (for path b) any 🟢 findings left for
-  the user.
+- Each round reports: findings applied, the gate result, what verification
+  filtered out, and what remains. On stop, summarize total commits made and (for
+  path b) any 🟢 or uncertain findings left for the user.
 - The loop is **stateless across invocations**: hitting the round cap is not the
   end of the road. Because each run re-orients and re-reviews from the current
   diff, the user can simply re-invoke this skill to run another set of rounds on
@@ -232,6 +309,10 @@ new**.
 - **Lint/test command not found:** warn and ask the user whether to proceed
   without the gate or supply the command. Never silently skip verification.
 - **A sub-agent fails or returns nothing:** note it, continue with the others.
+- **A verifier fails or is inconclusive:** treat the finding as `uncertain` —
+  surface it for the user rather than dropping it or auto-applying it.
+- **Verification refutes a finding:** drop it from the presented list but record
+  it in the filtered-out tally with its one-line reason; never silently discard.
 - **A fix breaks the gate and can't be repaired quickly:** revert that finding,
   mark it "attempted, reverted — needs manual work," and continue with the rest.
 - **Two findings' edits conflict:** one-commit-per-finding already serializes
