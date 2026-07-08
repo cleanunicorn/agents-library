@@ -9,8 +9,9 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr`, `/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
-`/describe-codebase` skills plus all seven agents as subagents.
+`/review-pr`, `/review-design`, `/batch-merge-prs`, `/triage-issues`,
+`/simplify-sweep`, and `/describe-codebase` skills plus all eight agents as
+subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -19,7 +20,7 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
-`/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
+`/review-design`, `/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
 `/describe-codebase`.
 
 Outside a session, the same works from the CLI:
@@ -36,13 +37,29 @@ To update later, push to the repo and run `/plugin marketplace update agents-lib
 [`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
 before you finalize it — the reviewer you start in a fresh agent after
 implementing a change. It orients on the project, computes the local branch
-diff, fans out nine specialized review sub-agents (correctness, architecture,
-dead code, docs, refactor, testing, UX polish, security, conventions),
-independently verifies every finding with a fresh skeptical agent to screen out
-false positives before you see them, consolidates the survivors into one ranked
-list, and then either applies a chosen subset or runs an autonomous
-improve-until-converged loop — every applied fix gated on the project's lint and
-tests. No GitHub remote required; it works on the local diff before a PR exists.
+diff, fans out ten specialized review sub-agents (correctness, architecture,
+dead code, docs, refactor, testing, UX polish, visual design, security,
+conventions), independently verifies every finding with a fresh skeptical agent
+to screen out false positives before you see them, consolidates the survivors
+into one ranked list, and then either applies a chosen subset or runs an
+autonomous improve-until-converged loop — every applied fix gated on the
+project's lint and tests. No GitHub remote required; it works on the local diff
+before a PR exists.
+
+## The Review Design Skill
+
+[`/review-design`](skills/review-design/SKILL.md) is the design-focused
+counterpart to `review-pr`: it reviews the **visual design** of a UI against core
+UI/UX principles, for a target you choose — a single view or component, a
+path/glob of frontend files, or the current branch diff. It orients on the
+project's design system (tokens, type and spacing scales, palette, components,
+dark mode), fans out five specialized sub-agents across the design lenses
+(hierarchy & spacing, typography, color & dark mode, depth/icons/buttons, and
+interaction/states/motion), and consolidates their findings — each tracing to a
+named principle — into one ranked list. You then either apply a chosen subset or
+run an autonomous improve-until-converged loop, every applied fix reusing the
+project's design tokens and gated on its lint and build. No `gh` or remote
+required.
 
 ## The Batch PR Merge Skill
 
@@ -118,6 +135,7 @@ or remote required.
 | [Refactor](agents/refactor.md) | 🔧 | Micro-refactors that improve clarity without changing behavior |
 | [Sentinel](agents/sentinel.md) | 🛡️ | Light security hygiene (auth guards, error leakage, hardcoded config) |
 | [TestForge](agents/testforge.md) | 🧪 | Fill test gaps without changing production code |
+| [UIDesigner](agents/uidesigner.md) | 🖌️ | Visual-design fixes (hierarchy, spacing, type, color, depth) using the project's tokens |
 | [UXPolish](agents/uxpolish.md) | 🎨 | Frontend UX friction fixes without touching contracts |
 
 ## Shared Conventions
