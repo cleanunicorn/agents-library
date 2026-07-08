@@ -9,9 +9,9 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr`, `/review-design`, `/batch-merge-prs`, `/triage-issues`,
-`/simplify-sweep`, and `/describe-codebase` skills plus all eight agents as
-subagents.
+`/review-pr`, `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`,
+`/triage-issues`, `/simplify-sweep`, and `/describe-codebase` skills plus all
+eight agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -20,8 +20,8 @@ subagents.
 
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
-`/review-design`, `/batch-merge-prs`, `/triage-issues`, `/simplify-sweep`, and
-`/describe-codebase`.
+`/review-design`, `/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
+`/simplify-sweep`, and `/describe-codebase`.
 
 Outside a session, the same works from the CLI:
 
@@ -60,6 +60,28 @@ named principle — into one ranked list. You then either apply a chosen subset 
 run an autonomous improve-until-converged loop, every applied fix reusing the
 project's design tokens and gated on its lint and build. No `gh` or remote
 required.
+
+## The UX Psychology Review Skill
+
+[`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
+behavior-and-conversion counterpart to `review-design`: where `review-design`
+judges how a UI *looks*, this skill judges how a flow works against the way people
+actually decide, in the service of a **specific product metric**. For a target you
+choose — a screen or flow (onboarding, signup, checkout, pricing, a form), a
+path/glob, or the current branch diff — it orients on the product goal and the
+metric the flow is being optimized for (signup, activation, trial-to-paid,
+checkout completion, retention), best-effort renders the flow to
+screenshots/video so findings are grounded in what the user actually sees, then
+fans out six specialized sub-agents across behavioral-design lenses: decision
+fatigue & smart defaults, goal-gradient progress, reciprocity & value-first,
+endowment & the IKEA effect, loss aversion & framing, and anchoring & the contrast
+effect. Every finding traces to a named psychology principle and names the metric
+it is meant to move. Following `review-pr`, it then independently **verifies** each
+finding against the real code/flow to screen out false positives, consolidates the
+survivors into one list ranked by expected impact, presents them for you to pick
+from, and then either applies a chosen subset or runs an autonomous
+improve-until-converged loop — every applied fix reusing the project's patterns and
+gated on its lint and build. No `gh` or remote required.
 
 ## The Batch PR Merge Skill
 

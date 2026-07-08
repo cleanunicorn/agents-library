@@ -1,0 +1,44 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Node / tooling (in case plugin tooling is added)
+node_modules/
+.npm
+.pnp.*
+.yarn/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local Claude Code overrides
+.claude/settings.local.json
+
+# Temporary files
+*.tmp
+*.bak
+tmp/

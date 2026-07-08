@@ -103,14 +103,15 @@ definitions plus JSON manifests. There is no runtime, database, or build —
 "behavior" is the prose contracts that Claude Code loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
-  role). `skills/<name>/SKILL.md` are 6 orchestrators that fan out to
-  sub-prompt files in `domains/` (review-pr, review-design, simplify-sweep),
-  `lenses/` (describe-codebase), or `references/` (batch-merge-prs,
-  triage-issues).
+  role). `skills/<name>/SKILL.md` are 7 orchestrators that fan out to
+  sub-prompt files in `domains/` (review-pr, review-design,
+  review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
+  `references/` (batch-merge-prs, triage-issues).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
-  parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr
-  inserts a *verify* pass (fresh skeptical agents re-check each finding) between
-  fan-out and consolidate, so its consolidate step is Phase 3.
+  parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
+  review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
+  each finding) between fan-out and consolidate, so their consolidate step is
+  Phase 3.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`; the
   marketplace registry (single entry, `source: "."`) in
   `.claude-plugin/marketplace.json`; enabled plugins in `.claude/settings.json`.
@@ -121,9 +122,12 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   the in-skill finding records sub-agents return (`{id, severity, domain,
   location, problem, fix, effort}` for review-pr, which its verify pass then
   annotates with `{verdict, confidence}`; `{id, severity, lens, principle,
-  location, problem, fix, effort}` for review-design; `{lens, topic, location,
-  detail}` for describe-codebase; `{issue, recommendation, kind, validity,
-  evidence, labels, …}` verdicts for triage-issues).
+  location, problem, fix, effort}` for review-design; `{id, severity, lens,
+  principle, location, problem, fix, hypothesis, effort}` for
+  review-ux-psychology, which (like review-pr) runs a verify pass that annotates
+  survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
+  describe-codebase; `{issue, recommendation, kind, validity, evidence, labels,
+  …}` verdicts for triage-issues).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — lint/format/test/build: none. Quality is enforced by the prose
