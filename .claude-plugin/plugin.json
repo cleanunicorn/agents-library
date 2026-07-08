@@ -1,6 +1,6 @@
 {
   "name": "agents-library",
-  "description": "Six orchestrator skills — /review-pr, /review-design, /batch-merge-prs, /triage-issues, /simplify-sweep, and /describe-codebase — plus a set of stack-agnostic, single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
+  "description": "Seven orchestrator skills — /review-pr, /review-design, /review-ux-psychology, /batch-merge-prs, /triage-issues, /simplify-sweep, and /describe-codebase — plus a set of stack-agnostic, single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com"
