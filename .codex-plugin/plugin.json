@@ -1,0 +1,39 @@
+{
+  "name": "agents-library",
+  "version": "0.1.0",
+  "description": "Orchestrator skills for PR review, design review, issue triage, simplification, batch merging, and codebase mapping.",
+  "author": {
+    "name": "Daniel Luca",
+    "email": "lucadanielcostin@gmail.com",
+    "url": "https://github.com/cleanunicorn"
+  },
+  "homepage": "https://github.com/cleanunicorn/agents-library",
+  "repository": "https://github.com/cleanunicorn/agents-library",
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "code-review",
+    "design-review",
+    "issue-triage",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agents Library",
+    "shortDescription": "Focused coding review and triage skills.",
+    "longDescription": "Agents Library provides Codex skills for reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; and mapping a codebase.",
+    "developerName": "Daniel Luca",
+    "category": "Development",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/cleanunicorn/agents-library",
+    "defaultPrompt": [
+      "Review this branch for correctness.",
+      "Triage open issues in this repo.",
+      "Describe this codebase."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

@@ -6,6 +6,18 @@ These are general-purpose definitions: they reference *roles* (linter, test suit
 
 See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here.
 
+## Install (Codex plugin)
+
+Install this repository in Codex with the GitHub URL:
+
+```
+https://github.com/cleanunicorn/agents-library
+```
+
+The Codex plugin metadata lives in [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
+After installation, start a new Codex thread so newly installed skills are
+loaded into the session.
+
 ## Install (Claude Code plugin)
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
