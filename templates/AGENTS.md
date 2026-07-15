@@ -75,6 +75,15 @@ real damage or break an invariant an agent can't see from the code.
    dependencies without a good reason" / "Business logic never reads env
    directly; config flows through `config/`."}}
 
+## Communication
+
+- Always explain the reasoning behind decisions and approaches.
+- When claiming something works or is fixed, prove it — a passing test, a
+  script that validates the behavior, or a clear explanation of why. Don't just
+  assert.
+- When uncertain, say so rather than presenting a guess as fact.
+- End each response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+
 ## The GitHub flow, step by step
 
 ### 1. Start from an up-to-date `{{DEFAULT_BRANCH}}`
