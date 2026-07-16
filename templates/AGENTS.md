@@ -59,6 +59,8 @@ The non-negotiables. Keep this list short — only rules that, if broken, cause
 real damage or break an invariant an agent can't see from the code.
 
 1. **Never commit directly to `{{DEFAULT_BRANCH}}`.** Always branch, always PR.
+   {{If it's protected and/or merging ships something, say so here — e.g. "it is
+   the release branch; merging auto-publishes a release."}}
 2. **Never force-push a shared branch.**
 3. **Keep `{{DEFAULT_BRANCH}}` green.** Run the checks locally before opening a
    PR (see [Run the checks](#5-run-the-checks-locally)).
@@ -68,10 +70,13 @@ real damage or break an invariant an agent can't see from the code.
    everyone (and CI) stays in sync.
 5. **Never disable, skip, or delete a test to make a build pass.** If a test is
    wrong, say so and propose the fix.
-6. {{PROJECT INVARIANT — the thing that's easy to break and hard to notice.
+6. {{IF TITLES DRIVE AUTOMATION — delete if they don't: "**The PR title is
+   load-bearing.** It drives the released version bump, so it must be a valid
+   Conventional Commits string (see [PR titles](#pr-titles))."}}
+7. {{PROJECT INVARIANT — the thing that's easy to break and hard to notice.
    e.g. "Every user-facing claim must trace to a registered source" / "The
    public API in `api/` is a contract; don't change response shapes."}}
-7. {{PROJECT INVARIANT — architectural constraint. e.g. "No new runtime
+8. {{PROJECT INVARIANT — architectural constraint. e.g. "No new runtime
    dependencies without a good reason" / "Business logic never reads env
    directly; config flows through `config/`."}}
 
@@ -95,15 +100,19 @@ git pull origin {{DEFAULT_BRANCH}}
 
 ### 2. Create a branch
 
-Branch names are short, lowercase, hyphenated, and prefixed by intent:
+Branch names are short, lowercase, hyphenated, and prefixed by intent. Match the
+Conventional Commits type you expect the PR to use (see [Commit](#4-commit)):
 
 ```
 feat/<short-description>      # new feature
 fix/<short-description>       # bug fix
 refactor/<short-description>  # internal change, no behavior change
+perf/<short-description>      # performance work
 docs/<short-description>      # documentation only
 chore/<short-description>     # tooling, deps, housekeeping
 ```
+
+Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 
 ### 3. Make focused changes
 
@@ -114,13 +123,23 @@ chore/<short-description>     # tooling, deps, housekeeping
 
 ### 4. Commit
 
-Commit subjects are imperative, under ~72 characters, and lead with the area or
-theme when it helps. Explain the *why* in the body when it isn't obvious.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+type(optional-scope): short imperative description
+```
+
+Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
+`build`, `ci`, `chore`, `revert`. Add `!` before the colon for a breaking change.
 
 ```
 fix: {{example imperative subject}}
-{{Area}}: {{example subject leading with the area}}
+feat({{scope}}): {{example scoped subject}}
+{{type}}!: {{example breaking change}}
 ```
+
+Write in the imperative mood ("add", not "added"). Keep the subject under ~72
+characters and explain the *why* in the body when it isn't obvious.
 
 ### 5. Run the checks locally
 
@@ -142,6 +161,17 @@ gh pr create --base {{DEFAULT_BRANCH}} --fill
 
 Target **`{{DEFAULT_BRANCH}}`**.
 
+## PR titles
+
+The PR title follows the same Conventional Commits format as commits:
+
+```
+type(optional scope)!: description
+```
+
+{{If a CI check enforces this, say so — e.g. "a GitHub Action blocks the merge on
+an invalid title." If the title also drives a release, see Release automation.}}
+
 ## PR description
 
 Keep it short and useful:
@@ -153,10 +183,31 @@ Keep it short and useful:
 
 ## After opening the PR
 
-- Make sure **CI is green**.
+- Make sure **CI is green**. {{Note which jobs matter and why — e.g. "all three
+  platforms; the binaries ship per-OS."}}
+- {{If a PR-title check fails, edit the title — it re-validates on edit.}}
 - Address review feedback by pushing more commits to the same branch.
 - {{PROJECT RULE — e.g. "changes to `<sensitive area>` need maintainer sign-off;
   never self-merge them."}}
+
+## Release automation
+
+Delete this section if merging doesn't ship anything.
+
+- **Is `{{DEFAULT_BRANCH}}` protected?** {{yes/no}}
+- **What does merging trigger?** {{e.g. "bumps `{{VERSION_FILE}}`, tags, and
+  dispatches the release build" / "deploys to staging" / "nothing"}}
+- **Does the PR title/prefix decide the bump?** {{yes/no — if yes, fill the table}}
+
+| PR title prefix | Release effect |
+| --- | --- |
+| `{{type}}!: …` (any `type!:`) | **major** |
+| `feat: …` | **minor** |
+| `fix: …`, `perf: …`, `refactor: …` | **patch** |
+| `docs:`, `style:`, `test:`, `build:`, `ci:`, `chore:`, `revert:` | **none** |
+
+> ⚠️ Choose the prefix deliberately — it decides whether (and how big) a release
+> ships when the PR merges.
 
 ## Project map (where things live)
 
