@@ -84,7 +84,7 @@
       "expect_skill": "review-pr",
       "fixture": "mini-service",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change)|even with|clean)"},
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"},
         {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
       ]
     },

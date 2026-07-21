@@ -285,6 +285,8 @@ def run_case(args, tmp_root, suite, case, loaded_skills, isolate_settings):
             "failures": failures,
             "skills_used": sorted(skills_used),
             "trigger_ok": trigger_ok,
+            # tail of the agent's output, for debugging failed assertions
+            "output_tail": output[-4000:],
         })
         if not args.keep_workspaces:
             shutil.rmtree(ws, ignore_errors=True)
