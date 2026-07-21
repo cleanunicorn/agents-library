@@ -1,0 +1,106 @@
+name: Auto release
+
+# Cuts a release automatically when a PR merges to main, sized by the
+# conventional-commit prefix of the PR title:
+#
+#   feat!: / fix!: / any `type!:`  → major
+#   feat:                          → minor
+#   fix: / perf: / refactor:       → patch
+#   anything else (chore:, docs:, ci:, free-form, "[skip release]") → no release
+#
+# The version bump lands as a commit on main (updating the version in
+# .codex-plugin/plugin.json — the only versioned manifest; the Claude plugin is
+# versioned by commit SHA on purpose) plus a `v<version>` tag, and the GitHub
+# release is created right here with generated notes. Those release notes ARE
+# this repo's changelog — there is nothing to build for a markdown-only plugin,
+# so no separate build workflow is dispatched.
+#
+# Deliberately NOT part of this workflow: the skill evals (run_evals.py). They
+# spawn real agent runs and are manual-only by policy — never wire them into
+# CI. See docs/evals.md.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+
+      - name: Decide version bump from the PR title
+        id: bump
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # The regexes live in variables: bash cannot parse `[^)]` inside
+          # an inline [[ =~ ]] expression.
+          major_re='^[a-z]+(\([^)]*\))?!:'
+          minor_re='^feat(\([^)]*\))?:'
+          patch_re='^(fix|perf|refactor)(\([^)]*\))?:'
+          bump=""
+          if [[ "$TITLE" == *"[skip release]"* ]]; then
+            bump=""
+          elif [[ "$TITLE" =~ $major_re ]]; then
+            bump=major
+          elif [[ "$TITLE" =~ $minor_re ]]; then
+            bump=minor
+          elif [[ "$TITLE" =~ $patch_re ]]; then
+            bump=patch
+          fi
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          echo "PR title: $TITLE → bump: ${bump:-none}"
+
+      - name: Bump version, commit and tag
+        id: version
+        if: steps.bump.outputs.bump != ''
+        env:
+          BUMP: ${{ steps.bump.outputs.bump }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          version=$(python3 - <<'EOF'
+          import json, os
+          path = ".codex-plugin/plugin.json"
+          with open(path) as f:
+              manifest = json.load(f)
+          major, minor, patch = map(int, manifest["version"].split("."))
+          bump = os.environ["BUMP"]
+          if bump == "major":
+              major, minor, patch = major + 1, 0, 0
+          elif bump == "minor":
+              minor, patch = minor + 1, 0
+          else:
+              patch += 1
+          manifest["version"] = f"{major}.{minor}.{patch}"
+          with open(path, "w") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          print(manifest["version"])
+          EOF
+          )
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          git commit -am "release: v$version"
+          git tag "v$version"
+          git push origin main --follow-tags
+
+      - name: Create the GitHub release with generated notes
+        if: steps.bump.outputs.bump != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ steps.version.outputs.version }}"
+          # Reuse an existing release so a re-run is idempotent.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists, reusing it."
+          else
+            gh release create "$tag" --title "$tag" --generate-notes
+          fi
