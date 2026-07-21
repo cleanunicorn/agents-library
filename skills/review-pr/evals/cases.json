@@ -1,0 +1,142 @@
+{
+  "skill": "review-pr",
+  "fixtures": {
+    "branch-with-bug": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# demo-auth\n\nPassword policy: a valid password has **at least 8 characters** and at least one digit.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 tests/test_auth.py\n",
+            "src/auth.py": "def validate_password(password):\n    \"\"\"Valid passwords have at least 8 characters.\"\"\"\n    return len(password) >= 8\n",
+            "tests/test_auth.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom auth import validate_password\n\nassert validate_password('short1') is False\nassert validate_password('longenough1') is True\nprint('ok')\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial auth module'",
+            "git checkout -qb feature/digit-rule"
+          ]
+        },
+        {
+          "files": {
+            "src/auth.py": "def validate_password(password):\n    \"\"\"Valid passwords have at least 8 characters and at least one digit.\"\"\"\n    if len(password) > 8:\n        return any(c.isdigit() for c in password)\n    return False\n\n\ndef legacy_strength_score(password):\n    return len(password) * 2\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat(auth): require a digit in passwords'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "rp-h1",
+      "prompt": "Review my changes on this branch before I open a PR. Report the findings; don't change any code.",
+      "should_trigger": true,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(>=|at least 8|off.by.one|boundary|exactly 8)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "rp-h2",
+      "prompt": "Check what I just built on this branch — anything wrong with it? Report only.",
+      "should_trigger": true,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(>=|at least 8|off.by.one|boundary|exactly 8)"}
+      ]
+    },
+    {
+      "id": "rp-h3",
+      "prompt": "Do a thorough pre-merge review of this branch's diff. Report only.",
+      "should_trigger": true,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(>=|at least 8|off.by.one|boundary|exactly 8)"},
+        {"type": "output_regex", "pattern": "legacy_strength_score"}
+      ]
+    },
+    {
+      "id": "rp-h4",
+      "prompt": "Review this branch for dead code and test gaps. Report only; change nothing.",
+      "should_trigger": true,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "legacy_strength_score"},
+        {"type": "output_regex", "pattern": "(?i)(boundary|exactly 8|length 8|8.char|edge)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "rp-h5",
+      "prompt": "Review my branch and fix all critical correctness issues you find. Pre-approved: apply the fixes and commit them; keep make test green.",
+      "should_trigger": true,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "file_regex", "path": "src/auth.py", "pattern": ">=\\s*8"},
+        {"type": "shell", "cmd": "make test"}
+      ]
+    },
+    {
+      "id": "rp-n1",
+      "prompt": "Explain how this codebase works — where is the entry point and how do the pieces fit together?",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "auth"},
+        {"type": "output_not_regex", "pattern": "\\[(correctness|architecture|deadcode|testing|security|conventions)-\\d"}
+      ]
+    },
+    {
+      "id": "rp-n2",
+      "prompt": "Simplify the whole repository — find duplication, dead code, and over-engineering everywhere and report what could be cleaner.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(simpl|dead code|duplic|nothing)"}
+      ]
+    },
+    {
+      "id": "rp-n3",
+      "prompt": "What is the capital of France? Answer in one word.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)paris"}
+      ]
+    },
+    {
+      "id": "rp-n4",
+      "prompt": "Add a function is_strong(password) to src/auth.py that returns True when the password has at least 12 characters, plus a test for it in tests/test_auth.py. Keep it minimal.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "file_regex", "path": "src/auth.py", "pattern": "is_strong"},
+        {"type": "shell", "cmd": "make test"}
+      ]
+    },
+    {
+      "id": "rp-n5",
+      "prompt": "Trace how validate_password is used from the tests through the source — explain the flow, don't change anything.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "branch-with-bug",
+      "assertions": [
+        {"type": "output_regex", "pattern": "validate_password"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    }
+  ]
+}

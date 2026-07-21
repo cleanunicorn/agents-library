@@ -1,0 +1,135 @@
+{
+  "skill": "describe-codebase",
+  "fixtures": {
+    "mini-service": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# userlist\n\nSmall demo service that serves user records.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 -m compileall -q src\n",
+            "src/app.py": "from handlers import get_users, get_user\n\nROUTES = {\n    '/users': get_users,\n    '/users/<id>': get_user,\n}\n\n\ndef serve(path):\n    handler = ROUTES.get(path)\n    if handler is None:\n        return 404, 'not found'\n    return 200, handler()\n",
+            "src/handlers.py": "import db\n\n\ndef get_users():\n    return db.query('SELECT id, name FROM users')\n\n\ndef get_user(user_id=1):\n    return db.query('SELECT id, name FROM users WHERE id = ?', (user_id,))\n",
+            "src/db.py": "import sqlite3\n\nfrom config import DB_PATH\n\n\ndef query(sql, params=()):\n    con = sqlite3.connect(DB_PATH)\n    try:\n        return con.execute(sql, params).fetchall()\n    finally:\n        con.close()\n",
+            "src/config.py": "import os\n\nDB_PATH = os.environ.get('USERLIST_DB', 'users.db')\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial service'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "dc-h1",
+      "prompt": "Explain how this codebase works.",
+      "should_trigger": true,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "app\\.py"},
+        {"type": "output_regex", "pattern": "db\\.py"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "dc-h2",
+      "prompt": "I'm new to this repo — give me an orientation: layering, data, conventions, and where to start reading.",
+      "should_trigger": true,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)start"},
+        {"type": "output_regex", "pattern": "app\\.py"}
+      ]
+    },
+    {
+      "id": "dc-h3",
+      "prompt": "Map the architecture of this project.",
+      "should_trigger": true,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "handlers"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "dc-h4",
+      "prompt": "Trace how a request to /users flows through the code, end to end.",
+      "should_trigger": true,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "app\\.py"},
+        {"type": "output_regex", "pattern": "handlers\\.py"},
+        {"type": "output_regex", "pattern": "db\\.py"}
+      ]
+    },
+    {
+      "id": "dc-h5",
+      "prompt": "Describe this codebase and write the result to ARCHITECTURE.md — you have my approval to create that file.",
+      "should_trigger": true,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "file_exists", "path": "ARCHITECTURE.md"},
+        {"type": "file_regex", "path": "ARCHITECTURE.md", "pattern": "(?i)(app|handler|db)"}
+      ]
+    },
+    {
+      "id": "dc-n1",
+      "prompt": "Review my changes on this branch before merge.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change)|even with|clean)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "dc-n2",
+      "prompt": "Simplify this codebase — survey it for duplication and dead code and report.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(simpl|duplic|dead|nothing|clean)"}
+      ]
+    },
+    {
+      "id": "dc-n3",
+      "prompt": "Rename src/db.py to src/database.py and update all imports.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "file_exists", "path": "src/database.py"},
+        {"type": "file_absent", "path": "src/db.py"},
+        {"type": "shell", "cmd": "make test"}
+      ]
+    },
+    {
+      "id": "dc-n4",
+      "prompt": "What does db.query return when the users table is empty? Just answer from reading the code.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(empty list|\\[\\]|no rows)"}
+      ]
+    },
+    {
+      "id": "dc-n5",
+      "prompt": "Review the visual design of this project's UI.",
+      "should_trigger": false,
+      "expect_skill": "review-design",
+      "fixture": "mini-service",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(no (visual|ui|frontend)|nothing to|backend|not have a UI|isn't a UI|no user interface)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "skill": "review-ux-psychology",
+  "fixtures": {
+    "signup-flow": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\nnode_modules/\n",
+            "README.md": "# scanly\n\nA site-scanner SaaS. Flow: user runs a scan, sees a report, signs up, picks a plan.\n\n## Commands\n\n- lint: `npm run lint`\n- build: `npm run build`\n",
+            "package.json": "{\n  \"name\": \"scanly\",\n  \"private\": true,\n  \"scripts\": {\n    \"lint\": \"node -e \\\"process.exit(0)\\\"\",\n    \"build\": \"node -e \\\"process.exit(0)\\\"\"\n  }\n}\n",
+            "src/ProgressBar.jsx": "export function ProgressBar({ value, max }) {\n  return <progress value={value} max={max} />;\n}\n",
+            "src/Signup.jsx": "import { ProgressBar } from './ProgressBar';\n\nexport function Signup() {\n  return (\n    <form>\n      <ProgressBar value={0} max={4} />\n      <input name=\"firstName\" placeholder=\"First name\" />\n      <input name=\"lastName\" placeholder=\"Last name\" />\n      <input name=\"email\" placeholder=\"Email\" />\n      <input name=\"password\" type=\"password\" placeholder=\"Password\" />\n      <input name=\"company\" placeholder=\"Company\" />\n      <input name=\"role\" placeholder=\"Role\" />\n      <select name=\"country\">\n        <option value=\"\">Select a country…</option>\n        <option value=\"us\">United States</option>\n        <option value=\"ro\">Romania</option>\n      </select>\n      <button type=\"submit\">Sign up</button>\n    </form>\n  );\n}\n",
+            "src/Report.jsx": "export function Report({ score }) {\n  return (\n    <div className=\"blurred\">\n      <p>Create an account to see your report.</p>\n    </div>\n  );\n}\n",
+            "src/Pricing.jsx": "export function Pricing() {\n  return (\n    <div>\n      <h2>Pro</h2>\n      <p>$49/mo</p>\n      <button>Subscribe</button>\n    </div>\n  );\n}\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: signup flow'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "ux-h1",
+      "prompt": "Review the signup flow's UX psychology. The metric is signup conversion. Report only — change nothing.",
+      "should_trigger": true,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(default|prefill|pre-?select|decision fatigue|fewer fields)"},
+        {"type": "output_regex", "pattern": "(?i)(progress|0%|zero|goal.gradient)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ux-h2",
+      "prompt": "Users abandon our report page — audit it for drop-off. Metric: activation. Report only.",
+      "should_trigger": true,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(reciprocit|value|gate|blur|before (asking|the ask)|signup wall)"}
+      ]
+    },
+    {
+      "id": "ux-h3",
+      "prompt": "Audit src/Signup.jsx for decision fatigue. Metric: signup completion. Report only.",
+      "should_trigger": true,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(field|default|fatigue|fewer|reduce)"}
+      ]
+    },
+    {
+      "id": "ux-h4",
+      "prompt": "How can we lift trial-to-paid on the pricing page? Review it against behavioral principles; report only.",
+      "should_trigger": true,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(anchor|reference|compar|contrast|isolation)"}
+      ]
+    },
+    {
+      "id": "ux-h5",
+      "prompt": "Review the signup flow (metric: signup conversion) and apply the single safest quick win. Pre-approved: commit it; keep lint and build green.",
+      "should_trigger": true,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "shell", "cmd": "test \"$(git rev-list --count HEAD)\" -gt 1"},
+        {"type": "output_regex", "pattern": "(?i)signup"},
+        {"type": "shell", "cmd": "npm run lint && npm run build"}
+      ]
+    },
+    {
+      "id": "ux-n1",
+      "prompt": "Review the visual design of the pricing page — spacing, typography, and color.",
+      "should_trigger": false,
+      "expect_skill": "review-design",
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_not_regex", "pattern": "\\[(defaults|progress|reciprocity|endowment|loss-aversion|anchoring)-\\d"}
+      ]
+    },
+    {
+      "id": "ux-n2",
+      "prompt": "Review my branch diff before merge.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change)|even with|clean)"}
+      ]
+    },
+    {
+      "id": "ux-n3",
+      "prompt": "Explain how the signup flow code is organized.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_regex", "pattern": "Signup"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ux-n4",
+      "prompt": "Add a phone number field to the signup form.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "file_regex", "path": "src/Signup.jsx", "pattern": "(?i)phone"}
+      ]
+    },
+    {
+      "id": "ux-n5",
+      "prompt": "Simplify the whole repo — find dead code and duplication and report.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "signup-flow",
+      "assertions": [
+        {"type": "output_not_regex", "pattern": "\\[(defaults|progress|reciprocity|endowment|loss-aversion|anchoring)-\\d"}
+      ]
+    }
+  ]
+}

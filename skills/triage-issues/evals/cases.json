@@ -1,0 +1,135 @@
+{
+  "skill": "triage-issues",
+  "fixtures": {
+    "issue-backlog": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# csvkit-demo\n\nExports rows to CSV. `python3 src/export.py data.txt out.csv` writes **all** rows of data.txt to out.csv.\n",
+            "src/export.py": "import sys\n\n\ndef export_rows(rows):\n    out = []\n    for i in range(len(rows) - 1):\n        out.append(rows[i].strip())\n    return out\n\n\nif __name__ == '__main__':\n    with open(sys.argv[1]) as f:\n        rows = f.readlines()\n    with open(sys.argv[2], 'w') as f:\n        f.write('\\n'.join(export_rows(rows)))\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves canned issue data.\necho \"gh $*\" >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/csvkit-demo\"}'; exit 0 ;;\n  \"label list\") printf 'bug\\tSomething is broken\\t#d73a4a\\nenhancement\\tNew feature\\t#a2eeef\\ntriaged\\tSeen by triage\\t#ededed\\n'; exit 0 ;;\n  \"issue list\") cat .fixture/issue-list.json; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-$3.txt\"; exit 0 ;;\n  \"search issues\") cat .fixture/search.txt; exit 0 ;;\n  \"pr list\") echo \"[]\"; exit 0 ;;\n  \"issue edit\"|\"issue comment\"|\"issue close\"|\"label create\") exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-list.json": "[\n  {\"number\": 1, \"title\": \"CSV export misses the last row\", \"author\": {\"login\": \"alice\"}, \"labels\": [], \"assignees\": [], \"createdAt\": \"2026-05-01T10:00:00Z\", \"updatedAt\": \"2026-05-01T10:00:00Z\"},\n  {\"number\": 2, \"title\": \"Export drops the final line\", \"author\": {\"login\": \"bob\"}, \"labels\": [], \"assignees\": [], \"createdAt\": \"2026-06-10T10:00:00Z\", \"updatedAt\": \"2026-06-10T10:00:00Z\"},\n  {\"number\": 3, \"title\": \"app broken\", \"author\": {\"login\": \"carol\"}, \"labels\": [], \"assignees\": [], \"createdAt\": \"2026-06-20T10:00:00Z\", \"updatedAt\": \"2026-06-20T10:00:00Z\"}\n]\n",
+            ".fixture/issue-1.txt": "CSV export misses the last row\n\nalice opened this issue\n\nWhen exporting a file with 10 rows, only 9 are written to the CSV. Reproduce: create data.txt with three lines a, b, c; run python3 src/export.py data.txt out.csv; out.csv contains only a and b.\n",
+            ".fixture/issue-2.txt": "Export drops the final line\n\nbob opened this issue\n\nSaving to CSV loses the last entry of the input file every time.\n",
+            ".fixture/issue-3.txt": "app broken\n\ncarol opened this issue\n\nit doesnt work pls fix\n",
+            ".fixture/search.txt": "1\tOPEN\tCSV export misses the last row\n2\tOPEN\tExport drops the final line\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial exporter'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "ti-h1",
+      "prompt": "Triage the open issues and give me a ranked action plan. Report only — take no actions on GitHub.",
+      "should_trigger": true,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)duplicate"},
+        {"type": "output_regex", "pattern": "(?i)(easy|export\\.py)"},
+        {"type": "shell", "cmd": "! grep -qE 'issue (edit|close|comment)' .gh-calls.log 2>/dev/null"}
+      ]
+    },
+    {
+      "id": "ti-h2",
+      "prompt": "Groom the backlog: which issues are duplicates and which are easy wins? No actions.",
+      "should_trigger": true,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)duplicate"},
+        {"type": "shell", "cmd": "! grep -qE 'issue (edit|close|comment)' .gh-calls.log 2>/dev/null"}
+      ]
+    },
+    {
+      "id": "ti-h3",
+      "prompt": "Find duplicate issues in this repo; report only.",
+      "should_trigger": true,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)duplicate"},
+        {"type": "output_regex", "pattern": "2"},
+        {"type": "shell", "cmd": "! grep -qE 'issue (edit|close|comment)' .gh-calls.log 2>/dev/null"}
+      ]
+    },
+    {
+      "id": "ti-h4",
+      "prompt": "Which open issues are easy wins? Ground your answer in the actual code. Report only.",
+      "should_trigger": true,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "export\\.py"},
+        {"type": "output_regex", "pattern": "(?i)(range|off.by.one|last row|len\\(rows\\))"}
+      ]
+    },
+    {
+      "id": "ti-h5",
+      "prompt": "Triage the open issues. Pre-approved: apply labels only — no comments, no closures, no code changes.",
+      "should_trigger": true,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "shell", "cmd": "grep -q 'issue edit' .gh-calls.log"},
+        {"type": "shell", "cmd": "! grep -qE 'issue (close|comment)' .gh-calls.log"}
+      ]
+    },
+    {
+      "id": "ti-n1",
+      "prompt": "Clean up the PR queue and batch-merge the trivial PRs.",
+      "should_trigger": false,
+      "expect_skill": "batch-merge-prs",
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(no (open )?(pull requests|prs)|nothing to (triage|batch|merge)|empty)"}
+      ]
+    },
+    {
+      "id": "ti-n2",
+      "prompt": "Review my changes on this branch.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change)|even with|clean)"}
+      ]
+    },
+    {
+      "id": "ti-n3",
+      "prompt": "Fix the bug where the CSV export drops the last row, and prove the fix works by running the exporter on a three-line file.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "file_not_regex", "path": "src/export.py", "pattern": "len\\(rows\\) - 1"},
+        {"type": "shell", "cmd": "printf 'a\\nb\\nc\\n' > /tmp/eval-data.txt && python3 src/export.py /tmp/eval-data.txt /tmp/eval-out.csv && grep -q c /tmp/eval-out.csv"}
+      ]
+    },
+    {
+      "id": "ti-n4",
+      "prompt": "Explain how this codebase works.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "output_regex", "pattern": "export"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ti-n5",
+      "prompt": "Simplify the repo and report cleanup opportunities.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "issue-backlog",
+      "assertions": [
+        {"type": "shell", "cmd": "! grep -qE 'issue (edit|close|comment)' .gh-calls.log 2>/dev/null"}
+      ]
+    }
+  ]
+}

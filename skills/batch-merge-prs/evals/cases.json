@@ -1,0 +1,181 @@
+{
+  "skill": "batch-merge-prs",
+  "fixtures": {
+    "pr-queue": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\nremote.git/\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# demo\n\nWelcom to the demo project.\n",
+            "core.py": "def add(a, b):\n    return a + b\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves canned PR data.\necho \"gh $*\" >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"pr list\") cat .fixture/pr-list.json; exit 0 ;;\n  \"pr view\")\n    n=$3\n    if printf '%s\\n' \"$@\" | grep -qx -- '.title'; then\n      python3 -c \"import json; print(json.load(open('.fixture/pr-$n-view.json'))['title'])\"\n    else\n      cat \".fixture/pr-$n-view.json\"\n    fi\n    exit 0 ;;\n  \"pr diff\") cat \".fixture/pr-$3.diff\"; exit 0 ;;\n  \"issue list\") echo \"[]\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/demo\"}'; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/pr-list.json": "[\n  {\"number\": 1, \"title\": \"docs: fix typo in README\", \"author\": {\"login\": \"alice\"}, \"headRefName\": \"pr-1\", \"baseRefName\": \"main\", \"isDraft\": false, \"mergeable\": \"MERGEABLE\", \"labels\": [], \"additions\": 1, \"deletions\": 1, \"changedFiles\": 1},\n  {\"number\": 2, \"title\": \"docs: reword README intro\", \"author\": {\"login\": \"bob\"}, \"headRefName\": \"pr-2\", \"baseRefName\": \"main\", \"isDraft\": false, \"mergeable\": \"MERGEABLE\", \"labels\": [], \"additions\": 1, \"deletions\": 1, \"changedFiles\": 1}\n]\n",
+            ".fixture/pr-1-view.json": "{\"number\": 1, \"title\": \"docs: fix typo in README\", \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n",
+            ".fixture/pr-2-view.json": "{\"number\": 2, \"title\": \"docs: reword README intro\", \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial'",
+            "git init -q --bare remote.git",
+            "git remote add origin ./remote.git",
+            "git push -q origin main",
+            "git checkout -qb pr-1"
+          ]
+        },
+        {
+          "files": {
+            "README.md": "# demo\n\nWelcome to the demo project.\n"
+          }
+        },
+        {
+          "run": [
+            "git commit -qam 'docs: fix typo in README'",
+            "git push -q origin HEAD:refs/pull/1/head",
+            "git checkout -q main",
+            "git checkout -qb pr-2"
+          ]
+        },
+        {
+          "files": {
+            "README.md": "# demo\n\nWelcom to the demo project — a tiny sample repository.\n"
+          }
+        },
+        {
+          "run": [
+            "git commit -qam 'docs: reword README intro'",
+            "git push -q origin HEAD:refs/pull/2/head",
+            "git checkout -q main",
+            "git fetch -q origin '+refs/pull/*/head:refs/remotes/origin/pull/*'",
+            "git diff main origin/pull/1 > .fixture/pr-1.diff",
+            "git diff main origin/pull/2 > .fixture/pr-2.diff"
+          ]
+        }
+      ]
+    },
+    "no-remote": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# lonely\n\nA repo with no GitHub remote.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "bm-h1",
+      "prompt": "Clean up the PR queue: triage the open PRs and merge the trivial ones onto a branch called batch-1. Pre-approved: take all PRs you judge trivial, in ascending order, without asking me.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "shell", "cmd": "git rev-parse --verify -q batch-1"},
+        {"type": "shell", "cmd": "git log batch-1 --oneline | grep -qiE 'Merge PR #(1|2)'"},
+        {"type": "output_regex", "pattern": "(?i)(conflict|skip)"}
+      ]
+    },
+    {
+      "id": "bm-h2",
+      "prompt": "Sweep the open pull requests and tell me which are safe to batch-merge. Don't merge anything.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(typo|reword)"},
+        {"type": "shell", "cmd": "! git log main --merges --oneline | grep -q ."}
+      ]
+    },
+    {
+      "id": "bm-h3",
+      "prompt": "Bulk-merge the low-risk open PRs onto a local integration branch named combined. Take all the trivial ones without asking.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "shell", "cmd": "git rev-parse --verify -q combined"},
+        {"type": "shell", "cmd": "git log combined --oneline | grep -qiE 'Merge PR #(1|2)'"}
+      ]
+    },
+    {
+      "id": "bm-h4",
+      "prompt": "Which of our open PRs are trivial enough to batch together? Report only.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(include|trivial)"},
+        {"type": "shell", "cmd": "! git log main --merges --oneline | grep -q ."}
+      ]
+    },
+    {
+      "id": "bm-h5",
+      "prompt": "Batch the trivial open PRs onto a branch called batch-1.",
+      "should_trigger": true,
+      "fixture": "no-remote",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(gh|github)"},
+        {"type": "output_regex", "pattern": "(?i)(auth|remote|unable|cannot|can't|fail|missing|error|no open)"}
+      ]
+    },
+    {
+      "id": "bm-n1",
+      "prompt": "Triage the open issues and tell me which are duplicates.",
+      "should_trigger": false,
+      "expect_skill": "triage-issues",
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(no (open )?issues|nothing to triage|zero issues|empty)"},
+        {"type": "shell", "cmd": "! git rev-parse --verify -q batch-1"}
+      ]
+    },
+    {
+      "id": "bm-n2",
+      "prompt": "Review my current branch before I open a PR.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change)|even with|clean)"}
+      ]
+    },
+    {
+      "id": "bm-n3",
+      "prompt": "Merge the local branch pr-1 into main.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "shell", "cmd": "git merge-base --is-ancestor pr-1 main"}
+      ]
+    },
+    {
+      "id": "bm-n4",
+      "prompt": "Explain this codebase briefly.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(core|README)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "bm-n5",
+      "prompt": "Summarize the git history of main in one or two sentences.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "pr-queue",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)initial"}
+      ]
+    }
+  ]
+}
