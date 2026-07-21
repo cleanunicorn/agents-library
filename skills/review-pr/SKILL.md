@@ -1,19 +1,17 @@
 ---
 name: review-pr
 description: >-
-  Review the work-in-progress on the current branch before it is finalized —
-  the reviewer you start in a fresh agent after implementing a change. Orients
-  on the project (AGENTS.md, README, conventions), computes the local branch
-  diff, fans out specialized review sub-agents across ten quality domains
+  Review the current branch's local diff across ten quality domains
   (correctness, architecture, dead code, docs, refactor, testing, UX polish,
-  visual design, security, conventions), independently verifies every finding to
-  screen out false positives before you see it, consolidates and ranks the
-  survivors, presents them for you to pick from, and then either applies a chosen
-  subset or runs an autonomous improve-until-converged loop. Use this whenever the
-  user wants to review a PR, review a branch, review their changes before merging,
-  "check what I just built", clean up a diff, or asks for a pre-merge / pre-PR
-  review — even if they don't say the word "skill". Works on the local diff
-  before a GitHub PR exists; no `gh` or remote required.
+  visual design, security, conventions), with every finding independently
+  verified to screen out false positives; then optionally apply fixes behind
+  the project's lint/test gate. Use when the user wants to review a PR, a
+  branch, or their changes before merging — "review my changes", "check what I
+  just built", a pre-merge / pre-PR review. Works on the local diff before a
+  GitHub PR exists; no `gh` or remote required. Do NOT use for whole-repo
+  cleanup (use simplify-sweep), a visual-only design pass (use review-design),
+  conversion/flow psychology (use review-ux-psychology), or explaining a
+  codebase (use describe-codebase).
 ---
 
 # review-pr
@@ -31,27 +29,19 @@ or a remote.
 
 ## Why this shape
 
-A single reviewer reading a diff top-to-bottom misses things, because "is this
-correct?", "does this fit the architecture?", and "is this tested?" are
-different mental modes that compete for attention. Ten focused sub-agents, each
-holding exactly one lens and the same shared project context, find more and
-find it more sharply. You then merge their findings into one ranked list so the
-user sees signal, not ten separate reports.
+"Is this correct?", "does this fit the architecture?", and "is this tested?"
+are different mental modes — one domain per sub-agent, all sharing the same
+project context, finds more than one generalist pass, and you merge the results
+into one ranked list. The sub-agents **only analyze**; edits happen later,
+under your control, behind the lint/test gate.
 
-The sub-agents **only analyze** — they never edit code. Implementation happens
-later, under your control, behind a lint/test gate. Keeping review and
-implementation separate is what makes the findings trustworthy and the applied
-changes safe.
-
-But the finders are not infallible. Each is primed to see problems through its
-one lens, so some of what it returns is a false positive — a "bug" the
-surrounding code already prevents, "dead code" that's reached by dynamic
-dispatch, a "missing" test that already exists elsewhere, a convention
-"violation" the project actually permits. Trusting those blindly wastes the
-user's attention, and in the autonomous loop it gets a wrong fix committed. So
-between finding and presenting there is a dedicated **verification** stage:
-every finding is independently re-checked against the real code by a fresh,
-skeptical agent, and only what survives reaches the user.
+The finders are not infallible: each is primed to see problems through its one
+lens, so the raw pile contains false positives — a "bug" the surrounding code
+already prevents, "dead code" reached by dynamic dispatch, a "missing" test
+that exists elsewhere. So between finding and presenting sits a dedicated
+**verification** stage: a fresh, skeptical agent re-checks every finding
+against the real code, and only survivors reach the user — or, in the
+autonomous loop, get applied.
 
 ## Phase 0 — Orient (do this once, yourself)
 

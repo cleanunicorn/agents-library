@@ -1,24 +1,15 @@
 ---
 name: triage-issues
 description: >-
-  Triage the project's open GitHub issues into a ranked action plan. Lists the
-  untriaged open issues, fans out one assessment sub-agent per issue that reads
-  the issue *and the actual codebase* and judges it across five lenses —
-  validity (does the bug still exist in the code?), completeness, classification,
-  duplicate detection (search-then-confirm), and a code-grounded effort estimate
-  — then recommends an action with evidence. Consolidates the verdicts into
-  duplicate clusters and one ranked decision table (easy wins, duplicates,
-  needs-info, larger work), lets you pick which actions to take, and then — only
-  after your confirmation — applies labels, posts needs-more-info comments,
-  closes confirmed duplicates via `gh`, and fixes the easy wins you approve:
-  one fix sub-agent per issue, each in its own git worktree, each opening its
-  own reviewable pull request that references the issue. Use this whenever the
-  user wants to triage issues, clean up or groom the issue tracker/backlog,
-  find duplicate issues, find and fix easy wins or good first issues, label or
-  categorize open issues, or figure out what's worth fixing first — even if
-  they don't say the word "skill". Requires the `gh` CLI; never writes to
-  GitHub without explicit per-action confirmation, and never commits to the
-  default branch — every fix lands as its own PR.
+  Triage the project's open GitHub issues into a ranked action plan: duplicates
+  clustered, easy wins backed by code-grounded evidence, needs-info drafts,
+  larger work classified. Only after per-action approval it applies labels,
+  posts comments, closes duplicates, and fixes approved easy wins — one PR per
+  issue, never committing to the default branch. Use when the user wants to
+  triage or groom the issue tracker/backlog, find duplicate issues, find and
+  fix easy wins or good first issues, or label open issues. Requires the `gh`
+  CLI. Do NOT use for pull requests (use batch-merge-prs for the PR queue,
+  review-pr for the current branch).
 ---
 
 # triage-issues
@@ -52,24 +43,16 @@ Two guardrails frame everything below:
 
 ## Why this shape
 
-An issue tracker read by title is a hall of mirrors — "app crashes on save"
-and "data loss when exporting" can be the same bug — and issue text alone
-can't tell you whether a bug is *still real* or how contained a fix would be:
-only the code can. So each issue gets its own sub-agent, holding all five
-lenses over that one issue, that reads the thread, searches for duplicates,
-and **goes into the codebase**. That code-grounded read, run in parallel
-across the backlog, is what separates a real triage from a labeling bot. You
-then merge the verdicts, resolve duplicate claims into clusters (no single
-agent can see the whole graph), and present one decision table, not a stack
-of reports.
-
-The assessment sub-agents **only assess** — they read issues and code, they
-judge, they never label, comment, close, or edit anything. Action happens
-later, under your control, with the user's explicit approval — and fixing is
-its own later still: a separate fan-out of fix sub-agents (Phase 5), one per
-approved easy win, each producing one PR. Keeping assessment, triage actions,
-and fixes in separate stages is what makes the verdicts trustworthy and every
-write step safe to reason about.
+Issue titles are a hall of mirrors — "app crashes on save" and "data loss when
+exporting" can be the same bug — and issue text alone can't say whether a bug
+is still real or how contained a fix is: only the code can. So each issue gets
+one sub-agent holding all five lenses that reads the thread, searches for
+duplicates, and goes into the codebase; you then resolve duplicate claims into
+clusters (no single agent sees the whole graph) and present one decision
+table. The assessment sub-agents **only assess** — labeling, commenting,
+closing, and fixing happen in later phases, under your control, with the
+user's explicit approval; fixes are their own separate fan-out (Phase 5), one
+PR per issue.
 
 ## Phase 0 — Orient (do this once, yourself)
 

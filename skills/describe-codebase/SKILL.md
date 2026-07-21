@@ -1,19 +1,15 @@
 ---
 name: describe-codebase
 description: >-
-  Explain how a codebase is shaped — the read-to-explain counterpart to
-  review-pr. Orients on the project, then fans out read-only explorer sub-agents
-  to map it across three lenses (layering & entry points incl. config/auth/error
-  handling, data & persistence, conventions & build), consolidates their findings
-  into one skimmable orientation brief with file:line references, and optionally
-  writes that brief to a doc. Supports three scopes: whole repository (default),
-  a path/glob for one subsystem, or a feature/flow trace that follows a single
-  execution path end to end. Use this whenever the user wants to understand an
-  unfamiliar codebase, "explain how this works", get oriented, onboard onto a
-  repo or subsystem, map the architecture, write an ARCHITECTURE.md, or trace how
-  a feature/endpoint flows — even if they don't say the word "skill". Read-only
-  by default; never modifies code and writes a doc only on explicit confirmation.
-  No `gh` or remote required.
+  Explain how a codebase is shaped: the whole repository, one subsystem
+  (path/glob), or a single feature/flow traced end to end. Produces a skimmable
+  orientation brief with file:line references; can optionally write it to
+  ARCHITECTURE.md. Use when the user wants to understand or onboard onto an
+  unfamiliar codebase, "explain how this works", map the architecture, or trace
+  how a feature/endpoint flows. Read-only — it explains, it never judges or
+  edits. Do NOT use to review, critique, or improve code (use review-pr for the
+  branch diff, simplify-sweep for cleanup opportunities). No `gh` or remote
+  required.
 ---
 
 # describe-codebase
@@ -30,17 +26,11 @@ fix.
 
 ## Why this shape
 
-A single agent reading a whole codebase top-to-bottom blurs together questions
-that need different attention: "where does execution start and flow?", "how is
-data stored?", and "what are the conventions and commands?" are different mental
-modes. Focused explorers, each holding one lens over the same target, map more
-and map it more sharply. You then merge their findings into one brief so the user
-sees an orientation, not three separate reports.
-
-The explorers **only read** — they never edit. The only thing you ever write is
-an optional doc the user explicitly opts into (Phase 3). Keeping the survey
-read-only is what makes it safe to point at any repo, including one you've never
-seen.
+"Where does execution flow?", "how is data stored?", and "what are the
+conventions and commands?" are different mental modes — one lens per explorer
+maps each more sharply, and you merge the results into a single brief. The
+explorers **only read**; the only thing ever written is the optional doc the
+user opts into in Phase 3, which is what makes this safe to point at any repo.
 
 ## Phase 0 — Orient & resolve scope (do this once, yourself)
 
