@@ -4,7 +4,7 @@ A set of stack-agnostic, single-purpose coding agents. Each agent does **one sma
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
-See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here.
+See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)); [CHANGELOG.md](CHANGELOG.md) archives the pre-automation history.
 
 ## Install (Codex plugin)
 
@@ -158,6 +158,49 @@ execution path end to end. The brief is shown in the conversation; you can
 optionally persist it to a new `ARCHITECTURE.md` or append it to `AGENTS.md`. It
 never modifies code and writes a doc only on your explicit confirmation. No `gh`
 or remote required.
+
+## Skill Evals
+
+Every skill ships an eval suite (`skills/<name>/evals/cases.json`) — 10
+outcome-based cases each, including cross-triggering negatives that must route
+to a *different* skill — executed by [`run_evals.py`](run_evals.py) at the repo
+root. Each trial runs the prompt through a real agent in a clean, isolated
+workspace (fixtures include fake `gh` shims, so no network is needed) and
+grades outcomes, not whether the skill loaded. The runner also supports
+ablation (`--ablation`) to detect skills the bare model can already replace.
+
+Evals are **manual-only** — never wired to CI or git hooks. Start with
+`python3 run_evals.py --dry-run`; see [docs/evals.md](docs/evals.md) for the
+full guide and cost notes, and
+[docs/skill-audit-2026-07.md](docs/skill-audit-2026-07.md) for the audit that
+introduced them.
+
+## Releasing
+
+Releases are cut **automatically when a PR merges to main**, sized by the
+Conventional-Commit prefix of the PR title
+([.github/workflows/auto-release.yml](.github/workflows/auto-release.yml)).
+The title format is enforced by a CI check
+([.github/workflows/pr-title.yml](.github/workflows/pr-title.yml)) because the
+title drives the version bump:
+
+| PR title | Release |
+| --- | --- |
+| `feat!: …` (any `type!:`) | major |
+| `feat: …` | minor |
+| `fix: …`, `perf: …`, `refactor: …` | patch |
+| anything else (`chore:`, `docs:`, free-form, `[skip release]`) | none |
+
+The workflow bumps the version in `.codex-plugin/plugin.json`, commits
+`release: vX.Y.Z` to main, tags it, and creates the GitHub release with
+generated notes. **Those release notes are the changelog** —
+[CHANGELOG.md](CHANGELOG.md) is a frozen archive of the pre-automation
+history. The Claude Code plugin stays versioned by commit SHA;
+`/plugin marketplace update agents-library` picks up the latest main either
+way.
+
+The skill evals are **not** part of any workflow — they spawn real agent runs
+and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).
 
 ## The Agents
 

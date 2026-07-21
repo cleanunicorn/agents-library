@@ -1,24 +1,15 @@
 ---
 name: triage-issues
 description: >-
-  Triage the project's open GitHub issues into a ranked action plan. Lists the
-  untriaged open issues, fans out one assessment sub-agent per issue that reads
-  the issue *and the actual codebase* and judges it across five lenses —
-  validity (does the bug still exist in the code?), completeness, classification,
-  duplicate detection (search-then-confirm), and a code-grounded effort estimate
-  — then recommends an action with evidence. Consolidates the verdicts into
-  duplicate clusters and one ranked decision table (easy wins, duplicates,
-  needs-info, larger work), lets you pick which actions to take, and then — only
-  after your confirmation — applies labels, posts needs-more-info comments,
-  closes confirmed duplicates via `gh`, and fixes the easy wins you approve:
-  one fix sub-agent per issue, each in its own git worktree, each opening its
-  own reviewable pull request that references the issue. Use this whenever the
-  user wants to triage issues, clean up or groom the issue tracker/backlog,
-  find duplicate issues, find and fix easy wins or good first issues, label or
-  categorize open issues, or figure out what's worth fixing first — even if
-  they don't say the word "skill". Requires the `gh` CLI; never writes to
-  GitHub without explicit per-action confirmation, and never commits to the
-  default branch — every fix lands as its own PR.
+  Triage the project's open GitHub issues into a ranked action plan: duplicates
+  clustered, easy wins backed by code-grounded evidence, needs-info drafts,
+  larger work classified. Only after per-action approval it applies labels,
+  posts comments, closes duplicates, and fixes approved easy wins — one PR per
+  issue, never committing to the default branch. Use when the user wants to
+  triage or groom the issue tracker/backlog, find duplicate issues, find and
+  fix easy wins or good first issues, or label open issues. Requires the `gh`
+  CLI. Do NOT use for pull requests (use batch-merge-prs for the PR queue,
+  review-pr for the current branch).
 ---
 
 # triage-issues
@@ -52,56 +43,50 @@ Two guardrails frame everything below:
 
 ## Why this shape
 
-An issue tracker read by title is a hall of mirrors — "app crashes on save"
-and "data loss when exporting" can be the same bug — and issue text alone
-can't tell you whether a bug is *still real* or how contained a fix would be:
-only the code can. So each issue gets its own sub-agent, holding all five
-lenses over that one issue, that reads the thread, searches for duplicates,
-and **goes into the codebase**. That code-grounded read, run in parallel
-across the backlog, is what separates a real triage from a labeling bot. You
-then merge the verdicts, resolve duplicate claims into clusters (no single
-agent can see the whole graph), and present one decision table, not a stack
-of reports.
-
-The assessment sub-agents **only assess** — they read issues and code, they
-judge, they never label, comment, close, or edit anything. Action happens
-later, under your control, with the user's explicit approval — and fixing is
-its own later still: a separate fan-out of fix sub-agents (Phase 5), one per
-approved easy win, each producing one PR. Keeping assessment, triage actions,
-and fixes in separate stages is what makes the verdicts trustworthy and every
-write step safe to reason about.
+Issue titles are a hall of mirrors — "app crashes on save" and "data loss when
+exporting" can be the same bug — and issue text alone can't say whether a bug
+is still real or how contained a fix is: only the code can. So each issue gets
+one sub-agent holding all five lenses that reads the thread, searches for
+duplicates, and goes into the codebase; you then resolve duplicate claims into
+clusters (no single agent sees the whole graph) and present one decision
+table. The assessment sub-agents **only assess** — labeling, commenting,
+closing, and fixing happen in later phases, under your control, with the
+user's explicit approval; fixes are their own separate fan-out (Phase 5), one
+PR per issue.
 
 ## Phase 0 — Orient (do this once, yourself)
 
 Before dispatching anything, build the picture you'll bundle into every
 sub-agent so the agents don't each re-derive it.
 
-1. **Confirm `gh` works.** Run `gh auth status`. If `gh` is missing or not
-   authenticated, stop and tell the user — this skill cannot list issues
-   without it.
-2. **Read the project's guidance.** Look for `AGENTS.md`, `README`,
+1. **Read the project's guidance.** Look for `AGENTS.md`, `README`,
    `CLAUDE.md`, `CONTRIBUTING`, and any issue templates under `.github/`.
    These tell you what a well-formed issue looks like here and what
    information reporters are expected to provide. Capture a short summary to
    pass along.
-3. **Capture the repo slug.** Run `gh repo view --json nameWithOwner`. The
-   sub-agents need it to scope their duplicate searches — an unscoped
-   `gh search issues` searches all of GitHub.
-4. **Learn the label vocabulary.** Run `gh label list --limit 200` (the
-   default truncates at 30). Sub-agents must suggest labels **from this
-   list** — a triage that invents labels the repo doesn't use creates work
-   instead of removing it. Note which labels look like a triage convention
-   (kind/priority/area/`triaged`); if none exists, you'll propose a minimal
-   one at the end rather than mid-sweep.
-5. **List the open issues.** Run
-   `gh issue list --state open --limit 200 --json number,title,author,labels,assignees,createdAt,updatedAt`.
-   Default scope is the **untriaged** open issues, decided by this rule: if a
-   label named `triaged` (or similar) exists, issues without it; otherwise,
-   if the repo uses kind/area labels, issues with no labels at all;
-   otherwise, every open issue. State the scope you chose to the user before
-   fanning out. The user can override it: all open issues, a label filter,
-   or the most recent N.
-6. **Sketch the codebase map.** Note the project's language, layout, and how
+2. **Run the listing script.** `bash scripts/list-issues.sh` verifies `gh` is
+   installed and authenticated (a `FATAL` line and non-zero exit if not —
+   stop and relay it; this skill cannot run without `gh`), then prints three
+   sections:
+   - **repo** — the repo slug. Sub-agents need it to scope their duplicate
+     searches; an unscoped `gh search issues` searches all of GitHub.
+   - **labels** — the vocabulary (up to 200). Sub-agents must suggest labels
+     **from this list** — a triage that invents labels the repo doesn't use
+     creates work instead of removing it. Note which labels look like a
+     triage convention (kind/priority/area/`triaged`); if none exists, you'll
+     propose a minimal one at the end rather than mid-sweep.
+   - **issues** — the open-issue JSON work list.
+   A `(repo view failed)` or `(label list failed)` marker is non-fatal — say
+   so and ask whether to continue (triage works without labels; duplicate
+   search degrades to the issue list). A `FATAL` issue-list failure is fatal:
+   it is the work list.
+3. **Choose the scope.** Default scope is the **untriaged** open issues,
+   decided by this rule: if a label named `triaged` (or similar) exists,
+   issues without it; otherwise, if the repo uses kind/area labels, issues
+   with no labels at all; otherwise, every open issue. State the scope you
+   chose to the user before fanning out. The user can override it: all open
+   issues, a label filter, or the most recent N.
+4. **Sketch the codebase map.** Note the project's language, layout, and how
    to find things (the top-level directories and what lives in each). One
    paragraph is enough — it saves every sub-agent an orientation pass.
 
@@ -333,9 +318,10 @@ definitions of each value live in `references/issue-assessment.md`
 ## Error handling
 
 - **`gh` missing/unauthenticated:** stop in Phase 0; this skill needs it.
-- **Another Phase 0 command fails:** `gh issue list` failing is fatal — it is
-  the work list; report the error and stop. If `gh repo view` or
-  `gh label list` fails, say so and ask whether to continue (triage works
+- **The listing script degrades or fails:** `scripts/list-issues.sh` exits
+  `FATAL` when `gh` is unusable or the issue list can't be fetched — report
+  the error and stop. Its `(repo view failed)` / `(label list failed)`
+  markers are non-fatal — say so and ask whether to continue (triage works
   without labels; duplicate search degrades to the issue list). Missing
   guidance files are not an error — note it and continue.
 - **No issues in scope:** report nothing to triage and stop.

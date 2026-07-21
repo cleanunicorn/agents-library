@@ -1,21 +1,15 @@
 ---
 name: review-design
 description: >-
-  Review the visual design of a UI against core UI/UX principles — for a target
-  you choose: a single view or component, a path/glob of frontend files, or the
-  current branch diff. Orients on the project's design system (tokens, type and
-  spacing scales, palette, components, dark mode) and conventions, fans out
-  parallel sub-agents across five design lenses (hierarchy & spacing, typography,
-  color & dark mode, depth/icons/buttons, interaction/states/motion),
-  consolidates and ranks their findings into one list, presents them for you to
-  pick from, and then either applies a chosen subset or runs an autonomous
-  improve-until-converged loop — every applied fix reusing the project's design
-  tokens and gated on its lint and build. Use this whenever the user wants to
-  review the design or UI of a screen, critique how an interface looks, audit
-  visual hierarchy / spacing / typography / color / contrast / dark mode, do a
-  design pass, or check a UI against design principles — even if they don't say
-  the word "skill". It's the design-focused, target-of-your-choice counterpart to
-  `review-pr`'s diff-scoped review. No `gh` or remote required.
+  Review the visual design of a UI — hierarchy, spacing, typography,
+  color/contrast, dark mode, depth, interaction states — judged against the
+  project's own design tokens, for a view/component, a path/glob, or the branch
+  diff; then optionally apply fixes behind the project's lint/build gate. Use
+  when the user wants a design pass, a critique of how a screen looks, or an
+  audit of visual hierarchy / spacing / typography / color / dark mode. Do NOT
+  use for conversion, persuasion, or metric-moving flow reviews (use
+  review-ux-psychology) or a general code-quality review of the diff (use
+  review-pr). No `gh` or remote required.
 ---
 
 # review-design
@@ -31,7 +25,9 @@ This is the design-focused counterpart to `review-pr`. Where `review-pr` reviews
 a diff across ten quality domains (correctness, architecture, tests, …),
 `review-design` reviews the *visual craft* of a UI — hierarchy, spacing,
 typography, color, depth, and interaction feel — across a target you pick, not
-just the diff.
+just the diff. If the user's real question is about conversion, drop-off, or a
+product metric (defaults, framing, pricing psychology), that's
+`review-ux-psychology`, not this skill.
 
 Two properties frame everything below:
 
@@ -42,17 +38,12 @@ Two properties frame everything below:
 
 ## Why this shape
 
-A single reviewer scanning a screen for "what's wrong with the design" misses
-things, because "is the hierarchy clear?", "is the spacing on a scale?", "does
-the color pass contrast?", and "do the states feel right?" are different mental
-modes that compete for attention. Five focused sub-agents, each holding exactly
-one lens and the same shared design-system context, find more and find it more
-sharply. You then merge their findings into one ranked list so the user sees
-signal, not five separate reports.
-
-The sub-agents **only analyze** — they never edit. Implementation happens later,
-under your control, behind a lint/build gate. Keeping review and implementation
-separate is what makes the findings trustworthy and the applied changes safe.
+"Is the hierarchy clear?", "is spacing on a scale?", "does the color pass
+contrast?", and "do states feel right?" are different mental modes — one lens
+per sub-agent, all sharing the same design-system context, finds more than one
+generalist pass, and you merge the results into one ranked list. The sub-agents
+**only analyze**; edits happen later, under your control, behind the lint/build
+gate.
 
 ## Phase 0 — Orient (do this once, yourself)
 

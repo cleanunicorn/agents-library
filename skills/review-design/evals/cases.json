@@ -1,0 +1,126 @@
+{
+  "skill": "review-design",
+  "fixtures": {
+    "landing-ui": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\nnode_modules/\n",
+            "README.md": "# landing\n\nMarketing landing page components.\n\n## Commands\n\n- lint: `npm run lint`\n- build: `npm run build`\n\nDesign tokens live in styles/tokens.css — always use them instead of raw values.\n",
+            "package.json": "{\n  \"name\": \"landing\",\n  \"private\": true,\n  \"scripts\": {\n    \"lint\": \"node -e \\\"process.exit(0)\\\"\",\n    \"build\": \"node -e \\\"process.exit(0)\\\"\"\n  }\n}\n",
+            "styles/tokens.css": ":root {\n  --color-text: #1a1a1a;\n  --color-text-muted: #595959;\n  --color-bg: #ffffff;\n  --color-primary: #2563eb;\n  --font-size-body: 16px;\n  --space-1: 4px;\n  --space-2: 8px;\n  --space-3: 16px;\n  --space-4: 24px;\n}\n",
+            "src/components/Card.jsx": "export function Card({ title, body }) {\n  return (\n    <div style={{ background: '#ffffff', padding: '13px', margin: '7px' }}>\n      <h3 style={{ color: '#1a1a1a' }}>{title}</h3>\n      <p style={{ color: '#999999', fontSize: '13px' }}>{body}</p>\n      <button className=\"btn-primary\">Save</button>\n      <button className=\"btn-primary\">Cancel</button>\n    </div>\n  );\n}\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: landing card component'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "rd-h1",
+      "prompt": "Do a design pass on src/components/Card.jsx and report the findings — don't change anything.",
+      "should_trigger": true,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(contrast|#999|999999)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "rd-h2",
+      "prompt": "Review the visual design of the card component. Report only.",
+      "should_trigger": true,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(contrast|hierarchy|primary)"}
+      ]
+    },
+    {
+      "id": "rd-h3",
+      "prompt": "Audit this UI for spacing and typography issues. Report only.",
+      "should_trigger": true,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(13px|scale|16px|7px)"}
+      ]
+    },
+    {
+      "id": "rd-h4",
+      "prompt": "Check src/components against our design tokens and report what's off. Don't edit anything.",
+      "should_trigger": true,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(token|--color|--space)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "rd-h5",
+      "prompt": "Review the design of Card.jsx and fix the color-contrast problems using the existing tokens. Pre-approved: apply and commit the fixes.",
+      "should_trigger": true,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "file_not_regex", "path": "src/components/Card.jsx", "pattern": "#999"},
+        {"type": "file_regex", "path": "src/components/Card.jsx", "pattern": "(--color-text-muted|var\\()"}
+      ]
+    },
+    {
+      "id": "rd-n1",
+      "prompt": "Our signup conversion is tanking — review the flow and tell me where users drop off.",
+      "should_trigger": false,
+      "expect_skill": "review-ux-psychology",
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_not_regex", "pattern": "\\[(hierarchy|typography|color|depth|interaction)-\\d"}
+      ]
+    },
+    {
+      "id": "rd-n2",
+      "prompt": "Review my branch changes before I open a PR.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"}
+      ]
+    },
+    {
+      "id": "rd-n3",
+      "prompt": "Explain how this frontend project is organized.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_regex", "pattern": "Card"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "rd-n4",
+      "prompt": "Change the Save button label in Card.jsx to Submit.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "file_regex", "path": "src/components/Card.jsx", "pattern": ">Submit<"}
+      ]
+    },
+    {
+      "id": "rd-n5",
+      "prompt": "Remove duplicated CSS rules and tidy the stylesheets across the whole repo.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "landing-ui",
+      "assertions": [
+        {"type": "output_not_regex", "pattern": "\\[(hierarchy|typography|color|depth|interaction)-\\d"}
+      ]
+    }
+  ]
+}

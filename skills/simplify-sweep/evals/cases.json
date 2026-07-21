@@ -1,0 +1,132 @@
+{
+  "skill": "simplify-sweep",
+  "fixtures": {
+    "dupes": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# reporter\n\nGenerates reports from config files.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 -m compileall -q src\n",
+            "src/report_a.py": "def parse_config(path):\n    data = {}\n    with open(path) as f:\n        for line in f:\n            line = line.strip()\n            if not line or line.startswith('#'):\n                continue\n            key, _, value = line.partition('=')\n            data[key.strip()] = value.strip()\n    return data\n\n\ndef daily_report(path):\n    cfg = parse_config(path)\n    return f\"daily: {cfg.get('title', 'untitled')}\"\n",
+            "src/report_b.py": "def parse_config(path):\n    data = {}\n    with open(path) as f:\n        for line in f:\n            line = line.strip()\n            if not line or line.startswith('#'):\n                continue\n            key, _, value = line.partition('=')\n            data[key.strip()] = value.strip()\n    return data\n\n\ndef weekly_report(path):\n    cfg = parse_config(path)\n    return f\"weekly: {cfg.get('title', 'untitled')}\"\n",
+            "src/legacy.py": "def unused_export(rows):\n    return [r for r in rows if r]\n",
+            "src/deep.py": "def categorize(user):\n    if user is not None:\n        if user.get('active'):\n            if user.get('admin'):\n                if user.get('verified'):\n                    return 'admin'\n                else:\n                    return 'pending-admin'\n            else:\n                return 'member'\n        else:\n            return 'inactive'\n    else:\n        return 'unknown'\n",
+            "src/cli.py": "import sys\n\nfrom report_a import daily_report\n\nif __name__ == '__main__':\n    print(daily_report(sys.argv[1]))\n",
+            "docs/usage.md": "# Usage\n\nRun `python3 src/cli.py config.txt` to print the daily report.\n\nPass `--fast` for quicker runs on large configs.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial reporter'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "ss-h1",
+      "prompt": "Simplify this codebase — survey it and report what could be simpler. Don't change anything.",
+      "should_trigger": true,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "parse_config"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ss-h2",
+      "prompt": "Find duplication and dead code across the whole project. Report only.",
+      "should_trigger": true,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "parse_config"},
+        {"type": "output_regex", "pattern": "unused_export"}
+      ]
+    },
+    {
+      "id": "ss-h3",
+      "prompt": "This code feels over-complicated. Do a tidy-up survey and report cleanup opportunities; change nothing.",
+      "should_trigger": true,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nest|early return|categorize|flatten)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ss-h4",
+      "prompt": "Are the docs in sync with the code? Sweep the repo for doc simplifications and drift; report only.",
+      "should_trigger": true,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(--fast|usage\\.md|stale|drift|out.of.date|doesn'?t exist)"}
+      ]
+    },
+    {
+      "id": "ss-h5",
+      "prompt": "Simplify src/ and apply the safe fixes. Pre-approved: commit them; make test must stay green.",
+      "should_trigger": true,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "shell", "cmd": "make test"},
+        {"type": "shell", "cmd": "test \"$(git rev-list --count HEAD)\" -gt 1"}
+      ]
+    },
+    {
+      "id": "ss-n1",
+      "prompt": "Review my changes on this branch.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"}
+      ]
+    },
+    {
+      "id": "ss-n2",
+      "prompt": "Explain how this project is structured.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(cli|report)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ss-n3",
+      "prompt": "Triage the open issues in this repo.",
+      "should_trigger": false,
+      "expect_skill": "triage-issues",
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(gh|github)"}
+      ]
+    },
+    {
+      "id": "ss-n4",
+      "prompt": "Write a unit test for categorize in src/deep.py covering all branches, and make sure it passes.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "shell", "cmd": "git ls-files -o -m --exclude-standard | grep -qi test"},
+        {"type": "shell", "cmd": "make test"}
+      ]
+    },
+    {
+      "id": "ss-n5",
+      "prompt": "What's the time complexity of parse_config in src/report_a.py? Just answer.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "dupes",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(o\\(n\\)|linear)"}
+      ]
+    }
+  ]
+}

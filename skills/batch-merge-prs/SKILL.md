@@ -1,18 +1,13 @@
 ---
 name: batch-merge-prs
 description: >-
-  Triage the project's open pull requests and batch the trivial ones onto a
-  branch you name. Lists every open PR, fans out one review sub-agent per PR that
-  reads the diff and judges it across four lenses — size/scope, change type,
-  mergeability/CI, and an actual correctness read — then recommends include or
-  skip with reasoning. Consolidates the verdicts into one ranked list, lets you
-  pick which to take, and locally git-merges the chosen PRs into your target
-  branch (no push, nothing closed on GitHub), reporting conflicts and a final
-  summary. Use this whenever the user wants to sweep open PRs, batch or bulk
-  merge pull requests, "clean up the PR queue", collect the easy/trivial/safe
-  PRs, merge the low-risk ones together, or assemble several PRs onto one branch
-  — even if they don't say the word "skill". Requires the `gh` CLI; works on the
-  local repo, never pushes or closes PRs on its own.
+  Triage all open GitHub pull requests and locally batch-merge the trivial ones
+  onto one branch the user names. Use when the user wants to sweep or bulk-merge
+  the PR queue, "clean up the PR queue", collect the easy/trivial/low-risk PRs,
+  or assemble several PRs onto one branch. Requires the `gh` CLI; merges are
+  local only — never pushes, never closes PRs on GitHub. Do NOT use to review a
+  single PR or the current branch (use review-pr) or to triage GitHub issues
+  (use triage-issues).
 ---
 
 # batch-merge-prs
@@ -37,40 +32,29 @@ Two guardrails frame everything below:
 
 ## Why this shape
 
-Skimming a PR list by title tells you almost nothing — "fix typo" can hide a
-behavior change and "small refactor" can be genuinely trivial. The only way to
-know if a PR is safe to batch is to read its diff. But reading a queue of PRs
-yourself is slow and the lenses compete: "is this small?" and "is this correct?"
-pull attention in different directions. One sub-agent per PR, each holding the
-same four lenses over a single diff, gives every PR a real review in parallel.
-You then merge their verdicts into one ranked list so the user sees a decision
-table, not a stack of reports.
-
-The sub-agents **only assess** — they read, they judge, they never merge or edit
-anything. Merging happens later, under your control, locally. Keeping assessment
-separate from action is what makes the verdicts trustworthy and the merge step
-safe to reason about.
+Titles lie — "fix typo" can hide a behavior change — so every PR gets a real
+diff-read from its own sub-agent, all in parallel, each judging through the
+same four lenses. The sub-agents **only assess**; merging happens later, under
+your control, locally. Keeping assessment separate from action is what makes
+the verdicts trustworthy and the merge step safe to reason about.
 
 ## Phase 0 — Orient (do this once, yourself)
 
 Before dispatching anything, build the picture you'll bundle into every
 sub-agent so the agents don't each re-derive it.
 
-1. **Confirm `gh` works.** Run `gh auth status`. If `gh` is missing or not
-   authenticated, stop and tell the user — this skill cannot list PRs without it.
-2. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
+1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`. These tell you the conventions, commit style, and quality bars
    a PR should respect — the same bars the per-PR reviewer judges against. Capture
    a short summary to pass along.
-3. **Detect the main branch and the GitHub remote.** Don't hard-code `main` —
-   detect it (`git symbolic-ref refs/remotes/origin/HEAD`, or fall back to
-   whichever of `main`/`master` exists). Call it `<main>`. Note which remote
-   points at GitHub (usually `origin`); you'll fetch PR heads from it.
-4. **List the open PRs.** Run
-   `gh pr list --state open --json number,title,author,headRefName,baseRefName,isDraft,mergeable,labels,additions,deletions,changedFiles`.
-   This is the work-list. Capture it. Skip drafts by default (mention you did);
-   the user can ask to include them.
-5. **Find the commands that matter (optional but useful).** Detect how the
+2. **Run the listing script.** `bash scripts/list-prs.sh` verifies `gh` is
+   installed and authenticated (a `FATAL` line and non-zero exit if not — stop
+   and relay it; this skill cannot run without `gh`), then prints two sections:
+   the detected main branch (call it `<main>`) and the open-PR JSON work list.
+   Capture both. Note which remote points at GitHub (usually `origin`); you'll
+   fetch PR heads from it. Skip drafts by default (mention you did); the user
+   can ask to include them.
+3. **Find the commands that matter (optional but useful).** Detect how the
    project lints/tests/builds, from the docs first then config. You'll offer to
    run these once on the final batched branch as a sanity check in Phase 5.
 
@@ -127,35 +111,42 @@ Keep it skimmable. The user is making a pick from a table, not reading reviews.
 
 ## Phase 3 — Decide
 
-Ask the user two things:
+If the user's original request already made these decisions — they pre-approved
+a selection ("take everything trivial", "don't ask") and/or named a target
+branch — treat that as the answer and proceed straight to Phase 4 without
+re-asking. Otherwise ask the user two things:
 
-1. **The target branch.** Where should the chosen PRs land? If they already named
-   it, confirm it. If it doesn't exist yet, you'll create it off `<main>`; if it
-   exists, you'll merge onto it as-is (tell them which).
+1. **The target branch.** Default to an auto-generated name: pass `auto` to the
+   merge script and it creates `batch/<YYYYMMDD-HHMM>` from the current date and
+   time. If the user named a branch, use that instead — if it doesn't exist
+   you'll create it off `<main>`; if it exists you'll merge onto it as-is (tell
+   them which).
 2. **Which PRs to take.** They name the PR numbers. Offer the include candidates
    as a default ("take all 4 ✅ ones?") but let them add borderline PRs or drop
-   any. Nothing merges until they answer.
+   any. Nothing merges until they answer (or their original request already
+   answered).
 
 ## Phase 4 — Merge (local, no push)
 
-Set up the branch once, then merge each chosen PR in the order the user gave (or
+Run the merge script with the approved PRs, in the order the user gave (or
 ascending PR number):
 
-1. **Prepare the target branch.** If it doesn't exist, create it from an
-   up-to-date `<main>` (`git fetch <remote>` first, then
-   `git checkout -b <target> <remote>/<main>`). If it exists, check it out. Make
-   sure the working tree is clean before you start — if it isn't, stop and tell
-   the user rather than risk their uncommitted work.
-2. **Fetch each PR's head.** Use the base-repo pull ref so it works for fork PRs
-   too: `git fetch <remote> pull/<n>/head:__batch_pr_<n>`.
-3. **Merge it.** `git merge --no-ff __batch_pr_<n> -m "Merge PR #<n>: <title>"`.
-   The `--no-ff` keeps each PR as a distinct, revertable merge commit, so the
-   batch stays auditable.
-4. **Handle conflicts honestly.** If a merge conflicts, **abort it**
-   (`git merge --abort`) — do not attempt to resolve it silently. Record the PR
-   as "skipped — conflicts with the batch," and continue with the rest. A
-   half-resolved merge the user didn't see is worse than a cleanly skipped PR.
-5. **Clean up.** Delete the temporary `__batch_pr_<n>` branches when done.
+```
+bash scripts/merge-prs.sh <remote> <main> <target>|auto <pr-number>...
+```
+
+The script encodes the whole procedure: a target of `auto` generates the
+branch name `batch/<YYYYMMDD-HHMM>` from the current date/time (the default
+when the user didn't name one — the `TARGET` line it prints tells you the
+generated name); it refuses a dirty working tree (protecting uncommitted
+work), creates the target from an up-to-date `<remote>/<main>` if needed or
+checks it out as-is, fetches each PR via the base-repo pull ref (works for
+fork PRs), merges `--no-ff` so each PR stays a distinct revertable merge
+commit, aborts (never half-resolves) any merge that conflicts, and cleans up
+its temporary branches. It prints one
+`MERGED <n>` / `SKIPPED <n> <reason>` ledger line per PR — capture these; they
+are Phase 5's input. If it exits non-zero it stopped at setup (dirty tree,
+target checkout failed): relay the error to the user instead of improvising.
 
 Do not push, and do not run `gh pr merge`. The branch stays local.
 

@@ -1,27 +1,18 @@
 ---
 name: review-ux-psychology
 description: >-
-  Review a UI or flow against the psychology of how people actually decide, to
-  move a specific product metric — for a target you choose: a single screen or
-  flow (onboarding, signup, checkout, pricing, a form), a path/glob of frontend
-  files, or the current branch diff. Orients on the product goal and the metric
-  the flow is being optimized for, best-effort renders the flow to screenshots or
-  a short screen capture so findings are grounded in what the user actually sees,
-  then fans out parallel sub-agents across six behavioral-design lenses (decision
-  fatigue & smart defaults, goal-gradient progress, reciprocity & value-first,
-  endowment & the IKEA effect, loss aversion & framing, anchoring & the contrast
-  effect). Every finding traces to a named principle and names the metric it is
-  meant to move. It then independently verifies each finding against the real
-  code/flow to screen out false positives, consolidates and ranks the survivors
-  by expected impact, presents them for you to pick from, and either applies a
-  chosen subset or runs an autonomous improve-until-converged loop behind the
-  project's lint/build gate. Use this whenever the user wants to review the UX or
-  conversion of a flow, lift a metric (activation, signup, trial-to-paid,
-  checkout completion, retention), critique onboarding / signup / checkout /
-  pricing, reduce friction or drop-off, audit a form for decision fatigue, or
-  find where a UI fights how users think — even if they don't say the word
-  "skill". It's the behavior-and-conversion counterpart to `review-design`'s
-  visual-craft review. No `gh` or remote required.
+  Review a flow's decision architecture — defaults, progress, value-before-ask,
+  ownership, loss/gain framing, price anchoring — against behavioral psychology,
+  to move a named product metric (signup, activation, trial-to-paid, checkout
+  completion, retention). Targets a screen or flow (onboarding, signup,
+  checkout, pricing, a form), a path/glob, or the branch diff; every finding
+  names its principle and the metric it moves, is verified against the real
+  code/flow, and fixes apply behind the lint/build gate. Use when the user
+  wants to lift conversion or a metric, reduce drop-off/friction in a flow,
+  critique onboarding/signup/checkout/pricing, or audit a form for decision
+  fatigue. Do NOT use for how the UI looks — hierarchy, spacing, color (use
+  review-design) — or general code review (use review-pr). No `gh` or remote
+  required.
 ---
 
 # review-ux-psychology
@@ -62,27 +53,20 @@ Three properties frame everything below:
 
 ## Why this shape
 
-A single reviewer scanning a flow for "what hurts the metric" misses things,
-because "is the user forced to make too many decisions?", "does the flow start
-them at zero?", "did we give value before asking?", "have they built something
-they'd hate to lose?", "is inaction framed as free?", and "is this price shown in
-isolation?" are six different mental modes that compete for attention. Six focused
-sub-agents, each holding exactly one principle and the same shared product
-context, find more and find it more sharply. You then merge their findings into
-one ranked list so the user sees signal, not six separate reports.
+"Too many decisions?", "starts at zero?", "value before the ask?", "anything to
+lose by leaving?", "is inaction framed as free?", and "is this price anchored?"
+are six different mental modes — one principle per sub-agent, all sharing the
+same product context, finds more than one generalist pass, and you merge the
+results into one ranked list. The sub-agents **only analyze**; edits happen
+later, under your control, behind the lint/build gate.
 
-The sub-agents **only analyze** — they never edit. Implementation happens later,
-under your control, behind a lint/build gate. Keeping review and implementation
-separate is what makes the findings trustworthy and the applied changes safe.
-
-But the finders are not infallible. Each is primed to see its one principle
-everywhere, so some of what it returns is a false positive — a "blank form" that's
-prefilled a component deeper, a "0% start" that's actually a deliberate reset, an
-"isolated price" that sits next to an anchor the finder didn't scroll to. Trusting
-those blindly wastes the user's attention, and in the autonomous loop it gets a
-pointless change committed. So between finding and presenting there is a dedicated
-**verification** stage: every finding is independently re-checked against the real
-code/flow by a fresh, skeptical agent, and only what survives reaches the user.
+The finders are not infallible: each is primed to see its principle everywhere,
+so the raw pile contains false positives — a "blank form" that's prefilled a
+component deeper, an "isolated price" next to an anchor the finder didn't
+scroll to. So between finding and presenting sits a dedicated **verification**
+stage: a fresh, skeptical agent re-checks every finding against the real
+code/flow, and only survivors reach the user — or, in the autonomous loop, get
+applied.
 
 ## Phase 0 — Orient (do this once, yourself)
 

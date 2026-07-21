@@ -1,20 +1,15 @@
 ---
 name: simplify-sweep
 description: >-
-  Survey a target — the whole repository, a path/glob, or the current branch diff
-  — for behavior-preserving simplification opportunities, then optionally apply
-  them. Orients on the project (AGENTS.md, README, conventions), builds and shards
-  a scan surface, fans out parallel sub-agents across four simplification lenses
-  (redundancy & dead code, complexity & structure, clarity & idiom, docs),
-  consolidates and ranks their findings, presents them for you to pick from, and
-  then either applies a chosen subset or runs an autonomous improve-until-converged
-  loop — every applied fix gated on the project's lint and tests and
-  behavior-preserving by construction. Use this whenever the user wants to simplify
-  the codebase, find code or docs that can be simplified, reduce complexity,
-  declutter or tidy a repo, find duplication / dead code / over-engineering, or
-  survey the whole project (not just a diff) for cleanup opportunities — even if
-  they don't say the word "skill". Works on the local branch; no `gh` or remote
-  required.
+  Survey a target — whole repository (default), a path/glob, or the branch diff
+  — for behavior-preserving simplifications: duplication, dead code, deep
+  nesting, unclear names, over-engineering, stale docs; then optionally apply
+  them behind the project's lint/test gate. Use when the user wants to simplify,
+  declutter, or tidy the codebase, reduce complexity, or hunt duplication and
+  dead code across the whole project. Never fixes bugs or changes behavior. Do
+  NOT use for a full quality review of the branch diff — bugs, security, tests
+  (use review-pr) — or to explain how the codebase works (use
+  describe-codebase). No `gh` or remote required.
 ---
 
 # simplify-sweep
@@ -36,16 +31,11 @@ Two properties frame everything below:
 
 ## Why this shape
 
-A single reader skimming a whole codebase for "things to simplify" misses most of
-it, because "is this duplicated?", "is this too nested?", "is this name clear?",
-and "is this doc stale?" are different mental modes that compete for attention.
-Focused sub-agents, each holding exactly one lens over a bounded shard of files,
-find more and find it more sharply. You then merge their findings into one ranked
-list so the user sees signal, not a pile of reports.
-
-The sub-agents **only analyze** — they never edit. Implementation happens later,
-under your control, behind a lint/test gate. Keeping analysis separate from
-action is what makes the findings trustworthy and the applied changes safe.
+"Is this duplicated?", "too nested?", "is this name clear?", and "is this doc
+stale?" are different mental modes — one lens per sub-agent over a bounded
+shard of files finds more than one generalist skim, and you merge the results
+into one ranked list. The sub-agents **only analyze**; edits happen later,
+under your control, behind the lint/test gate.
 
 ## Phase 0 — Orient (do this once, yourself)
 

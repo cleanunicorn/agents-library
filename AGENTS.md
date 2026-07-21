@@ -106,15 +106,35 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   role). `skills/<name>/SKILL.md` are 7 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
-  `references/` (batch-merge-prs, triage-issues).
+  `references/` (batch-merge-prs, triage-issues). Each skill also carries an
+  eval suite in `evals/cases.json`. Deterministic sub-procedures live as
+  `scripts/` inside their skill, invoked by the phases instead of narrated as
+  prose: batch-merge-prs has `list-prs.sh` and `merge-prs.sh` (which
+  auto-names the target branch `batch/<YYYYMMDD-HHMM>` when passed `auto`),
+  review-pr has `diff-target.sh` (main-branch detection + diff computation),
+  and triage-issues has `list-issues.sh` (repo slug, labels, issue work list).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
   each finding) between fan-out and consolidate, so their consolidate step is
   Phase 3.
-- **Config / manifests** — identity in `.claude-plugin/plugin.json`; the
-  marketplace registry (single entry, `source: "."`) in
-  `.claude-plugin/marketplace.json`; enabled plugins in `.claude/settings.json`.
+- **Config / manifests** — identity in `.claude-plugin/plugin.json`
+  (deliberately versionless — versioned by commit SHA); the Codex manifest in
+  `.codex-plugin/plugin.json` carries the only SemVer `version` field, bumped
+  by release automation; the marketplace registry (single entry,
+  `source: "."`) in `.claude-plugin/marketplace.json`; enabled plugins in
+  `.claude/settings.json`.
+- **Releases / changelog** — a release is cut automatically when a PR merges
+  to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
+  title decides the bump (`type!:` → major, `feat:` → minor,
+  `fix:`/`perf:`/`refactor:` → patch, anything else or `[skip release]` →
+  none), the version lands in `.codex-plugin/plugin.json`, main gets a
+  `release: vX.Y.Z` commit plus a `v<version>` tag, and a GitHub release is
+  created with generated notes. **Those release notes are the changelog** —
+  `CHANGELOG.md` is a frozen pre-automation archive; don't append to it. PR
+  titles are load-bearing and CI-checked (`.github/workflows/pr-title.yml`).
+  Never add the skill evals to any workflow — they are manual-only
+  (`docs/evals.md`).
 - **No auth / error handling / logging / database / migrations** — agents
   inspect *target* projects for these; this repo holds none. The only durable
   per-project state is the per-agent journals in `agents/journals/`.
@@ -130,8 +150,11 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   …}` verdicts for triage-issues).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
-- **Commands** — lint/format/test/build: none. Quality is enforced by the prose
-  bars in this guide and each SKILL.md, not automation.
+- **Commands** — lint/format/build: none. Tests: `python3 run_evals.py`
+  (validate with `--dry-run` first) runs the skill evals — **manual-only and
+  expensive** (real agent runs); never wire it into CI, hooks, or push
+  automation. See `docs/evals.md`. Prose quality is still enforced by the bars
+  in this guide and each SKILL.md.
 
 **Start here:** README.md → AGENTS.md → agents/architect.md →
 skills/review-pr/SKILL.md → skills/review-pr/domains/correctness.md
