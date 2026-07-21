@@ -77,6 +77,15 @@ Dispatch all ten domain sub-agents **in parallel** — issue all the Agent/Task
 calls in a single message so they run concurrently. (This is the
 `superpowers:dispatching-parallel-agents` pattern.)
 
+**Model choice:** unless the user specified a model, run the fan-out
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each domain prompt is narrow and single-lens,
+so the cheaper tier is normally enough, and ten session-tier agents is an
+expensive default. If a domain comes back clearly degraded (e.g. empty on a
+diff that plainly has issues in its lens), re-run that one domain on the
+session model.
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** you gathered in Phase 0: the project guidance summary,
@@ -115,9 +124,11 @@ never, in the autonomous loop, apply one — on a finder's word alone. Every
 finding is independently re-checked here first.
 
 Dispatch verification sub-agents **in parallel**, the same way you fanned out the
-review. Run one verifier per finding; when the finding count is large, batch
-several low-severity findings into a single verifier. A verifier is a **fresh,
-skeptical** agent that did **not** produce the finding. Its prompt is:
+review — including the Phase 1 model default (lesser tier unless the user
+specified a model). Run one verifier per finding; when the finding count is
+large, batch several low-severity findings into a single verifier. A verifier
+is a **fresh, skeptical** agent that did **not** produce the finding. Its
+prompt is:
 
 1. **The shared Phase 0 context** — project guidance, conventions, changed-file
    list.
