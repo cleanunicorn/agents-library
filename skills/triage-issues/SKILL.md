@@ -59,32 +59,34 @@ PR per issue.
 Before dispatching anything, build the picture you'll bundle into every
 sub-agent so the agents don't each re-derive it.
 
-1. **Confirm `gh` works.** Run `gh auth status`. If `gh` is missing or not
-   authenticated, stop and tell the user — this skill cannot list issues
-   without it.
-2. **Read the project's guidance.** Look for `AGENTS.md`, `README`,
+1. **Read the project's guidance.** Look for `AGENTS.md`, `README`,
    `CLAUDE.md`, `CONTRIBUTING`, and any issue templates under `.github/`.
    These tell you what a well-formed issue looks like here and what
    information reporters are expected to provide. Capture a short summary to
    pass along.
-3. **Capture the repo slug.** Run `gh repo view --json nameWithOwner`. The
-   sub-agents need it to scope their duplicate searches — an unscoped
-   `gh search issues` searches all of GitHub.
-4. **Learn the label vocabulary.** Run `gh label list --limit 200` (the
-   default truncates at 30). Sub-agents must suggest labels **from this
-   list** — a triage that invents labels the repo doesn't use creates work
-   instead of removing it. Note which labels look like a triage convention
-   (kind/priority/area/`triaged`); if none exists, you'll propose a minimal
-   one at the end rather than mid-sweep.
-5. **List the open issues.** Run
-   `gh issue list --state open --limit 200 --json number,title,author,labels,assignees,createdAt,updatedAt`.
-   Default scope is the **untriaged** open issues, decided by this rule: if a
-   label named `triaged` (or similar) exists, issues without it; otherwise,
-   if the repo uses kind/area labels, issues with no labels at all;
-   otherwise, every open issue. State the scope you chose to the user before
-   fanning out. The user can override it: all open issues, a label filter,
-   or the most recent N.
-6. **Sketch the codebase map.** Note the project's language, layout, and how
+2. **Run the listing script.** `bash scripts/list-issues.sh` verifies `gh` is
+   installed and authenticated (a `FATAL` line and non-zero exit if not —
+   stop and relay it; this skill cannot run without `gh`), then prints three
+   sections:
+   - **repo** — the repo slug. Sub-agents need it to scope their duplicate
+     searches; an unscoped `gh search issues` searches all of GitHub.
+   - **labels** — the vocabulary (up to 200). Sub-agents must suggest labels
+     **from this list** — a triage that invents labels the repo doesn't use
+     creates work instead of removing it. Note which labels look like a
+     triage convention (kind/priority/area/`triaged`); if none exists, you'll
+     propose a minimal one at the end rather than mid-sweep.
+   - **issues** — the open-issue JSON work list.
+   A `(repo view failed)` or `(label list failed)` marker is non-fatal — say
+   so and ask whether to continue (triage works without labels; duplicate
+   search degrades to the issue list). A `FATAL` issue-list failure is fatal:
+   it is the work list.
+3. **Choose the scope.** Default scope is the **untriaged** open issues,
+   decided by this rule: if a label named `triaged` (or similar) exists,
+   issues without it; otherwise, if the repo uses kind/area labels, issues
+   with no labels at all; otherwise, every open issue. State the scope you
+   chose to the user before fanning out. The user can override it: all open
+   issues, a label filter, or the most recent N.
+4. **Sketch the codebase map.** Note the project's language, layout, and how
    to find things (the top-level directories and what lives in each). One
    paragraph is enough — it saves every sub-agent an orientation pass.
 
@@ -316,9 +318,10 @@ definitions of each value live in `references/issue-assessment.md`
 ## Error handling
 
 - **`gh` missing/unauthenticated:** stop in Phase 0; this skill needs it.
-- **Another Phase 0 command fails:** `gh issue list` failing is fatal — it is
-  the work list; report the error and stop. If `gh repo view` or
-  `gh label list` fails, say so and ask whether to continue (triage works
+- **The listing script degrades or fails:** `scripts/list-issues.sh` exits
+  `FATAL` when `gh` is unusable or the issue list can't be fetched — report
+  the error and stop. Its `(repo view failed)` / `(label list failed)`
+  markers are non-fatal — say so and ask whether to continue (triage works
   without labels; duplicate search degrades to the issue list). Missing
   guidance files are not an error — note it and continue.
 - **No issues in scope:** report nothing to triage and stop.

@@ -2,9 +2,11 @@
 # Locally batch-merge GitHub PR heads onto a target branch. Never pushes,
 # never writes to GitHub.
 #
-# Usage: merge-prs.sh <remote> <main-branch> <target-branch> <pr-number>...
+# Usage: merge-prs.sh <remote> <main-branch> <target-branch>|auto <pr-number>...
 #
 # Behavior:
+#   - A target of `auto` generates the branch name batch/<YYYYMMDD-HHMM> from
+#     the current date/time (the default when the user didn't name a branch).
 #   - Refuses to run on a dirty working tree.
 #   - Creates <target-branch> from an up-to-date <remote>/<main-branch> if it
 #     doesn't exist; otherwise checks it out as-is.
@@ -22,7 +24,7 @@
 set -u
 
 if [ "$#" -lt 4 ]; then
-  echo "usage: $0 <remote> <main-branch> <target-branch> <pr-number>..." >&2
+  echo "usage: $0 <remote> <main-branch> <target-branch>|auto <pr-number>..." >&2
   exit 2
 fi
 
@@ -30,6 +32,10 @@ remote=$1
 main=$2
 target=$3
 shift 3
+
+if [ "$target" = "auto" ]; then
+  target="batch/$(date +%Y%m%d-%H%M)"
+fi
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "FATAL working tree not clean — commit or stash first" >&2

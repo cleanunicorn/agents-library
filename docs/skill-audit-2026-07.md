@@ -65,7 +65,7 @@ lines keeping only the load-bearing invariants: sub-agents only
 analyze/assess, verification screens false positives (review-pr,
 review-ux-psychology), action happens later behind a gate/approval.
 
-### 4. Rigid procedure converted to a script
+### 4. Rigid procedures converted to scripts
 
 `batch-merge-prs` Phase 4 narrated a fully deterministic git sequence. It is
 now [`skills/batch-merge-prs/scripts/merge-prs.sh`](../skills/batch-merge-prs/scripts/merge-prs.sh):
@@ -73,7 +73,36 @@ dirty-tree refusal, target-branch setup from `<remote>/<main>`,
 `pull/<n>/head` fetch (fork-safe), `--no-ff` merge per PR, abort-on-conflict
 (never half-resolves), temp-branch cleanup, and one `MERGED <n>` /
 `SKIPPED <n> <reason>` ledger line per PR. Phase 4 of the SKILL.md now invokes
-the script and interprets its ledger instead of narrating git commands.
+the script and interprets its ledger instead of narrating git commands. A
+target of `auto` generates the branch name `batch/<YYYYMMDD-HHMM>` from the
+current date/time — the default when the user doesn't name a branch.
+
+The same treatment was applied to the other deterministic Phase 0 procedures:
+
+- `review-pr` — [`scripts/diff-target.sh`](../skills/review-pr/scripts/diff-target.sh):
+  main-branch detection plus the changed-file list (committed vs main,
+  uncommitted, untracked) and combined diff.
+- `batch-merge-prs` — [`scripts/list-prs.sh`](../skills/batch-merge-prs/scripts/list-prs.sh):
+  gh auth check, main-branch detection, open-PR JSON work list.
+- `triage-issues` — [`scripts/list-issues.sh`](../skills/triage-issues/scripts/list-issues.sh):
+  gh auth check, repo slug, label vocabulary, open-issue JSON work list, with
+  failure semantics matching the skill's error handling (issue list fatal;
+  repo/labels degrade with a marker).
+
+### 6. Eval-driven follow-ups
+
+The first manual eval run (haiku, 1 trial/case, 67/70 passed) drove two fixes:
+
+- `bm-h3` failed because Phase 3's "nothing merges until the user answers"
+  could override an in-prompt pre-approval, stalling headless runs. Phase 3
+  now treats a pre-approved selection/target in the original request as the
+  answer and proceeds.
+- `bm-n2`/`rd-n2` failed on an over-narrow "nothing to review" assertion; the
+  regex was widened (`no commits`, `up to date`, `same as`) in all six case
+  files that use it.
+- Observed, no change made: haiku passes several report-only cases without
+  loading the skill (all four triage report cases, two batch-merge report
+  cases) — relevant input for future ablation runs.
 
 ### 5. Eval infrastructure added
 

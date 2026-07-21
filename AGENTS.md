@@ -107,9 +107,12 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
   `references/` (batch-merge-prs, triage-issues). Each skill also carries an
-  eval suite in `evals/cases.json`; batch-merge-prs additionally has
-  `scripts/merge-prs.sh` (the deterministic local-merge procedure its Phase 4
-  invokes).
+  eval suite in `evals/cases.json`. Deterministic sub-procedures live as
+  `scripts/` inside their skill, invoked by the phases instead of narrated as
+  prose: batch-merge-prs has `list-prs.sh` and `merge-prs.sh` (which
+  auto-names the target branch `batch/<YYYYMMDD-HHMM>` when passed `auto`),
+  review-pr has `diff-target.sh` (main-branch detection + diff computation),
+  and triage-issues has `list-issues.sh` (repo slug, labels, issue work list).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check

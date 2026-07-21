@@ -55,13 +55,14 @@ the ten agents don't each re-derive the same context.
    against. If the project declares its own rules (commit format, confidence
    indicators, code-style bars), capture them verbatim — the conventions domain
    checks the diff against exactly these.
-2. **Detect the main branch.** Don't hard-code `main` — detect it (e.g.
-   `git symbolic-ref refs/remotes/origin/HEAD`, or fall back to whichever of
-   `main`/`master` exists). Call it `<main>`.
-3. **Compute the diff.** `git diff <main>...HEAD` for committed work, plus
-   `git diff` and `git status` for uncommitted working-tree changes. The review
-   target is the union. Capture the changed-file list.
-4. **Find the commands that matter.** Detect how the project lints, formats,
+2. **Compute the review target.** Run `bash scripts/diff-target.sh` — it
+   detects the main branch deterministically (call it `<main>`; never
+   hard-code `main`) and prints the changed-file list: committed vs `<main>`,
+   uncommitted, and untracked. `bash scripts/diff-target.sh diff` prints the
+   combined diff. The review target is that union; capture the file list and
+   the diff. If the script exits `FATAL` (no main branch detectable), ask the
+   user which branch to diff against instead of guessing.
+3. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — from the docs first, then config files (package.json
    scripts, Makefile, pyproject, etc.). You'll need these for the gate in
    Phase 5. If you can't find them, you'll ask the user later rather than
