@@ -100,6 +100,15 @@ call in a single message so they run concurrently (the
 issues), tell the user the count and confirm before fanning out that wide;
 offer to batch (newest first) instead.
 
+**Model choice:** unless the user specified a model, run the assessment
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each assessment is a narrow read-and-judge
+task, so the cheaper tier is normally enough — and one agent per issue at
+session tier is an expensive default. If a verdict comes back clearly
+degraded or incomplete, re-run that one issue on the session model. This
+default does **not** apply to the Phase 5 fix sub-agents (see Phase 5).
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** from Phase 0: the project guidance summary, the
@@ -242,6 +251,10 @@ available; otherwise create a `git worktree` per fix yourself (the
 `superpowers:using-git-worktrees` pattern) and clean it up after. If more
 than ~5 fixes were approved, confirm before fanning out that wide — each fix
 is a real implementation run, not a quick edit.
+
+Fix sub-agents are the exception to the Phase 1 lesser-model default: they
+write code behind a test gate and open PRs a human will review, so run them
+on the **session model** unless the user says otherwise.
 
 Each fix sub-agent's prompt is assembled from three parts:
 

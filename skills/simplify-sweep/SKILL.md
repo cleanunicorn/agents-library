@@ -87,6 +87,14 @@ Agent/Task calls in a single message so they run concurrently (the
 `superpowers:dispatching-parallel-agents` pattern). If the pair count is large,
 dispatch in batches to respect the concurrency limit.
 
+**Model choice:** unless the user specified a model, run the fan-out
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each (lens, shard) prompt is narrow and
+bounded, so the cheaper tier is normally enough — and at up to ~24 agents the
+session tier is an expensive default. If a pair comes back clearly degraded,
+re-run that one pair on the session model.
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** from Phase 0: the project guidance summary, the

@@ -56,6 +56,13 @@ Dispatch all sub-agents **in parallel** — issue every Agent/Task call in a sin
 message so they run concurrently (the
 `superpowers:dispatching-parallel-agents` pattern).
 
+**Model choice:** unless the user specified a model, run the explorer/tracer
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each lens is a bounded read-and-report task, so
+the cheaper tier is normally enough. If a lens comes back clearly degraded,
+re-run that one lens on the session model.
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** from Phase 0: the project-guidance summary and the

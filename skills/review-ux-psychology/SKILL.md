@@ -129,6 +129,13 @@ Dispatch all six lens sub-agents **in parallel** — issue all the Agent/Task ca
 in a single message so they run concurrently. (This is the
 `superpowers:dispatching-parallel-agents` pattern.)
 
+**Model choice:** unless the user specified a model, run the fan-out
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each lens prompt is narrow and single-principle,
+so the cheaper tier is normally enough. If a lens comes back clearly
+degraded, re-run that one lens on the session model.
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** you gathered in Phase 0: the project guidance summary,
@@ -170,9 +177,11 @@ raw pile they return contains false positives. Never present a finding — and
 never, in the autonomous loop, apply one — on a finder's word alone.
 
 Dispatch verification sub-agents **in parallel**, the same way you fanned out the
-review. Run one verifier per finding; when the finding count is large, batch
-several low-severity findings into a single verifier. A verifier is a **fresh,
-skeptical** agent that did **not** produce the finding. Its prompt is:
+review — including the Phase 1 model default (lesser tier unless the user
+specified a model). Run one verifier per finding; when the finding count is
+large, batch several low-severity findings into a single verifier. A verifier
+is a **fresh, skeptical** agent that did **not** produce the finding. Its
+prompt is:
 
 1. **The shared Phase 0 context** — project guidance, target metric, flow map, and
    the rendered frames.

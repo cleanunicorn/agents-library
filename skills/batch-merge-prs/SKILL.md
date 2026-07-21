@@ -68,6 +68,13 @@ call in a single message so they run concurrently (the
 `superpowers:dispatching-parallel-agents` pattern). For a large queue (say >15
 open PRs), tell the user the count and confirm before fanning out that wide.
 
+**Model choice:** unless the user specified a model, run the per-PR review
+sub-agents on a **lesser model** than your own session — one tier down (e.g.
+`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
+Agent tool's model parameter. Each assessment is a narrow diff-read against
+four fixed lenses, so the cheaper tier is normally enough. If a verdict comes
+back clearly degraded or incomplete, re-run that one PR on the session model.
+
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** from Phase 0: the project guidance summary, the
