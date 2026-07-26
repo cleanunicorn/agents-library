@@ -89,8 +89,12 @@ jobs:
           )
           echo "version=$version" >> "$GITHUB_OUTPUT"
           git commit -am "release: v$version"
-          git tag "v$version"
-          git push origin main --follow-tags
+          # Annotated tag + explicit ref push: `--follow-tags` only pushes
+          # annotated tags, and a lightweight `git tag` silently stayed local
+          # (v0.2.0 failed exactly this way — the release step then refused
+          # the unpushed tag). Pushing the tag ref explicitly can't miss.
+          git tag -a "v$version" -m "release: v$version"
+          git push origin main "v$version"
 
       - name: Create the GitHub release with generated notes
         if: steps.bump.outputs.bump != ''
