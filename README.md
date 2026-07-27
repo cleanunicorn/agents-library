@@ -52,20 +52,22 @@ An installed copy is **pinned** — to the commit SHA in Claude Code, to the
 marketplace snapshot revision in Codex. New commits on `main` do not reach an
 existing install until you update it.
 
-In Claude Code, refreshing the marketplace is not enough on its own — it
-refreshes the catalog and leaves the installed plugin on its old SHA. Run both:
+In Claude Code, one command does it:
 
 ```
-claude plugin marketplace update agents-library
 claude plugin update agents-library@agents-library
 ```
 
-The second command reports the SHA it lands on, or tells you it is already at
-the latest. Either way the change does not reach a session already running:
-`claude plugin update` says *restart required to apply*, and the in-session
-`/plugin` manager says *Run `/reload-plugins` to apply*. There is no
-`/plugin update` slash command — `/plugin marketplace update agents-library`
-covers only the first step, so take the second from the CLI or the manager.
+It refreshes the marketplace itself before resolving, so a separate
+`claude plugin marketplace update agents-library` is not needed — and a
+marketplace refresh on its own is *not* enough: it updates the catalog and
+leaves the installed plugin on its old SHA.
+
+The update reports the SHA it lands on (`updated from … to … for scope …`), or
+tells you it is already at the latest. Either way it does not reach a session
+already running — the command prints *Restart to apply changes*, and the
+in-session `/plugin` manager points you at `/reload-plugins`. There is no
+`/plugin update` slash command; in-session, update from the `/plugin` manager.
 
 `claude plugin update` defaults to `--scope user`. If you installed at project
 scope, pass it explicitly from that project's directory:
@@ -83,29 +85,37 @@ In Codex, one command refreshes the snapshot:
 codex plugin marketplace upgrade agents-library
 ```
 
-Omit the name to refresh every configured Git marketplace. Codex records the
-revision it pinned as `last_revision` under `[marketplaces.agents-library]` in
-`~/.codex/config.toml`. Start a new Codex thread afterwards so the updated
-skills load.
+Omit the name to refresh every configured Git marketplace. This re-points the
+snapshot at the latest `main` and records it as `last_revision` under
+`[marketplaces.agents-library]` in `~/.codex/config.toml`. Start a new Codex
+thread afterwards to pick it up.
 
 ### Troubleshooting
 
 **`Permission denied (publickey)`.** `claude plugin install` and
 `claude plugin update` clone the plugin source over SSH (`git@github.com:…`)
-while the marketplace refresh uses HTTPS, so an unavailable key fails the
-install or update — `Failed to clone repository: … git@github.com: Permission
-denied (publickey)` — while `claude plugin marketplace update` still succeeds.
-Check your agent: `ssh-add -l` reporting *Error connecting to agent* means
-`$SSH_AUTH_SOCK` is stale. Load your key:
+with no HTTPS fallback, so an unavailable key fails them with
+`Failed to clone repository: … git@github.com: Permission denied (publickey)`.
+The marketplace refresh does fall back to HTTPS, which is why
+`claude plugin marketplace update` can succeed while the update right after it
+fails. Check your agent: `ssh-add -l` reporting *Error connecting to agent*
+means `$SSH_AUTH_SOCK` is stale. Load your key:
 
 ```
 eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
 ```
 
-Failing that, you can route GitHub clones over HTTPS instead, but note the blast
-radius: this rewrites **every** `git@github.com:` URL on the machine, for fetch
-and push, in every repo, and needs a credential helper for pushes that were
-using SSH keys.
+If you would rather not use SSH at all, `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`
+switches both clones to HTTPS for that one command — it is not in
+`claude plugin --help`, so treat it as undocumented and version-dependent:
+
+```
+CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1 claude plugin update agents-library@agents-library
+```
+
+The equivalent git-level rewrite works too, but note the blast radius: it
+rewrites **every** `git@github.com:` URL on the machine, for fetch and push, in
+every repo, and needs a credential helper for pushes that were using SSH keys.
 
 ```
 git config --global url."https://github.com/".insteadOf git@github.com:
