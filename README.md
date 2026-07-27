@@ -20,8 +20,13 @@ Codex's in-thread plugin UI takes this repository's URL,
 
 If you registered the marketplace before this repo carried a Codex manifest,
 `marketplace add` is a no-op (`alreadyAdded`) and leaves you on the old pinned
-snapshot, so the second command fails with `plugin agents-library was not found
-in marketplace agents-library`. Refresh the snapshot first:
+snapshot, so the second command fails:
+
+```
+Error: plugin `agents-library` was not found in marketplace `agents-library`
+```
+
+Refresh the snapshot first, then install:
 
 ```
 codex plugin marketplace upgrade agents-library
