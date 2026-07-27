@@ -14,12 +14,18 @@ Install this repository in Codex with the GitHub URL:
 https://github.com/cleanunicorn/agents-library
 ```
 
-Outside a thread, the same works from the CLI — this registers a marketplace
-named `agents-library`, the name later used to update it:
+Codex records this as a Git marketplace named `agents-library` under
+`[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what
+updates it later. The CLI registers the same source:
 
 ```
 codex plugin marketplace add cleanunicorn/agents-library
 ```
+
+Registering the source is all that command does. This repo ships a Codex
+*plugin* manifest and no marketplace manifest, so `codex plugin add` finds no
+entry to install (`codex plugin list` reports nothing available for this
+marketplace); install from a Codex thread with the URL above.
 
 The Codex plugin metadata lives in [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 After installation, start a new Codex thread so newly installed skills are
@@ -63,10 +69,11 @@ claude plugin marketplace update agents-library
 claude plugin update agents-library@agents-library
 ```
 
-The second command prints the SHA it moved to, or tells you it is already at the
-latest. Then **restart Claude Code** — a running session keeps the copy it
-started with. In-session, `/plugin marketplace update agents-library` performs
-the first step and the `/plugin` manager handles the rest.
+The second command reports the SHA it lands on, or tells you it is already at
+the latest. Either way **restart Claude Code** afterwards — the update is not
+applied to a running session. In-session there is no `/plugin update`:
+`/plugin marketplace update agents-library` performs only the first step, so
+run the second from the CLI or from the `/plugin` manager.
 
 `claude plugin update` defaults to `--scope user`. If you installed at project
 scope, pass it explicitly from that project's directory:
@@ -91,22 +98,32 @@ skills load.
 
 ### Troubleshooting
 
-**`Permission denied (publickey)` on install or update.** Claude Code clones
-plugin sources over SSH (`git@github.com:…`), so an unavailable SSH key surfaces
-as `Failed to clone repository: … git@github.com: Permission denied
-(publickey)`. Check the agent with `ssh-add -l` — *Error connecting to agent*
-means `$SSH_AUTH_SOCK` is stale. Either load your key
-(`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519`) or route GitHub clones
-over HTTPS:
+**`Permission denied (publickey)`.** `claude plugin install` and
+`claude plugin update` clone the plugin source over SSH (`git@github.com:…`), so
+an unavailable key fails them with `Failed to clone repository: …
+git@github.com: Permission denied (publickey)`. The marketplace refresh is
+unaffected, so the first of the two update commands can succeed while the second
+fails. Check your agent — `ssh-add -l` reporting *Error connecting to agent*
+means `$SSH_AUTH_SOCK` is stale — and load your key:
+
+```
+eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
+```
+
+Failing that, you can route GitHub clones over HTTPS instead, but note the blast
+radius: this rewrites **every** `git@github.com:` URL on the machine, for fetch
+and push, in every repo, and needs a credential helper for pushes that were
+using SSH keys.
 
 ```
 git config --global url."https://github.com/".insteadOf git@github.com:
+# undo: git config --global --unset url."https://github.com/".insteadOf
 ```
 
-**`Plugin "agents-library" is not installed at scope user` after a failed
-update.** A clone failure can drop the entry from
-`~/.claude/plugins/installed_plugins.json`, leaving nothing for the next update
-to upgrade. Reinstall it:
+**`Plugin "agents-library" is not installed at scope user`.** The install entry
+is missing from `~/.claude/plugins/installed_plugins.json`, so an update has
+nothing to upgrade — it can go missing after a failed install or update.
+Confirm with `claude plugin list --json` and reinstall:
 
 ```
 claude plugin install agents-library@agents-library --scope user
