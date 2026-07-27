@@ -87,19 +87,18 @@ claude plugin update agents-library@agents-library --scope project
 `claude plugin list --json` shows the scope, pinned version, and install path of
 every install.
 
-In Codex it is two — re-point the marketplace snapshot at the latest `main`,
-then reinstall the plugin from the refreshed snapshot:
+In Codex, also one:
 
 ```
 codex plugin marketplace upgrade agents-library
-codex plugin add agents-library@agents-library
 ```
 
-Omit the name on the first command to refresh every configured Git marketplace.
-Codex records the revision it pinned as `last_revision` under
-`[marketplaces.agents-library]` in `~/.codex/config.toml`. The reinstall
-re-copies the plugin even when the version is unchanged, so it picks up
-in-between commits. Start a new Codex thread afterwards.
+It re-points the marketplace snapshot at the latest `main` *and* refreshes the
+installed copy from it, so no reinstall is needed — and it lands new commits
+even when the plugin version is unchanged. Omit the name to refresh every
+configured Git marketplace. Codex records the revision it pinned as
+`last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
+Start a new Codex thread afterwards.
 
 ### Troubleshooting
 
