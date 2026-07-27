@@ -23,7 +23,7 @@
     "shortDescription": "Focused coding review and triage skills.",
     "longDescription": "Agents Library provides Codex skills for reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; and installing the library's maintenance agents into a project on a periodic schedule.",
     "developerName": "Daniel Luca",
-    "category": "Development",
+    "category": "Developer Tools",
     "capabilities": [
       "Read",
       "Write"

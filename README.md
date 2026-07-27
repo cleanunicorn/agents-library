@@ -15,11 +15,8 @@ codex plugin marketplace add cleanunicorn/agents-library
 codex plugin add agents-library@agents-library
 ```
 
-In a Codex thread you can add the marketplace with the GitHub URL instead:
-
-```
-https://github.com/cleanunicorn/agents-library
-```
+Codex's in-thread plugin UI takes this repository's URL,
+`https://github.com/cleanunicorn/agents-library`, in place of the first command.
 
 Either way Codex records it as a Git marketplace named `agents-library` under
 `[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what

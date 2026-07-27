@@ -122,11 +122,14 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   Phase 3. install-agents is the one exception: a linear installer with no
   fan-out (orient → one confirmation → install via script → schedule → ledger).
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
-  (deliberately versionless — versioned by commit SHA); the Codex manifest in
-  `.codex-plugin/plugin.json` carries the only SemVer `version` field, bumped
-  by release automation; the marketplace registry (single entry,
-  `source: "."`) in `.claude-plugin/marketplace.json`; enabled plugins in
-  `.claude/settings.json`.
+  (deliberately versionless — versioned by commit SHA); the Codex plugin
+  manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
+  field, bumped by release automation. Each tool then needs its own marketplace
+  registry, both a single entry pointing back at this repo:
+  `.claude-plugin/marketplace.json` (source `github`, `cleanunicorn/agents-library`)
+  and `.agents/plugins/marketplace.json` (source `local` at `"."`, which
+  resolves to the marketplace root — Codex rejects the `github` source type, so
+  it cannot reuse the Claude file). Enabled plugins in `.claude/settings.json`.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,
