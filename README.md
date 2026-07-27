@@ -18,6 +18,15 @@ codex plugin add agents-library@agents-library
 Codex's in-thread plugin UI takes this repository's URL,
 `https://github.com/cleanunicorn/agents-library`, in place of the first command.
 
+If you registered the marketplace before this repo carried a Codex manifest,
+`marketplace add` is a no-op (`alreadyAdded`) and leaves you on the old pinned
+snapshot, so the second command fails with `plugin agents-library was not found
+in marketplace agents-library`. Refresh the snapshot first:
+
+```
+codex plugin marketplace upgrade agents-library
+```
+
 Either way Codex records it as a Git marketplace named `agents-library` under
 `[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what
 updates it later — and `codex plugin list -m agents-library` reports whether the

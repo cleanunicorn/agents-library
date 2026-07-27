@@ -45,9 +45,9 @@ ensures two agents never run at the same moment and collide on the same fix.
      installed plugin.
    - `agents/` at the current repo root whose `*.md` files carry `name:`
      frontmatter — a checkout or vendored copy of the library.
-   - A best-effort search of the local plugin cache (e.g. under
-     `~/.claude/plugins/`) for an `agents-library` install containing
-     `agents/*.md`.
+   - A best-effort search of the local plugin caches (under
+     `~/.claude/plugins/` and `~/.codex/plugins/cache/`) for an
+     `agents-library` install containing `agents/*.md`.
    - Otherwise ask the user for the path to their agents-library checkout.
 2. **Confirm the target.** The install target is the current project's repo
    root (`git rev-parse --show-toplevel`; the current directory outside git —
