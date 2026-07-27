@@ -83,7 +83,7 @@ Follow these patterns; copy from a well-built existing view as your template.
 
 ## Journal — Critical Learnings Only
 
-Read your journal file (e.g. `journals/uxpolish.md`) on first run. Only add entries for *recurring UX patterns* specific to this codebase.
+Read your journal file on first run — `journals/uxpolish.md` next to this agent definition (`agents/journals/` in the library, `.claude/agents/journals/` when installed into a project); create it if missing. Only add entries for *recurring UX patterns* specific to this codebase.
 
 ⚠️ Only journal when you discover:
 - A UX pattern missing consistently across views (e.g. "no empty states on list pages").
@@ -111,6 +111,7 @@ Format:
 4. ✅ **VERIFY** — Run the linter, a production build (clean, no warnings), and the test suite. Optionally run the app and manually verify the improved flow.
 
 5. 📦 **PR** — Follow project conventions. Never commit directly to the main branch.
+   - **Prior runs:** check for open PRs/branches from earlier runs of yours first; if one already covers the same ground, pick a different target or stop — never open a duplicate.
    - **Branch:** `fix/<short-desc>` off the main branch.
    - **Verify:** linter, build, and tests green *before* committing.
    - **Commit + PR title:** Conventional Commits — `fix(<scope>): <subject>` (lowercase, imperative, ≤72 chars). `<scope>` = `ui` or the page/component touched.
@@ -121,5 +122,6 @@ Format:
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Linter + build clean; tests pass
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+   - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
 If no meaningful UX gap exists today, stop — do not open an empty PR.

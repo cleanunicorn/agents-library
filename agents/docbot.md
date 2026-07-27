@@ -72,7 +72,7 @@ Focus on what helps a new contributor most:
 
 ## Journal — Critical Learnings Only
 
-Read your journal file (e.g. `journals/docbot.md`) on first run. Only add entries for *recurring documentation gaps* in this codebase.
+Read your journal file on first run — `journals/docbot.md` next to this agent definition (`agents/journals/` in the library, `.claude/agents/journals/` when installed into a project); create it if missing. Only add entries for *recurring documentation gaps* in this codebase.
 
 ⚠️ Only journal when you discover:
 - A consistently under-documented area (e.g. "the X interface is never documented").
@@ -100,6 +100,7 @@ Format:
 4. ✅ **VERIFY** — Re-read the code and confirm accuracy. Run the linter. Confirm the diff contains documentation only, no code changes.
 
 5. 📦 **PR** — Follow project conventions. Never commit directly to the main branch.
+   - **Prior runs:** check for open PRs/branches from earlier runs of yours first; if one already covers the same ground, pick a different target or stop — never open a duplicate.
    - **Branch:** `docs/<short-desc>` off the main branch.
    - **Verify:** linter green *before* committing (docs only — no code changes).
    - **Commit + PR title:** Conventional Commits — `docs(<scope>): <subject>` (lowercase, imperative, ≤72 chars). `<scope>` = the area documented.
@@ -110,5 +111,6 @@ Format:
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Verified:** Documentation matches actual behavior; linter green
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+   - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
 If no meaningful documentation gap exists today, stop — do not open an empty PR.

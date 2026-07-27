@@ -22,8 +22,8 @@ loaded into the session.
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
 `/review-pr`, `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`,
-`/triage-issues`, `/simplify-sweep`, and `/describe-codebase` skills plus all
-eight agents as subagents.
+`/triage-issues`, `/simplify-sweep`, `/describe-codebase`, and
+`/install-agents` skills plus all eight agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -33,7 +33,7 @@ eight agents as subagents.
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
 `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
-`/simplify-sweep`, and `/describe-codebase`.
+`/simplify-sweep`, `/describe-codebase`, and `/install-agents`.
 
 Outside a session, the same works from the CLI:
 
@@ -159,11 +159,29 @@ optionally persist it to a new `ARCHITECTURE.md` or append it to `AGENTS.md`. It
 never modifies code and writes a doc only on your explicit confirmation. No `gh`
 or remote required.
 
+## The Install Agents Skill
+
+[`/install-agents`](skills/install-agents/SKILL.md) puts a project on automatic
+maintenance: it installs the agents below into the current project and
+schedules them to run periodically — **once per week by default**, staggered so
+at most one agent runs at a time and the PRs arrive as a steady drip rather
+than a Monday-morning flood. It locates the agent definitions (the installed
+plugin or a library checkout), copies your chosen subset into `.claude/agents/`
+with a deterministic script that never silently overwrites a locally customized
+agent, seeds each agent's journal, and wires the cadence through the best
+available mechanism: Claude Code scheduled agents, a GitHub Actions workflow
+(`.github/workflows/periodic-agents.yml`, one cron slot per agent), or plain
+crontab lines for machine-local repos. Every scheduled run tells its agent to
+make one primary change, verify with the project's linter and tests, open a
+reviewable PR — and to stop instead when a previous run's PR still covers the
+same ground or nothing qualifies. Re-running the skill upgrades or extends an
+existing install, and "install but don't schedule" is a supported choice.
+
 ## Skill Evals
 
-Every skill ships an eval suite (`skills/<name>/evals/cases.json`) — 10
-outcome-based cases each, including cross-triggering negatives that must route
-to a *different* skill — executed by [`run_evals.py`](run_evals.py) at the repo
+Every skill ships an eval suite (`skills/<name>/evals/cases.json`) — at least
+10 outcome-based cases each, including cross-triggering negatives that must
+route to a *different* skill — executed by [`run_evals.py`](run_evals.py) at the repo
 root. Each trial runs the prompt through a real agent in a clean, isolated
 workspace (fixtures include fake `gh` shims, so no network is needed) and
 grades outcomes, not whether the skill loaded. The runner also supports
@@ -214,6 +232,9 @@ and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)
 | [TestForge](agents/testforge.md) | 🧪 | Fill test gaps without changing production code |
 | [UIDesigner](agents/uidesigner.md) | 🖌️ | Visual-design fixes (hierarchy, spacing, type, color, depth) using the project's tokens |
 | [UXPolish](agents/uxpolish.md) | 🎨 | Frontend UX friction fixes without touching contracts |
+
+Install them into any project as weekly periodic agents with
+[`/install-agents`](skills/install-agents/SKILL.md).
 
 ## Shared Conventions
 

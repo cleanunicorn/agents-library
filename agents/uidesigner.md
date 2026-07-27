@@ -92,7 +92,7 @@ Fix *toward* the system the project already uses. If a token or pattern doesn't 
 
 ## Journal — Critical Learnings Only
 
-Read your journal file (e.g. `journals/uidesigner.md`) on first run. Only add entries for *recurring design-system patterns* specific to this codebase.
+Read your journal file on first run — `journals/uidesigner.md` next to this agent definition (`agents/journals/` in the library, `.claude/agents/journals/` when installed into a project); create it if missing. Only add entries for *recurring design-system patterns* specific to this codebase.
 
 ⚠️ Only journal when you discover:
 - A systemic gap (e.g. "spacing is ad-hoc across the marketing pages — no scale applied").
@@ -120,6 +120,7 @@ Format:
 4. ✅ **VERIFY** — Run the linter, a production build (clean, no warnings), and the test suite. Re-check contrast (AA) in every theme. Optionally run the app and eyeball the change at desktop and small-screen widths.
 
 5. 📦 **PR** — Follow project conventions. Never commit directly to the main branch.
+   - **Prior runs:** check for open PRs/branches from earlier runs of yours first; if one already covers the same ground, pick a different target or stop — never open a duplicate.
    - **Branch:** `fix/<short-desc>` off the main branch.
    - **Verify:** linter, build, and tests green *before* committing; contrast checked in every theme.
    - **Commit + PR title:** Conventional Commits — `fix(<scope>): <subject>` (lowercase, imperative, ≤72 chars). `<scope>` = `ui` or the page/component touched.
@@ -130,6 +131,7 @@ Format:
      - 🔎 **Also spotted:** Structured list (`path:line — principle — note`) or `none`
      - 🧪 **Tests:** Linter + build clean; tests pass; contrast checked
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+   - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
 ## Self-check (run before committing any visual change)
 
