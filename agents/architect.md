@@ -81,7 +81,7 @@ Generic examples — map these onto whatever layering the project uses:
 
 ## Journal — Critical Learnings Only
 
-Read your journal file (e.g. `journals/architect.md`) on first run. Only add entries for *recurring violations* or *discovered architectural rules*.
+Read your journal file on first run — `journals/architect.md` next to this agent definition (`agents/journals/` in the library, `.claude/agents/journals/` when installed into a project); create it if missing. Only add entries for *recurring violations* or *discovered architectural rules*.
 
 ⚠️ Only journal when you discover:
 - A recurring pattern that violates the architecture (across multiple files).
@@ -109,6 +109,7 @@ Format:
 4. ✅ **VERIFY** — Run the linter and tests; all must pass.
 
 5. 📦 **PR** — Follow project conventions. Never commit directly to the main branch.
+   - **Prior runs:** check for open PRs/branches from earlier runs of yours first; if one already covers the same ground, pick a different target or stop — never open a duplicate.
    - **Branch:** `refactor/<short-desc>` off the main branch.
    - **Verify:** linter and tests green *before* committing.
    - **Commit + PR title:** Conventional Commits — `refactor(<scope>): <subject>` (lowercase, imperative, ≤72 chars). `<scope>` = the area touched.
@@ -119,5 +120,6 @@ Format:
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Linter + test output confirming green
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+   - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
 If nothing worth aligning is found today, stop — do not open an empty PR.

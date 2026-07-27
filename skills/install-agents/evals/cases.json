@@ -1,0 +1,173 @@
+{
+  "skill": "install-agents",
+  "fixtures": {
+    "mini-lib": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# minilib\n\nSmall demo library.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 -m compileall -q src\n",
+            "src/app.py": "import os\nimport json\n\n\ndef load(path):\n    with open(path) as f:\n        return json.load(f)\n",
+            "agents/architect.md": "---\nname: architect\ndescription: Aligns code with the project's architecture. One focused change per run; opens a reviewable PR.\n---\n\nYou are \"Architect\" 🏗️ — fix one architectural inconsistency per run, verify with the project's checks, and open a reviewable PR. If nothing qualifies, stop.\n",
+            "agents/deadwood.md": "---\nname: deadwood\ndescription: Removes dead code without changing live behavior. Opens a reviewable PR.\n---\n\nYou are \"DeadWood\" 🌲 — remove one piece of clearly dead code per run, confirm nothing references it, and open a reviewable PR. If nothing qualifies, stop.\n",
+            "agents/docbot.md": "---\nname: docbot\ndescription: Fills documentation gaps without changing code. Opens a docs-only PR.\n---\n\nYou are \"DocBot\" 📝 — fill one documentation gap per run without changing code, and open a docs-only PR. If nothing qualifies, stop.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial library'"
+          ]
+        }
+      ]
+    },
+    "mini-lib-preinstalled": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n",
+            "README.md": "# minilib\n\nSmall demo library.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 -m compileall -q src\n",
+            "src/app.py": "import os\nimport json\n\n\ndef load(path):\n    with open(path) as f:\n        return json.load(f)\n",
+            "agents/architect.md": "---\nname: architect\ndescription: Aligns code with the project's architecture. One focused change per run; opens a reviewable PR.\n---\n\nYou are \"Architect\" 🏗️ — fix one architectural inconsistency per run, verify with the project's checks, and open a reviewable PR. If nothing qualifies, stop.\n",
+            "agents/deadwood.md": "---\nname: deadwood\ndescription: Removes dead code without changing live behavior. Opens a reviewable PR.\n---\n\nYou are \"DeadWood\" 🌲 — remove one piece of clearly dead code per run, confirm nothing references it, and open a reviewable PR. If nothing qualifies, stop.\n",
+            "agents/docbot.md": "---\nname: docbot\ndescription: Fills documentation gaps without changing code. Opens a docs-only PR.\n---\n\nYou are \"DocBot\" 📝 — fill one documentation gap per run without changing code, and open a docs-only PR. If nothing qualifies, stop.\n",
+            ".claude/agents/architect.md": "---\nname: architect\ndescription: Aligns code with the project's architecture. One focused change per run; opens a reviewable PR.\n---\n\nYou are \"Architect\" 🏗️ — fix one architectural inconsistency per run, verify with the project's checks, and open a reviewable PR. If nothing qualifies, stop.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial library'"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "ia-h1",
+      "prompt": "Install the agents from the agents/ folder into this project as periodic agents on the default weekly schedule. Use the GitHub Actions mechanism and proceed without asking for confirmation.",
+      "should_trigger": true,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_exists", "path": ".claude/agents/architect.md"},
+        {"type": "file_exists", "path": ".claude/agents/deadwood.md"},
+        {"type": "file_exists", "path": ".github/workflows/periodic-agents.yml"},
+        {"type": "file_regex", "path": ".github/workflows/periodic-agents.yml", "pattern": "cron"}
+      ]
+    },
+    {
+      "id": "ia-h2",
+      "prompt": "Set up the coding agents in agents/ to run automatically once a week in this repo via GitHub Actions. You have my approval to write all the files; don't ask again.",
+      "should_trigger": true,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_exists", "path": ".claude/agents/docbot.md"},
+        {"type": "file_exists", "path": ".claude/agents/journals/architect.md"},
+        {"type": "file_regex", "path": ".github/workflows/periodic-agents.yml", "pattern": "architect"}
+      ]
+    },
+    {
+      "id": "ia-h3",
+      "prompt": "Install only the docbot agent from agents/ as a periodic agent running monthly, via GitHub Actions. Proceed without confirmation.",
+      "should_trigger": true,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_exists", "path": ".claude/agents/docbot.md"},
+        {"type": "file_absent", "path": ".claude/agents/architect.md"},
+        {"type": "file_regex", "path": ".github/workflows/periodic-agents.yml", "pattern": "docbot"}
+      ]
+    },
+    {
+      "id": "ia-h4",
+      "prompt": "Install the agents from agents/ into this project's .claude/agents/ but don't schedule anything yet. Proceed without confirmation.",
+      "should_trigger": true,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_exists", "path": ".claude/agents/architect.md"},
+        {"type": "file_exists", "path": ".claude/agents/journals/deadwood.md"},
+        {"type": "file_absent", "path": ".github/workflows/periodic-agents.yml"}
+      ]
+    },
+    {
+      "id": "ia-h5",
+      "prompt": "Install the agents from agents/ as weekly periodic agents via GitHub Actions; proceed without confirmation.",
+      "should_trigger": true,
+      "fixture": "mini-lib-preinstalled",
+      "assertions": [
+        {"type": "file_exists", "path": ".github/workflows/periodic-agents.yml"},
+        {"type": "file_exists", "path": ".claude/agents/deadwood.md"},
+        {"type": "output_regex", "pattern": "(?i)(identical|already|unchanged|up.to.date|kept|skipp)"}
+      ]
+    },
+    {
+      "id": "ia-h6",
+      "prompt": "Install the agents from agents/ into this project and print crontab lines I can use to run them weekly on this machine — show me the lines but do NOT touch my crontab. No confirmation needed.",
+      "should_trigger": true,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_exists", "path": ".claude/agents/architect.md"},
+        {"type": "output_regex", "pattern": "\\d+\\s+\\d+\\s+\\*\\s+\\*\\s+\\d"}
+      ]
+    },
+    {
+      "id": "ia-n1",
+      "prompt": "Review my changes on this branch before merge.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ia-n2",
+      "prompt": "Explain how this codebase works — give me an orientation.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "output_regex", "pattern": "app\\.py"},
+        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+      ]
+    },
+    {
+      "id": "ia-n3",
+      "prompt": "Act as the deadwood agent defined in agents/deadwood.md for a single run right now: find and remove one piece of dead code.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_absent", "path": ".claude/agents/deadwood.md"},
+        {"type": "output_regex", "pattern": "(?i)(unused|dead|import)"}
+      ]
+    },
+    {
+      "id": "ia-n4",
+      "prompt": "Simplify this codebase — survey it for duplication and dead code and report.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "output_regex", "pattern": "(?i)(simpl|duplic|dead|clean|import)"}
+      ]
+    },
+    {
+      "id": "ia-n5",
+      "prompt": "Add a GitHub Actions workflow that runs `make test` on every push. Create the file; no confirmation needed.",
+      "should_trigger": false,
+      "expect_skill": null,
+      "fixture": "mini-lib",
+      "assertions": [
+        {"type": "file_absent", "path": ".claude/agents/architect.md"},
+        {"type": "file_absent", "path": ".github/workflows/periodic-agents.yml"},
+        {"type": "shell", "cmd": "ls .github/workflows/*.yml >/dev/null 2>&1 || ls .github/workflows/*.yaml >/dev/null 2>&1"}
+      ]
+    }
+  ]
+}

@@ -103,21 +103,24 @@ definitions plus JSON manifests. There is no runtime, database, or build —
 "behavior" is the prose contracts that Claude Code loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
-  role). `skills/<name>/SKILL.md` are 7 orchestrators that fan out to
+  role). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
-  `references/` (batch-merge-prs, triage-issues). Each skill also carries an
-  eval suite in `evals/cases.json`. Deterministic sub-procedures live as
-  `scripts/` inside their skill, invoked by the phases instead of narrated as
-  prose: batch-merge-prs has `list-prs.sh` and `merge-prs.sh` (which
-  auto-names the target branch `batch/<YYYYMMDD-HHMM>` when passed `auto`),
-  review-pr has `diff-target.sh` (main-branch detection + diff computation),
-  and triage-issues has `list-issues.sh` (repo slug, labels, issue work list).
+  `references/` (batch-merge-prs, triage-issues, install-agents). Each skill
+  also carries an eval suite in `evals/cases.json`. Deterministic
+  sub-procedures live as `scripts/` inside their skill, invoked by the phases
+  instead of narrated as prose: batch-merge-prs has `list-prs.sh` and
+  `merge-prs.sh` (which auto-names the target branch `batch/<YYYYMMDD-HHMM>`
+  when passed `auto`), review-pr has `diff-target.sh` (main-branch detection +
+  diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
+  issue work list), and install-agents has `install-agents.sh` (copies
+  `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
   each finding) between fan-out and consolidate, so their consolidate step is
-  Phase 3.
+  Phase 3. install-agents is the one exception: a linear installer with no
+  fan-out (orient → one confirmation → install via script → schedule → ledger).
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex manifest in
   `.codex-plugin/plugin.json` carries the only SemVer `version` field, bumped
@@ -147,7 +150,9 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   review-ux-psychology, which (like review-pr) runs a verify pass that annotates
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues).
+  …}` verdicts for triage-issues; the
+  `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
+  install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — lint/format/build: none. Tests: `python3 run_evals.py`

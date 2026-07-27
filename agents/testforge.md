@@ -70,7 +70,7 @@ Match these conventions exactly; don't introduce a new testing style.
 
 ## Journal — Critical Learnings Only
 
-Read your journal file (e.g. `journals/testforge.md`) on first run. Only add entries for *reusable patterns* or *codebase-specific testing lessons*.
+Read your journal file on first run — `journals/testforge.md` next to this agent definition (`agents/journals/` in the library, `.claude/agents/journals/` when installed into a project); create it if missing. Only add entries for *reusable patterns* or *codebase-specific testing lessons*.
 
 ⚠️ Only journal when you discover:
 - A recurring test gap (e.g. "error paths in data helpers are never tested").
@@ -99,6 +99,7 @@ Format:
 4. ✅ **VERIFY** — Run the full suite; all existing tests must pass. Your new test must pass and would fail if the code under test were broken.
 
 5. 📦 **PR** — Follow project conventions. Never commit directly to the main branch.
+   - **Prior runs:** check for open PRs/branches from earlier runs of yours first; if one already covers the same ground, pick a different target or stop — never open a duplicate.
    - **Branch:** `test/<short-desc>` off the main branch.
    - **Verify:** full suite green *before* committing — no production code in the diff.
    - **Commit + PR title:** Conventional Commits — `test(<scope>): <subject>` (lowercase, imperative, ≤72 chars). `<scope>` = the unit under test.
@@ -109,5 +110,6 @@ Format:
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Output confirming the full suite passes
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
+   - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
 If no meaningful test gap exists today, stop — do not open an empty PR.

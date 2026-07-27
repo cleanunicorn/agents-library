@@ -1,7 +1,7 @@
 {
   "name": "agents-library",
   "version": "0.2.0",
-  "description": "Orchestrator skills for PR review, design review, issue triage, simplification, batch merging, and codebase mapping.",
+  "description": "Orchestrator skills for PR review, design review, issue triage, simplification, batch merging, codebase mapping, and installing periodic maintenance agents.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com",
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Agents Library",
     "shortDescription": "Focused coding review and triage skills.",
-    "longDescription": "Agents Library provides Codex skills for reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; and mapping a codebase.",
+    "longDescription": "Agents Library provides Codex skills for reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; and installing the library's maintenance agents into a project on a periodic schedule.",
     "developerName": "Daniel Luca",
     "category": "Development",
     "capabilities": [
