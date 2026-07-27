@@ -48,9 +48,9 @@ claude plugin install agents-library@agents-library
 
 ## Updating
 
-An installed copy is **pinned** — to the commit SHA in Claude Code, to the
-marketplace snapshot revision in Codex. New commits on `main` do not reach an
-existing install until you update it.
+Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,
+Codex the marketplace snapshot's revision. New commits on `main` do not reach
+either until you update it.
 
 In Claude Code, one command does it:
 
@@ -63,11 +63,11 @@ It refreshes the marketplace itself before resolving, so a separate
 marketplace refresh on its own is *not* enough: it updates the catalog and
 leaves the installed plugin on its old SHA.
 
-The update reports the SHA it lands on (`updated from … to … for scope …`), or
-tells you it is already at the latest. Either way it does not reach a session
-already running — the command prints *Restart to apply changes*, and the
-in-session `/plugin` manager points you at `/reload-plugins`. There is no
-`/plugin update` slash command; in-session, update from the `/plugin` manager.
+The update reports the SHA it lands on — `updated from … to … for scope ….
+Restart to apply changes.` — or tells you it is already at the latest, in which
+case there is nothing to apply. A move never reaches a session already running:
+restart it, or update from the in-session `/plugin` manager, which points you at
+`/reload-plugins` instead. There is no `/plugin update` slash command.
 
 `claude plugin update` defaults to `--scope user`. If you installed at project
 scope, pass it explicitly from that project's directory:
@@ -79,16 +79,15 @@ claude plugin update agents-library@agents-library --scope project
 `claude plugin list --json` shows the scope, pinned version, and install path of
 every install.
 
-In Codex, one command refreshes the snapshot:
+In Codex, one command re-points the marketplace snapshot at the latest `main`:
 
 ```
 codex plugin marketplace upgrade agents-library
 ```
 
-Omit the name to refresh every configured Git marketplace. This re-points the
-snapshot at the latest `main` and records it as `last_revision` under
-`[marketplaces.agents-library]` in `~/.codex/config.toml`. Start a new Codex
-thread afterwards to pick it up.
+Omit the name to refresh every configured Git marketplace. Codex records the
+revision it pinned as `last_revision` under `[marketplaces.agents-library]` in
+`~/.codex/config.toml`. Start a new Codex thread afterwards.
 
 ### Troubleshooting
 
