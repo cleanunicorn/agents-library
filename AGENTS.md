@@ -98,9 +98,9 @@ auth and configuration model, and the test layout and naming conventions.
 
 ## Project-specific section — this repository
 
-This repo is a **Claude Code plugin marketplace**: markdown agent/skill
-definitions plus JSON manifests. There is no runtime, database, or build —
-"behavior" is the prose contracts that Claude Code loads and executes.
+This repo is a **plugin marketplace for both Claude Code and Codex**: markdown
+agent/skill definitions plus JSON manifests. There is no runtime, database, or
+build — "behavior" is the prose contracts each tool loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
@@ -125,11 +125,14 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
   field, bumped by release automation. Each tool then needs its own marketplace
-  registry, both a single entry pointing back at this repo:
+  registry, each with a single entry pointing back at this repo:
   `.claude-plugin/marketplace.json` (source `github`, `cleanunicorn/agents-library`)
-  and `.agents/plugins/marketplace.json` (source `local` at `"."`, which
+  and `.agents/plugins/marketplace.json` (source `local` at `"./"`, which
   resolves to the marketplace root — Codex rejects the `github` source type, so
-  it cannot reuse the Claude file). Enabled plugins in `.claude/settings.json`.
+  it cannot reuse the Claude file). Because that root is the repo root,
+  installing on Codex copies the **whole repository** into the plugin cache, so
+  anything added here ships to every Codex user. Enabled plugins in
+  `.claude/settings.json`.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,
