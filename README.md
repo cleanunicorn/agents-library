@@ -14,9 +14,16 @@ Install this repository in Codex with the GitHub URL:
 https://github.com/cleanunicorn/agents-library
 ```
 
+Outside a thread, the same works from the CLI — this registers a marketplace
+named `agents-library`, the name later used to update it:
+
+```
+codex plugin marketplace add cleanunicorn/agents-library
+```
+
 The Codex plugin metadata lives in [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 After installation, start a new Codex thread so newly installed skills are
-loaded into the session.
+loaded into the session. To pick up later changes, see [Updating](#updating).
 
 ## Install (Claude Code plugin)
 
@@ -42,7 +49,68 @@ claude plugin marketplace add cleanunicorn/agents-library
 claude plugin install agents-library@agents-library
 ```
 
-To update later, push to the repo and run `/plugin marketplace update agents-library`.
+## Updating
+
+An installed copy is **pinned** — to the commit SHA in Claude Code, to the
+marketplace snapshot revision in Codex. New commits on `main` do not reach an
+existing install until you update it.
+
+In Claude Code that takes **two** steps. Refreshing the marketplace only
+refreshes the catalog; it leaves the installed plugin on its old SHA:
+
+```
+claude plugin marketplace update agents-library
+claude plugin update agents-library@agents-library
+```
+
+The second command prints the SHA it moved to, or tells you it is already at the
+latest. Then **restart Claude Code** — a running session keeps the copy it
+started with. In-session, `/plugin marketplace update agents-library` performs
+the first step and the `/plugin` manager handles the rest.
+
+`claude plugin update` defaults to `--scope user`. If you installed at project
+scope, pass it explicitly from that project's directory:
+
+```
+claude plugin update agents-library@agents-library --scope project
+```
+
+`claude plugin list --json` shows the scope, pinned version, and install path of
+every install.
+
+In Codex, one command refreshes the snapshot:
+
+```
+codex plugin marketplace upgrade agents-library
+```
+
+Omit the name to refresh every configured Git marketplace. Codex records the
+revision it pinned as `last_revision` under `[marketplaces.agents-library]` in
+`~/.codex/config.toml`. Start a new Codex thread afterwards so the updated
+skills load.
+
+### Troubleshooting
+
+**`Permission denied (publickey)` on install or update.** Claude Code clones
+plugin sources over SSH (`git@github.com:…`), so an unavailable SSH key surfaces
+as `Failed to clone repository: … git@github.com: Permission denied
+(publickey)`. Check the agent with `ssh-add -l` — *Error connecting to agent*
+means `$SSH_AUTH_SOCK` is stale. Either load your key
+(`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519`) or route GitHub clones
+over HTTPS:
+
+```
+git config --global url."https://github.com/".insteadOf git@github.com:
+```
+
+**`Plugin "agents-library" is not installed at scope user` after a failed
+update.** A clone failure can drop the entry from
+`~/.claude/plugins/installed_plugins.json`, leaving nothing for the next update
+to upgrade. Reinstall it:
+
+```
+claude plugin install agents-library@agents-library --scope user
+```
 
 ## The PR Review Skill
 
@@ -213,9 +281,9 @@ The workflow bumps the version in `.codex-plugin/plugin.json`, commits
 `release: vX.Y.Z` to main, tags it, and creates the GitHub release with
 generated notes. **Those release notes are the changelog** —
 [CHANGELOG.md](CHANGELOG.md) is a frozen archive of the pre-automation
-history. The Claude Code plugin stays versioned by commit SHA;
-`/plugin marketplace update agents-library` picks up the latest main either
-way.
+history. The Claude Code plugin stays versioned by commit SHA rather than by
+release tag, so both tools track `main` — see [Updating](#updating) for how an
+installed copy picks it up.
 
 The skill evals are **not** part of any workflow — they spawn real agent runs
 and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).
