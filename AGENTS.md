@@ -98,9 +98,9 @@ auth and configuration model, and the test layout and naming conventions.
 
 ## Project-specific section — this repository
 
-This repo is a **Claude Code plugin marketplace**: markdown agent/skill
-definitions plus JSON manifests. There is no runtime, database, or build —
-"behavior" is the prose contracts that Claude Code loads and executes.
+This repo is a **plugin marketplace for both Claude Code and Codex**: markdown
+agent/skill definitions plus JSON manifests. There is no runtime, database, or
+build — "behavior" is the prose contracts each tool loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
@@ -122,11 +122,18 @@ definitions plus JSON manifests. There is no runtime, database, or build —
   Phase 3. install-agents is the one exception: a linear installer with no
   fan-out (orient → one confirmation → install via script → schedule → ledger).
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
-  (deliberately versionless — versioned by commit SHA); the Codex manifest in
-  `.codex-plugin/plugin.json` carries the only SemVer `version` field, bumped
-  by release automation; the marketplace registry (single entry,
-  `source: "."`) in `.claude-plugin/marketplace.json`; enabled plugins in
-  `.claude/settings.json`.
+  (deliberately versionless — versioned by commit SHA); the Codex plugin
+  manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
+  field, bumped by release automation. Each tool then needs its own marketplace
+  registry, each with a single entry pointing back at this repo:
+  `.claude-plugin/marketplace.json` (source `github`, `cleanunicorn/agents-library`)
+  and `.agents/plugins/marketplace.json` (source `local` at `"./"`). The two
+  cannot be merged: Codex has no `github` source type, and rather than erroring
+  it skips the entry silently, so the marketplace loads empty and the failure
+  only surfaces later as `plugin ... was not found in marketplace`. Both
+  registries resolve to the repo root, so installing on either tool copies the
+  **whole repository** into that tool's plugin cache — anything added here
+  ships to every user. Enabled plugins in `.claude/settings.json`.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,

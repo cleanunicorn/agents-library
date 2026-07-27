@@ -8,19 +8,41 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 
 ## Install (Codex plugin)
 
-Install this repository in Codex with the GitHub URL:
+Two steps — register the marketplace, then install the plugin from it:
 
 ```
-https://github.com/cleanunicorn/agents-library
+codex plugin marketplace add cleanunicorn/agents-library
+codex plugin add agents-library@agents-library
 ```
 
-Codex registers this as a Git marketplace named `agents-library`, recorded under
-`[marketplaces.agents-library]` in `~/.codex/config.toml` and listed by
-`codex plugin marketplace list`. That name is what updates it later.
+Codex's in-thread plugin UI takes this repository's URL,
+`https://github.com/cleanunicorn/agents-library`, in place of the first command.
 
-The Codex plugin metadata lives in [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
-After installation, start a new Codex thread so newly installed skills are
-loaded into the session. To pick up later changes, see [Updating](#updating).
+If you registered the marketplace before this repo carried a Codex manifest,
+`marketplace add` is a no-op (`alreadyAdded`) and leaves you on the old pinned
+snapshot, so the second command fails:
+
+```
+Error: plugin `agents-library` was not found in marketplace `agents-library`
+```
+
+Refresh the snapshot first, then install:
+
+```
+codex plugin marketplace upgrade agents-library
+```
+
+Either way Codex records it as a Git marketplace named `agents-library` under
+`[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what
+updates it later — and `codex plugin list -m agents-library` reports whether the
+plugin itself is installed. Registering the marketplace on its own does not
+install it.
+
+The marketplace manifest is
+[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json); the
+plugin metadata is [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
+Start a new Codex thread after installing so the skills load. To pick up later
+changes, see [Updating](#updating).
 
 ## Install (Claude Code plugin)
 
@@ -49,8 +71,8 @@ claude plugin install agents-library@agents-library
 ## Updating
 
 Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,
-Codex the marketplace snapshot's revision. New commits on `main` do not reach
-either until you update it.
+Codex the marketplace snapshot's revision and the copy installed from it. New
+commits on `main` do not reach either until you update it.
 
 In Claude Code, one command does it:
 
@@ -79,15 +101,18 @@ claude plugin update agents-library@agents-library --scope project
 `claude plugin list --json` shows the scope, pinned version, and install path of
 every install.
 
-In Codex, one command re-points the marketplace snapshot at the latest `main`:
+In Codex, also one:
 
 ```
 codex plugin marketplace upgrade agents-library
 ```
 
-Omit the name to refresh every configured Git marketplace. Codex records the
-revision it pinned as `last_revision` under `[marketplaces.agents-library]` in
-`~/.codex/config.toml`. Start a new Codex thread afterwards.
+It re-points the marketplace snapshot at the latest `main` *and* refreshes the
+installed copy from it, so no reinstall is needed — and it lands new commits
+even when the plugin version is unchanged. Omit the name to refresh every
+configured Git marketplace. Codex records the revision it pinned as
+`last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
+Start a new Codex thread afterwards.
 
 ### Troubleshooting
 
