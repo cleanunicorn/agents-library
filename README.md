@@ -14,18 +14,9 @@ Install this repository in Codex with the GitHub URL:
 https://github.com/cleanunicorn/agents-library
 ```
 
-Codex records this as a Git marketplace named `agents-library` under
-`[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what
-updates it later. The CLI registers the same source:
-
-```
-codex plugin marketplace add cleanunicorn/agents-library
-```
-
-Registering the source is all that command does. This repo ships a Codex
-*plugin* manifest and no marketplace manifest, so `codex plugin add` finds no
-entry to install (`codex plugin list` reports nothing available for this
-marketplace); install from a Codex thread with the URL above.
+Codex registers this as a Git marketplace named `agents-library`, recorded under
+`[marketplaces.agents-library]` in `~/.codex/config.toml` and listed by
+`codex plugin marketplace list`. That name is what updates it later.
 
 The Codex plugin metadata lives in [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 After installation, start a new Codex thread so newly installed skills are
@@ -61,8 +52,8 @@ An installed copy is **pinned** — to the commit SHA in Claude Code, to the
 marketplace snapshot revision in Codex. New commits on `main` do not reach an
 existing install until you update it.
 
-In Claude Code that takes **two** steps. Refreshing the marketplace only
-refreshes the catalog; it leaves the installed plugin on its old SHA:
+In Claude Code, refreshing the marketplace is not enough on its own — it
+refreshes the catalog and leaves the installed plugin on its old SHA. Run both:
 
 ```
 claude plugin marketplace update agents-library
@@ -70,10 +61,11 @@ claude plugin update agents-library@agents-library
 ```
 
 The second command reports the SHA it lands on, or tells you it is already at
-the latest. Either way **restart Claude Code** afterwards — the update is not
-applied to a running session. In-session there is no `/plugin update`:
-`/plugin marketplace update agents-library` performs only the first step, so
-run the second from the CLI or from the `/plugin` manager.
+the latest. Either way the change does not reach a session already running:
+`claude plugin update` says *restart required to apply*, and the in-session
+`/plugin` manager says *Run `/reload-plugins` to apply*. There is no
+`/plugin update` slash command — `/plugin marketplace update agents-library`
+covers only the first step, so take the second from the CLI or the manager.
 
 `claude plugin update` defaults to `--scope user`. If you installed at project
 scope, pass it explicitly from that project's directory:
@@ -99,12 +91,12 @@ skills load.
 ### Troubleshooting
 
 **`Permission denied (publickey)`.** `claude plugin install` and
-`claude plugin update` clone the plugin source over SSH (`git@github.com:…`), so
-an unavailable key fails them with `Failed to clone repository: …
-git@github.com: Permission denied (publickey)`. The marketplace refresh is
-unaffected, so the first of the two update commands can succeed while the second
-fails. Check your agent — `ssh-add -l` reporting *Error connecting to agent*
-means `$SSH_AUTH_SOCK` is stale — and load your key:
+`claude plugin update` clone the plugin source over SSH (`git@github.com:…`)
+while the marketplace refresh uses HTTPS, so an unavailable key fails the
+install or update — `Failed to clone repository: … git@github.com: Permission
+denied (publickey)` — while `claude plugin marketplace update` still succeeds.
+Check your agent: `ssh-add -l` reporting *Error connecting to agent* means
+`$SSH_AUTH_SOCK` is stale. Load your key:
 
 ```
 eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
@@ -120,10 +112,11 @@ git config --global url."https://github.com/".insteadOf git@github.com:
 # undo: git config --global --unset url."https://github.com/".insteadOf
 ```
 
-**`Plugin "agents-library" is not installed at scope user`.** The install entry
-is missing from `~/.claude/plugins/installed_plugins.json`, so an update has
-nothing to upgrade — it can go missing after a failed install or update.
-Confirm with `claude plugin list --json` and reinstall:
+**`Failed to update plugin …: Plugin "agents-library" is not installed at scope
+<scope>`.** The update is looking at a scope that has no install — most often
+the default `--scope user` when yours is at project or local scope. Check the
+scopes with `claude plugin list --json`. If the entry really is gone from
+`~/.claude/plugins/installed_plugins.json`, reinstall it:
 
 ```
 claude plugin install agents-library@agents-library --scope user
