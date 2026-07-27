@@ -127,12 +127,13 @@ build — "behavior" is the prose contracts each tool loads and executes.
   field, bumped by release automation. Each tool then needs its own marketplace
   registry, each with a single entry pointing back at this repo:
   `.claude-plugin/marketplace.json` (source `github`, `cleanunicorn/agents-library`)
-  and `.agents/plugins/marketplace.json` (source `local` at `"./"`, which
-  resolves to the marketplace root — Codex rejects the `github` source type, so
-  it cannot reuse the Claude file). Because that root is the repo root,
-  installing on Codex copies the **whole repository** into the plugin cache, so
-  anything added here ships to every Codex user. Enabled plugins in
-  `.claude/settings.json`.
+  and `.agents/plugins/marketplace.json` (source `local` at `"./"`). The two
+  cannot be merged: Codex has no `github` source type, and rather than erroring
+  it skips the entry silently, so the marketplace loads empty and the failure
+  only surfaces later as `plugin ... was not found in marketplace`. Both
+  registries resolve to the repo root, so installing on either tool copies the
+  **whole repository** into that tool's plugin cache — anything added here
+  ships to every user. Enabled plugins in `.claude/settings.json`.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,
