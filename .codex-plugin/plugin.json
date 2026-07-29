@@ -1,6 +1,6 @@
 {
   "name": "agents-library",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Orchestrator skills for PR review, design review, issue triage, simplification, batch merging, codebase mapping, and installing periodic maintenance agents.",
   "author": {
     "name": "Daniel Luca",
