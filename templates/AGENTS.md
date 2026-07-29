@@ -31,6 +31,9 @@ exact minimum versions where they matter.
 - {{RUNTIME}} — {{e.g. "Python ≥ 3.12" / "Node.js ≥ 20 + npm" / "Go ≥ 1.22"}}
 - {{SERVICES}} — {{e.g. "Docker + Docker Compose (Postgres runs in a container)"}}
 - {{TOOLING}} — {{e.g. "the `gh` CLI for PRs; `uv` if present, else venv"}}
+- {{BROWSERS}} — {{delete if there are no browser tests: "Playwright browser
+  binaries — `npx playwright install --with-deps`, once per machine or
+  container"}}
 - {{CREDENTIALS/KEYS}} — {{where they go and what a live run needs. Note if keys
   are app settings / a secrets manager rather than `.env`, and never commit them.}}
 
@@ -49,6 +52,8 @@ it as the single source of truth (see Golden rules).
 - **Type-check:** `{{TYPECHECK_CMD}}`
 - **Test (all):** `{{TEST_CMD}}`
 - **Test (single file / focused):** `{{TEST_ONE_CMD}}`
+- **Test (end-to-end):** `{{E2E_CMD}}` {{— delete if there are no browser tests;
+  see [End-to-end tests](#end-to-end-tests-playwright)}}
 - **Build:** `{{BUILD_CMD}}`
 
 Always run the linter and the test suite before opening a PR.
@@ -149,8 +154,12 @@ Do not open a PR with these failing — they mirror what CI runs:
 {{LINT_CMD}}
 {{TEST_CMD}}
 {{FORMAT_CMD}}    # run before lint if you touched code it formats
-{{ANY_EXTRA_GATE}} # e.g. type-check, frontend build, integration/eval gate
+{{ANY_EXTRA_GATE}} # e.g. type-check, frontend build, e2e, integration/eval gate
 ```
+
+{{If the end-to-end suite is too slow to be part of the local gate, say so here
+and name what does run it — e.g. "e2e runs in CI only; run `{{E2E_CMD}}` locally
+when you touched a user-facing flow."}}
 
 ### 6. Push and open a PR
 
@@ -240,10 +249,70 @@ before importing outside conventions.
 
 ## Testing
 
+Unit and integration tests. Browser tests have their own section below.
+
 - **Framework / runner:** {{e.g. pytest, vitest, go test}}
 - **Location & naming:** {{where tests live and how they're named}}
 - **What to cover:** {{happy path + error paths + edge cases; the bar for new code}}
 - **Fixtures / stubs:** {{how to run without network or keys, if applicable}}
+
+## End-to-end tests (Playwright)
+
+Delete this section if the project has no browser tests.
+
+E2E is where an automated run most often stalls or goes flaky — a missing
+browser binary, a report server that never exits, a login replayed per test.
+Record the exact invocations and the traps.
+
+- **Specs live in:** `{{e2e/}}`, named `{{*.spec.ts}}`
+- **Config:** `{{playwright.config.ts}}` — base URL `{{http://localhost:3000}}`
+- **Does the run start the app itself?** {{yes — the `webServer` block boots
+  `{{RUN_CMD}}` and waits for the base URL / no — start it yourself first}}
+- **Browser binaries:** `npx playwright install --with-deps`. A "browser not
+  found" / "executable doesn't exist" error means this hasn't been run.
+
+Prefer the task runner's wrapper if there is one (`{{E2E_CMD}}`); the raw forms:
+
+```bash
+npx playwright test                        # everything, headless
+npx playwright test {{e2e/login.spec.ts}}  # one spec
+npx playwright test -g "{{test title}}"    # one test by title
+npx playwright test --reporter=list        # plain streaming output
+```
+
+> ⚠️ `npx playwright show-report` and `npx playwright show-trace` both start a
+> **blocking** web server — they never return. Never run either in an automated
+> session. Read the artifacts on disk instead.
+
+**`--headed`, `--debug`, and `--ui`** are for a human at a terminal. `--headed`
+needs a display; `--debug` and `--ui` additionally wait for input, so they hang
+an automated run.
+
+**Writing tests here:**
+
+- **Selectors:** {{the project's rule — e.g. "`getByRole`/`getByLabel` first;
+  `data-testid` only when there's no accessible handle; never CSS or XPath tied
+  to styling"}}
+- **Waiting:** use web-first assertions — `await expect(locator).toBeVisible()`
+  auto-retries until the timeout. Never `waitForTimeout`; a fixed sleep is how
+  flake gets in, and it passes locally right up until CI is slower.
+- **Auth:** {{how a test gets a signed-in session — e.g. "a setup project saves
+  `storageState` once; don't drive the login form in every test"}}
+- **Test data:** {{how each test gets isolated data, and what's shared}}
+- **Isolation:** tests run in parallel against {{a shared database/environment}},
+  so no test may depend on another's leftovers or on file order.
+
+**When one fails:** {{where artifacts land — e.g. "the trace, screenshot, and
+video for a failed run are under `test-results/<test>/`"}}. Read the screenshot
+and the error text first; they identify most failures without opening a trace.
+
+{{**Snapshots:** how visual/DOM snapshots are updated (`--update-snapshots`) and
+the rule for it — e.g. "only when the change to the UI is intended, and the
+regenerated files get reviewed in the diff like any other change."}}
+
+A flaky e2e test is a real finding, not noise — fix it or report it. Never
+`test.skip` or `--grep-invert` one to get a green run (see
+[Golden rules](#golden-rules)).
 
 ## Security
 
