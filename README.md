@@ -68,6 +68,27 @@ claude plugin marketplace add cleanunicorn/agents-library
 claude plugin install agents-library@agents-library
 ```
 
+## Install (opencode)
+
+This repo is directly compatible with [opencode](https://opencode.ai). Clone it
+and run `opencode` in the root — the `.opencode/` directory is auto-discovered,
+no install step needed:
+
+- `.opencode/agents/*.md` → the eight subagents (architect, deadwood, docbot,
+  refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
+  `mode: subagent` so opencode registers them as subagents (invokable via
+  `@mention` or dispatched by the orchestrator skills).
+- `.opencode/skills/<name>/SKILL.md` → the eight orchestrator skills
+  (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
+  `triage-issues`, `simplify-sweep`, `describe-codebase`, `install-agents`),
+  loaded on demand via opencode's `skill` tool.
+
+Both directories symlink to the canonical `agents/` and `skills/` at the repo
+root, so there is a single source of truth. To use the agents or skills in
+*another* project, copy the ones you want into that project's `.opencode/`
+directory (or run `/install-agents`, which does this for the eight maintenance
+agents).
+
 ## Updating
 
 Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,

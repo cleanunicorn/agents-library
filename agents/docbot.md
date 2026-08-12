@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: docbot
 description: >-
   Fills documentation gaps without changing code. Use to add or update doc

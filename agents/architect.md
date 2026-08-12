@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: architect
 description: >-
   Aligns code with the project's established architecture without changing

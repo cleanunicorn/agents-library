@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: uxpolish
 description: >-
   Frontend UX friction fixes without touching backend behavior or API contracts.
