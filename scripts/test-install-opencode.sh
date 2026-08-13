@@ -52,7 +52,7 @@ assert_exit 0 "$code" "force exit 0"
 # --- agents-only creates no skills/ dir --------------------------------
 rm -rf .opencode
 bash "$SCRIPT" --project --agents-only >/dev/null 2>&1
-[ -d .opencode/skills ] && bad "agents-only created skills/" || ok "agents-only skips skills/"
+if [ -d .opencode/skills ]; then bad "agents-only created skills/"; else ok "agents-only skips skills/"; fi
 
 # --- global symlink: fresh install -------------------------------------
 out=$(env HOME="$tmp/home1" bash "$SCRIPT" 2>&1); code=$?
@@ -81,7 +81,7 @@ assert_contains "$out" "COPIED architect" "selective installs agent"
 assert_contains "$out" "COPIED review-pr" "selective installs skill"
 assert_exit 0 "$code" "selective exit 0"
 count=$(ls .opencode/agents/*.md 2>/dev/null | wc -l)
-[ "$count" = "1" ] && ok "selective installs exactly 1 agent" || bad "selective installed $count agents (expected 1)"
+if [ "$count" = "1" ]; then ok "selective installs exactly 1 agent"; else bad "selective installed $count agents (expected 1)"; fi
 
 echo
 echo "Results: $pass passed, $fail failed"

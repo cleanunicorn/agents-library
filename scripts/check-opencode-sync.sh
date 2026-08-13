@@ -5,7 +5,7 @@
 
 set -u
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || { echo "FATAL: cannot locate repo root" >&2; exit 1; }
 
 status=0
 

@@ -145,8 +145,8 @@ if [ ${#names[@]} -gt 0 ]; then
     echo "FATAL: unknown agent or skill: $name" >&2; exit 1
   done
 else
-  sel_agents=("${all_agents[@]}")
-  sel_skills=("${all_skills[@]}")
+  if [ ${#all_agents[@]} -gt 0 ]; then sel_agents=("${all_agents[@]}"); fi
+  if [ ${#all_skills[@]} -gt 0 ]; then sel_skills=("${all_skills[@]}"); fi
 fi
 
 [ "$category" = "skills" ] && sel_agents=()
@@ -162,6 +162,8 @@ total=$(( ${#sel_agents[@]} + ${#sel_skills[@]} ))
 
 status=0
 
+bump_status() { [ "$1" -gt "$status" ] && status=$1; }
+
 do_symlink() {
   src="$1" dest="$2" name="$3"
 
@@ -171,22 +173,22 @@ do_symlink() {
 
   if [ ! -e "$dest" ] && [ ! -L "$dest" ]; then
     if ln -s "$src" "$dest"; then echo "LINKED $name"
-    else echo "FAILED $name"; status=3; fi
+    else echo "FAILED $name"; bump_status 3; fi
     return
   fi
 
   if [ "$force" -ne 1 ]; then
-    echo "CONFLICT $name"; status=2; return
+    echo "CONFLICT $name"; bump_status 2; return
+
   fi
 
   tmp="${dest}.tmp.$$"
   if ln -s "$src" "$tmp" && rm -rf "$dest" && mv "$tmp" "$dest"; then
     echo "UPDATED $name"
   else
-    rm -rf "$tmp"; echo "FAILED $name"; status=3
+    rm -rf "$tmp"; echo "FAILED $name"; bump_status 3
   fi
 }
-
 do_copy() {
   src="$1" dest="$2" name="$3"
 
@@ -196,22 +198,22 @@ do_copy() {
 
   if [ ! -e "$dest" ] && [ ! -L "$dest" ]; then
     if cp -r "$src" "$dest"; then echo "COPIED $name"
-    else echo "FAILED $name"; status=3; fi
+    else echo "FAILED $name"; bump_status 3; fi
     return
   fi
 
   if [ "$force" -ne 1 ]; then
-    echo "CONFLICT $name"; status=2; return
+    echo "CONFLICT $name"; bump_status 2; return
+
   fi
 
   tmp="${dest}.tmp.$$"
   if cp -r "$src" "$tmp" && rm -rf "$dest" && mv "$tmp" "$dest"; then
     echo "UPDATED $name"
   else
-    rm -rf "$tmp"; echo "FAILED $name"; status=3
+    rm -rf "$tmp"; echo "FAILED $name"; bump_status 3
   fi
 }
-
 install_item() {
   if [ "$method" = "symlink" ]; then do_symlink "$@"
   else                               do_copy    "$@"; fi
