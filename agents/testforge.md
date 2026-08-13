@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: testforge
 description: >-
   Fills test-suite gaps without changing production code. Use to add coverage

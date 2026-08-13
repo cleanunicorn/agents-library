@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: refactor
 description: >-
   Micro-refactors that improve clarity without changing behavior. Use to extract

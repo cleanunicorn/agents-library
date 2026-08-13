@@ -68,6 +68,44 @@ claude plugin marketplace add cleanunicorn/agents-library
 claude plugin install agents-library@agents-library
 ```
 
+## Install (opencode)
+
+This repo is directly compatible with [opencode](https://opencode.ai).
+
+**Work inside the clone** — just run `opencode` in the repo root. The
+`.opencode/` directory is auto-discovered, no install step needed:
+
+- `.opencode/agents/*.md` → the eight subagents (architect, deadwood, docbot,
+  refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
+  `mode: subagent` so opencode registers them as subagents (invokable via
+  `@mention` or dispatched by the orchestrator skills).
+- `.opencode/skills/<name>/SKILL.md` → the eight orchestrator skills
+  (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
+  `triage-issues`, `simplify-sweep`, `describe-codebase`, `install-agents`),
+  loaded on demand via opencode's `skill` tool.
+
+Both directories symlink to the canonical `agents/` and `skills/` at the repo
+root, so there is a single source of truth.
+
+**Install into other projects or globally** — run the installer script from
+the repo root:
+
+```
+# Global: symlink all 8 agents + 8 skills into ~/.config/opencode/
+./scripts/install-opencode.sh
+
+# Project: copy into a specific project's .opencode/
+cd /path/to/your/project
+/path/to/agents-library/scripts/install-opencode.sh --project
+
+# Pick specific items only
+./scripts/install-opencode.sh review-pr simplify-sweep architect
+```
+
+Global installs use symlinks by default, so `git pull` in this repo updates
+every linked install. Project installs use copies for self-containment. Run
+`./scripts/install-opencode.sh --help` for all options.
+
 ## Updating
 
 Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,

@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: uidesigner
 description: >-
   Visual-design fixes that bring a UI in line with core design principles —

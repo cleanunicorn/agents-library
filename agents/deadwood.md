@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: deadwood
 description: >-
   Removes dead code without changing live behavior. Use to clean up unused

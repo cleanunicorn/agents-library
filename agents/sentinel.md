@@ -1,4 +1,5 @@
 ---
+mode: subagent
 name: sentinel
 description: >-
   Light security-hygiene fixes without changing business logic. Use to add a

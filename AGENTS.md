@@ -98,12 +98,14 @@ auth and configuration model, and the test layout and naming conventions.
 
 ## Project-specific section — this repository
 
-This repo is a **plugin marketplace for both Claude Code and Codex**: markdown
+This repo is a **plugin marketplace for both Claude Code and Codex**, and is
+**directly compatible with opencode** via its `.opencode/` directory: markdown
 agent/skill definitions plus JSON manifests. There is no runtime, database, or
 build — "behavior" is the prose contracts each tool loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
-  role). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
+  role; `mode: subagent` in frontmatter so opencode registers them as
+  subagents). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
   `references/` (batch-merge-prs, triage-issues, install-agents). Each skill
@@ -115,6 +117,11 @@ build — "behavior" is the prose contracts each tool loads and executes.
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  The `.opencode/` directory mirrors `agents/` and `skills/` via symlinks so
+  opencode auto-discovers both without duplicating files.
+  `scripts/install-opencode.sh` installs the agents and skills into an
+  opencode discovery path (global `~/.config/opencode/` by default, or a
+  target project's `.opencode/` with `--project`) via symlinks or copies.
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
@@ -148,7 +155,9 @@ build — "behavior" is the prose contracts each tool loads and executes.
 - **No auth / error handling / logging / database / migrations** — agents
   inspect *target* projects for these; this repo holds none. The only durable
   per-project state is the per-agent journals in `agents/journals/`.
-- **Schemas** — the `{name, description}` frontmatter on every agent/skill, and
+- **Schemas** — the `{mode, name, description}` frontmatter on every agent
+  (`mode: subagent` for opencode compatibility; ignored by Claude Code/Codex),
+  the `{name, description}` frontmatter on every skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
   location, problem, fix, effort}` for review-pr, which its verify pass then
   annotates with `{verdict, confidence}`; `{id, severity, lens, principle,
