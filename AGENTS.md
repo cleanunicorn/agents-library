@@ -119,6 +119,9 @@ build — "behavior" is the prose contracts each tool loads and executes.
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
   The `.opencode/` directory mirrors `agents/` and `skills/` via symlinks so
   opencode auto-discovers both without duplicating files.
+  `scripts/install-opencode.sh` installs the agents and skills into an
+  opencode discovery path (global `~/.config/opencode/` by default, or a
+  target project's `.opencode/` with `--project`) via symlinks or copies.
 - **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
   parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
