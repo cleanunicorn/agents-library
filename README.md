@@ -152,6 +152,18 @@ configured Git marketplace. Codex records the revision it pinned as
 `last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
 Start a new Codex thread afterwards.
 
+In opencode, the update path depends on how you installed:
+
+- **Working inside the clone** — no update step; `.opencode/` is always current.
+- **Global symlink install** — `git pull` in this repo updates every linked
+  install automatically (the symlinks point here).
+- **Project copy install** — re-run the installer with `--force` to refresh:
+
+  ```
+  cd /path/to/your/project
+  /path/to/agents-library/scripts/install-opencode.sh --project --force
+  ```
+
 ### Troubleshooting
 
 **`Permission denied (publickey)`.** `claude plugin install` and

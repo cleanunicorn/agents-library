@@ -99,9 +99,9 @@ auth and configuration model, and the test layout and naming conventions.
 ## Project-specific section — this repository
 
 This repo is a **plugin marketplace for both Claude Code and Codex**, and is
-**directly compatible with opencode** via its `.opencode/` directory: markdown
-agent/skill definitions plus JSON manifests. There is no runtime, database, or
-build — "behavior" is the prose contracts each tool loads and executes.
+**directly compatible with opencode** via its `.opencode/` directory of
+symlinked agent/skill definitions. There is no runtime, database, or build —
+"behavior" is the prose contracts each tool loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode registers them as
@@ -117,6 +117,7 @@ build — "behavior" is the prose contracts each tool loads and executes.
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  Repo-level scripts (installers, CI helpers) live in top-level `scripts/`.
   The `.opencode/` directory mirrors `agents/` and `skills/` via symlinks so
   opencode auto-discovers both without duplicating files.
   `scripts/install-opencode.sh` installs the agents and skills into an
@@ -141,6 +142,9 @@ build — "behavior" is the prose contracts each tool loads and executes.
   registries resolve to the repo root, so installing on either tool copies the
   **whole repository** into that tool's plugin cache — anything added here
   ships to every user. Enabled plugins in `.claude/settings.json`.
+  opencode is the exception: it has no marketplace manifest — `.opencode/`
+  is auto-discovered, which is why it mirrors the content tree via symlinks
+  rather than pointing at the root.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,
