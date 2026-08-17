@@ -121,10 +121,14 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 
 ### 3. Make focused changes
 
-- One logical change per PR. Don't bundle an unrelated refactor into a fix.
+- One logical change per PR — and a whole feature *is* one logical change.
+  Ship its code, tests, and docs together; don't split it across a chain of
+  dependent PRs. Don't bundle an unrelated refactor into a fix either.
 - Match the surrounding style: {{name the dominant patterns — e.g. "typed
   models between layers, early returns, framework X idioms"}}.
-- Keep diffs small and reviewable.
+- Keep diffs focused: everything in the diff should serve that one change.
+  Focused is about relevance, not size — don't ship half a feature to keep the
+  diff short.
 
 ### 4. Commit
 
