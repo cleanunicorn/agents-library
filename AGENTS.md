@@ -47,6 +47,15 @@ not from your own preference.
 
 ### Feature work
 
+- **One feature, one PR.** Ship the whole thing — code, tests, docs, and
+  wiring — in a single pull request. Never split a feature into a chain of
+  dependent PRs that would all land in the same sitting; a plan's milestones
+  are checklist steps *within* that one PR. Split only when the pieces ship
+  independently (separate deploys or releases, or one is useful on its own) —
+  and when you think that applies, state the reason and ask first.
+- "Small, focused diff" means *nothing unrelated in it* — not *less of the
+  feature in it*. An incomplete feature is not a small change; it's a broken
+  one.
 - Build the smallest feedback loop before writing logic. If one doesn't exist,
   build it first.
 - Acceptable loops: a failing test, a script that exercises the path, a
