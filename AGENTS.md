@@ -6,6 +6,21 @@ bars — without assuming a particular language, framework, or stack. Pair it
 with the single-purpose agents in [`agents/`](agents/), and supplement it with
 a project-specific section once you know the codebase.
 
+## Always start in a worktree
+
+Before doing anything else, create a git worktree updated from `origin/main`
+and do all work there — never on `main` directly, and never in a worktree
+that's stale relative to `origin/main`.
+
+```
+git fetch origin
+git worktree add ../<repo>-<task-slug> origin/main
+cd ../<repo>-<task-slug>
+```
+
+If a worktree already exists for this task, `git fetch origin` and rebase or
+merge it onto `origin/main` before continuing.
+
 ## Orient yourself first
 
 Before changing anything, build an accurate map of the project:
