@@ -129,8 +129,10 @@ Format:
      - 💡 **What:** The visual-design gap fixed, and the principle it serves
      - 🎯 **Why:** How it hurt the way the interface reads
      - 📊 **Before/After:** Screenshot or description (include contrast ratios when relevant)
+     - 🧯 **Guardrail:** What now fails if a token edit reintroduces this — the contrast assertion, visual test, or lint rule — or `none`, and why one isn't warranted. Assert the role on every surface it can land on, not only the pair you fixed.
      - 🔎 **Also spotted:** Structured list (`path:line — principle — note`) or `none`
      - 🧪 **Tests:** Linter + build clean; tests pass; contrast checked
+   - **Numbers, not adjectives.** Every claim in that body carries what you measured, what it is judged against, and the command that produced it — `npm test`: 269 pass; `3.73:1 → 7.13:1` (AA needs 4.5:1); `-412 lines`. Write "not measured" rather than reaching for an adjective.
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
    - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 

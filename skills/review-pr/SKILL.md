@@ -184,7 +184,13 @@ its verification tag:
 ```
 [correctness-1] ✓ 🔴 correctness · src/auth.ts:42 — token expiry uses `<` not
                 `<=`, off-by-one lets expired tokens through — change to `<=` — small
+                measured: 1 token accepted at exactly expiry
+                gap: auth.spec.ts tests expiry−1s and expiry+1s, never the boundary
 ```
+
+Render `measured` and `gap` on their own indented lines under any finding that
+has them. They are the two things a maintainer reads to decide whether the
+finding is real, and dropping them turns a verified defect back into an opinion.
 
 Then summarize: how many findings at each severity, which domains were quiet,
 and how many candidate findings verification filtered out — list those with
@@ -211,11 +217,15 @@ Ask the user to choose one path:
 For each accepted finding, in order:
 
 1. **Apply the edit** to the working tree.
-2. **Run the gate** — the project's lint and test commands from Phase 0.
-3. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
+2. **Close the finding's `gap` in the same commit** — widen the test, add the
+   lint rule, extend the check to the shape that slipped through. A defect fix
+   that leaves the thing which missed it untouched will be needed again. If the
+   gap genuinely can't be closed here, say so in the commit body.
+3. **Run the gate** — the project's lint and test commands from Phase 0.
+4. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
    finding. Never commit red. A review that breaks the build is worse than no
    review.
-4. **Commit on the current branch** — one commit per finding, Conventional
+5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`), scoped to the finding's domain.
    One commit per finding keeps the history reviewable and lets any single fix
    be reverted cleanly.
@@ -233,9 +243,19 @@ severity:  critical | important | nice-to-have   (🔴 | 🟡 | 🟢)
 domain:    <one of the ten>
 location:  path:line
 problem:   one-line description of what's wrong or missing
+measured:  the value you observed and what it is judged against, when the
+           finding is measurable (`3.73:1, AA needs 4.5:1`; `buffers the whole
+           stream, no cap`; `4 call sites, 3 shapes`) — else `not measured`
+gap:       for a defect: what was supposed to catch this, and why it didn't
+           (`contrast.test.ts covers only the pairs it lists`; `no test exercises
+           a chunked body`) — else `n/a`
 fix:       proposed change, concrete enough to act on
 effort:    small | medium | large
 ```
+
+`measured` and `gap` are what separate a finding a maintainer acts on from one
+they argue with. A finding whose `measured` is an adjective isn't ready; a
+defect whose `gap` is `n/a` should say why nothing could have caught it.
 
 Phase 2 verification then annotates each surviving finding with two more fields
 (refuted findings are dropped, not annotated):

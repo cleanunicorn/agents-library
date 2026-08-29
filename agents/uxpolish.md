@@ -120,8 +120,10 @@ Format:
      - 💡 **What:** The UX gap fixed
      - 🎯 **Why:** The user frustration or confusion it caused
      - 📊 **Before/After:** Screenshot or description
+     - 🧯 **Guardrail:** What now fails if this state goes missing again — the test asserting the loading / empty / error path or the keyboard handler — or `none`, and why one isn't warranted.
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Linter + build clean; tests pass
+   - **Numbers, not adjectives.** Every claim in that body carries what you measured, what it is judged against, and the command that produced it — `npm test`: 269 pass; `3.73:1 → 7.13:1` (AA needs 4.5:1); `-412 lines`. Write "not measured" rather than reaching for an adjective.
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
    - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 

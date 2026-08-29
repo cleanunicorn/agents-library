@@ -194,9 +194,16 @@ lens:      hierarchy | typography | color | depth | interaction
 principle: the named UI/UX principle the finding traces to
 location:  path:line
 problem:   one-line description of what reads wrong and why
+measured:  the value you observed and the threshold it fails (`3.73:1 on S1, AA
+           needs 4.5:1`; `18px target, min is 24px`; `spacing 13/17/23px, scale
+           is 4px`) — else `not measured`, and say what would measure it
 fix:       proposed change, concrete and token-reusing enough to act on
 effort:    small | medium | large
 ```
+
+Measure a colour role on **every surface it can land on**, not only the pair in
+front of you — a role that passes on white and fails on navy is the usual way a
+contrast bug ships past a test suite that has one.
 
 Severity guidance: 🔴 for a contrast failure that blocks readability or a
 hierarchy so broken the user can't find the primary action; 🟡 for off-scale
