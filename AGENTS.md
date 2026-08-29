@@ -221,7 +221,7 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   none), the version lands in `.codex-plugin/plugin.json`, main gets a
   `release: vX.Y.Z` commit plus a `v<version>` tag, and a GitHub release is
   created with generated notes. **Those release notes are the changelog** —
-  `CHANGELOG.md` is a frozen pre-automation archive; don't append to it. PR
+  there is no `CHANGELOG.md`; don't create one. PR
   titles are load-bearing and CI-checked (`.github/workflows/pr-title.yml`).
   Never add the skill evals to any workflow — they are manual-only
   (`docs/evals.md`).
