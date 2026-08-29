@@ -106,8 +106,10 @@ Format:
      - 💡 **What:** The simplification made
      - 🎯 **Why:** The cognitive load / maintainability issue it solves
      - 📊 **Before/After:** Short diff snippet
+     - 🧯 **Guardrail:** What proves behavior is unchanged, and what would fail if this pattern crept back — or `none`, and why one isn't warranted.
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Linter + test output confirming no behavior change
+   - **Numbers, not adjectives.** Every claim in that body carries what you measured, what it is judged against, and the command that produced it — `npm test`: 269 pass; `3.73:1 → 7.13:1` (AA needs 4.5:1); `-412 lines`. Write "not measured" rather than reaching for an adjective.
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
    - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 

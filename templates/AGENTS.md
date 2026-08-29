@@ -103,7 +103,17 @@ git checkout {{DEFAULT_BRANCH}}
 git pull origin {{DEFAULT_BRANCH}}
 ```
 
-### 2. Create a branch
+### 2. Create a branch — in a worktree
+
+**Never edit a checkout of `{{DEFAULT_BRANCH}}` directly.** Create the worktree
+before the first edit, do the whole change there, and open the PR from it:
+
+```bash
+git worktree add {{WORKTREE_DIR}}/<short-topic> -b <short-topic>
+```
+
+{{WORKTREE_DIR — where this project keeps them, e.g. `.claude/worktrees/`, and
+confirm it is gitignored. If the harness has a worktree tool, name it here.}}
 
 Branch names are short, lowercase, hyphenated, and prefixed by intent. Match the
 Conventional Commits type you expect the PR to use (see [Commit](#4-commit)):
@@ -190,9 +200,19 @@ an invalid title." If the title also drives a release, see Release automation.}}
 Keep it short and useful:
 
 - **What** changed and **why** (the motivation/problem).
+- **Numbers, not adjectives.** Anything you claim improved carries the value you
+  measured, the threshold it is judged against, and how to reproduce it —
+  `3.73:1 → 7.13:1 (AA needs 4.5:1)`, `{{TEST_CMD}}: 269 pass`, `-412 lines`.
+  A table when there is more than one pair. "Not measured" beats a vague
+  adjective.
+- **The gap**, for a bug fix: what was supposed to catch this, why it didn't,
+  and what now would. Give it its own heading — it is the half of the fix a
+  reviewer can't reconstruct from the diff.
 - **How to test** / what you ran ({{LINT_CMD}}, {{TEST_CMD}}, any extra gate).
 - **Linked issues**: `Closes #123` when it resolves one.
 - Screenshots for UI changes.
+- When the change is mostly a removal, lead with what is **gone** (net lines,
+  the concepts dropped) and add an explicit **Kept:** line.
 
 ## After opening the PR
 

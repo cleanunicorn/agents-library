@@ -405,7 +405,9 @@ Every agent follows the same operating model:
 - **How Much to Do Per Run** — one *Primary* change, up to two closely-related same-kind changes, and an *"Also spotted"* report of everything else found but not touched.
 - **Learn the project first** — read the docs and copy the prevailing patterns; refactor *toward* the existing style, never toward a personal preference.
 - **Verify before committing** — run the project's linter and test suite; evidence before claims.
-- **Reviewable PRs** — branch off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
+- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective.
+- **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
+- **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
 - **Journal critical learnings only** — record recurring patterns, not routine work.
 
 ## Adapting to a Project

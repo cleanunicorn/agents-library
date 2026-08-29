@@ -21,6 +21,10 @@ cd ../<repo>-<task-slug>
 If a worktree already exists for this task, `git fetch origin` and rebase or
 merge it onto `origin/main` before continuing.
 
+Follow the project's convention for where worktrees live if it has one (often a
+gitignored directory such as `.claude/worktrees/`). If the harness offers a
+worktree tool, use it — it does the same thing and moves the session into it.
+
 ## Orient yourself first
 
 Before changing anything, build an accurate map of the project:
@@ -57,7 +61,21 @@ not from your own preference.
 
 1. Reproduce the bug with a failing test FIRST. Do not attempt a fix before this.
 2. Then fix. Prove the fix with the test passing.
-3. If the bug genuinely cannot be expressed as a test, say so explicitly and
+3. **Close the gap that let it through.** A bug that reached a user got past
+   whatever was supposed to stop it. Name that thing and fix it in the same PR.
+   It is usually one of:
+   - **The check didn't exist.** Add it.
+   - **The check existed but didn't cover this shape.** This is the common case,
+     and the more valuable half of the fix. A contrast test that asserts only
+     the pairs someone thought to list; a size guard that reads a header the
+     sender chose; a lint rule that never ran on this directory — each stays
+     green while the defect ships. Widen it to the *shape* that broke, not just
+     to the one instance.
+   - **The check can't cover this.** Say so plainly, and name what does.
+
+   Give the gap its own section in the PR. Why this was possible deserves as
+   much review attention as what changed.
+4. If the bug genuinely cannot be expressed as a test, say so explicitly and
    explain why.
 
 ### Feature work
@@ -75,12 +93,28 @@ not from your own preference.
   build it first.
 - Acceptable loops: a failing test, a script that exercises the path, a
   command-line invocation, a REPL session.
+- **Deleting the wrong feature is a result, not a failure.** When the model a
+  feature is built on turns out not to match what the thing is used for, the fix
+  is to collapse it, not to keep bolting onto it. Say so, propose the removal
+  with what it costs, and — once agreed — lead the PR with what is *gone*: the
+  net line count, the list of removed concepts, and an explicit **Kept:** line
+  so a reviewer can check nothing they rely on left silently. A large negative
+  diff needs the same evidence as a large positive one, not an apology.
 
 ### When stuck
 
 - State the hypothesis: "I think X because Y. Test: Z."
 - If a hypothesis fails twice, stop and re-examine assumptions instead of
   trying variants.
+- **Suspect the measurement before the code.** When a result contradicts what
+  you can see, or when a change you "proved" good breaks in the real world, the
+  harness is a suspect: the fixture may be the wrong *shape* rather than merely
+  too small, the number may be hardcoded where it should be read, the baseline
+  may be measured against the wrong moment. Before deleting a working safeguard
+  on the strength of an eval, check that the eval's inputs look like the inputs
+  users actually send. Fix the instrument, re-run, and only then judge the code.
+- Where a harness and the test suite both need the same fixtures, have them
+  **share one definition** so they cannot drift apart and disagree later.
 
 ## Communication
 
@@ -88,6 +122,17 @@ not from your own preference.
 - When claiming something works or is fixed, prove it with a passing test, a
   script that validates the behavior, and a clear explanation of why it works.
   Don't just assert — convince with evidence.
+- **No quality adjective without a number.** "Improved contrast", "faster",
+  "fewer errors", "smaller" are not claims — they're moods. Report what you
+  measured, the threshold it is judged against, and the value before and after:
+  `3.73:1 → 7.13:1 (AA requires 4.5:1)`, `foot 238px in both states`,
+  `18 fillers → 3, 3 seeds per arm`, `269 tests pass`, `8,843 lines → 4,989`.
+  A table beats a sentence when there is more than one pair.
+- Say how you measured it, so the reader can repeat it: the exact command, the
+  fixture, the viewport, the seed count. A number nobody can reproduce is an
+  assertion wearing a number's clothes.
+- If something could not be measured, say that instead of reaching for the
+  adjective — and name what would measure it.
 - When uncertain about something, say so rather than presenting it as fact.
 - End each response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
 
@@ -187,11 +232,12 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   (`mode: subagent` for opencode compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
-  location, problem, fix, effort}` for review-pr, which its verify pass then
-  annotates with `{verdict, confidence}`; `{id, severity, lens, principle,
-  location, problem, fix, effort}` for review-design; `{id, severity, lens,
-  principle, location, problem, fix, hypothesis, effort}` for
-  review-ux-psychology, which (like review-pr) runs a verify pass that annotates
+  location, problem, measured, gap, fix, effort}` for review-pr, which its verify
+  pass then annotates with `{verdict, confidence}`; `{id, severity, lens,
+  principle, location, problem, measured, fix, effort}` for review-design;
+  `{id, severity, lens, location, problem, measured, fix, effort}` for
+  simplify-sweep; `{id, severity, lens, principle, location, problem, fix,
+  hypothesis, effort}` for review-ux-psychology, which (like review-pr) runs a verify pass that annotates
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{issue, recommendation, kind, validity, evidence, labels,
   …}` verdicts for triage-issues; the

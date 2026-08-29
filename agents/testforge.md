@@ -108,8 +108,10 @@ Format:
      - 💡 **What:** The gap filled
      - 🎯 **Why:** What regression/bug this would catch
      - 📊 **Coverage:** Which file/function is now tested
+     - 🧯 **Guardrail:** The *shape* this now covers, not just the instance — name the class of regression it catches, and what still slips past it.
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Tests:** Output confirming the full suite passes
+   - **Numbers, not adjectives.** Every claim in that body carries what you measured, what it is judged against, and the command that produced it — `npm test`: 269 pass; `3.73:1 → 7.13:1` (AA needs 4.5:1); `-412 lines`. Write "not measured" rather than reaching for an adjective.
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
    - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
