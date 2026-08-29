@@ -345,12 +345,53 @@ A flaky e2e test is a real finding, not noise — fix it or report it. Never
 - {{PROJECT-SPECIFIC: authn/authz model, which endpoints are protected, how
   permissions are checked}}
 
-## Gotchas
+## Hazards
 
-Non-obvious traps that have bitten people before. Delete if none.
+Traps that have already cost someone real time or real damage here. This is the
+highest-value section in the file and the one an agent cannot infer — a
+convention can be read off the code, an incident cannot. Delete if none.
+
+Write one subsection per hazard, not a bullet. A bullet says *don't*; a
+subsection says *why, and what to do instead*, which is the part that makes the
+rule survive contact with a plausible-looking shortcut. Each one:
+
+1. **The rule, in bold, up front.** Imperative and unhedged.
+2. **The mechanism** — what actually goes wrong, concretely enough that a
+   reader can recognise a new variant of it rather than only the exact case.
+3. **The evidence it is real** — what it broke and how often. *"This has taken
+   the production instance down twice"* stops an agent that *"be careful with
+   process management"* does not.
+4. **The safe recipe**, as a copy-pasteable block. A hazard without an
+   alternative just gets worked around.
+5. **The near-misses**, when the obvious workaround is also unsafe — name it
+   explicitly, or someone will reinvent it.
+
+````markdown
+### {{Never <do the tempting thing>}}
+
+**{{The rule as one imperative sentence.}}**
+
+{{The mechanism: what matches too broadly, runs in the wrong environment, is
+cached, or fires out of order — and why it looks correct right up until it
+isn't.}}
+
+{{The evidence: what this broke, when, and how many times.}}
+
+```sh
+{{the safe recipe}}
+```
+
+{{The near-misses: "`X`, `Y` and `Z` are the same hazard." Say so, or they will
+be tried next.}}
+````
+
+Short hazards that genuinely need no recipe can stay one-liners:
 
 - {{e.g. "The `legacy/` module is frozen — do not modify it."}}
 - {{e.g. "Migrations run automatically on boot in dev but not in prod."}}
+
+When an incident produces a rule, add it here in the same PR that fixes the
+incident — that is when the mechanism is still understood.
 
 ## Start here
 
