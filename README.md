@@ -282,10 +282,35 @@ Run the repository's local validation before opening a PR:
 bash scripts/check.sh
 ```
 
-It checks shell syntax, plugin JSON syntax, opencode sync and regression tests,
-the installer smoke tests, and `run_evals.py --dry-run`. The command is local
-and manual: it starts no model runs and needs no credentials. It requires
-`bash`, `python3`, and the usual Unix command-line tools.
+The same command covers all three supported platforms:
+
+| Platform | Local coverage |
+| --- | --- |
+| Claude Code | Plugin/marketplace identity, GitHub source, agent and skill discovery paths, and the intentionally versionless manifest. |
+| Codex | Plugin/marketplace identity, local source path, release version, interface metadata, availability policy, and skill discovery. |
+| opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
+
+It also checks shell and manifest JSON syntax, shared definition names and
+required frontmatter fields, and eval cases with `run_evals.py --dry-run`.
+The command is local and manual: it starts no model runs, needs no credentials,
+and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
+Unix command-line tools.
+
+These are repository packaging checks, not complete host schema validation or
+behavioral evals in Claude/Codex. The frontmatter checks cover the library's
+existing unquoted keys/names and block descriptions (`description: >-`), not
+arbitrary YAML. Required fields must appear exactly once.
+When Claude Code is installed, its manifest checks can also be run explicitly:
+
+```sh
+claude plugin validate .claude-plugin/plugin.json
+claude plugin validate .claude-plugin/marketplace.json
+```
+
+The missing-version warning for Claude is intentional; Codex owns the release
+version. `claude plugin validate .` selects the marketplace in this repository,
+so it must not be treated as validation of every skill and agent. The local gate
+does not require either CLI or depend on their user-specific plugin caches.
 
 ## Skill Evals
 

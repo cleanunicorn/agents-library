@@ -16,6 +16,9 @@ for manifest in .claude-plugin/*.json .codex-plugin/*.json .agents/plugins/*.jso
   python3 -m json.tool "$manifest" >/dev/null
 done
 
+echo "Checking Claude/Codex plugin layout..."
+python3 scripts/test-plugin-layout.py
+
 bash scripts/check-opencode-sync.sh
 python3 scripts/test-check-opencode-sync.py
 bash scripts/test-install-opencode.sh
