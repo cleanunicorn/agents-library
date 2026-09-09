@@ -184,11 +184,13 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s) and add a README entry. No manifest edit needed.
-- **Commands** — lint/format/build: none. Tests: `python3 run_evals.py`
-  (validate with `--dry-run` first) runs the skill evals — **manual-only and
-  expensive** (real agent runs); never wire it into CI, hooks, or push
-  automation. See `docs/evals.md`. Prose quality is still enforced by the bars
-  in this guide and each SKILL.md.
+- **Commands** — `bash scripts/check.sh` runs the fast local gate: shell syntax,
+  plugin JSON syntax, opencode link validation and regression tests, installer
+  smoke tests, and eval case validation (`--dry-run`). No model calls or
+  credentials needed. Lint/format/build: no separate tools. Behavioral skill
+  evals: `python3 run_evals.py` — **manual-only and expensive** (real agent
+  runs); never wire them into CI, hooks, or push automation. See `docs/evals.md`.
+  Prose quality is still enforced by the bars in this guide and each SKILL.md.
 
 **Start here:** README.md → AGENTS.md → agents/architect.md →
 skills/review-pr/SKILL.md → skills/review-pr/domains/correctness.md
