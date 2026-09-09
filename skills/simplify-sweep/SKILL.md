@@ -118,6 +118,18 @@ The four lenses and their files:
 If a sub-agent fails or returns nothing, note it and continue with the others —
 never block the whole survey on one shard or lens.
 
+**Deletion is a finding, not a failure.** The lenses above hunt for code that
+can be written more simply. Sometimes what a shard shows is that a whole
+capability is elaborate machinery for something nobody uses that way — a
+generalised model where the callers only ever take one path, an abstraction with
+a single implementation, a format nothing reads back. Raise it. A finding whose
+`fix` is *"delete this and the four things that exist to serve it"* is often the
+highest-value one in the sweep, and it is the one a sub-agent told to "simplify"
+will otherwise talk itself out of. Its `measured` field is the line count it
+takes with it. Removing behaviour is out of this skill's remit to *apply* —
+report it, size it, and let the user decide; never delete a live capability
+under path (b).
+
 ## Phase 3 — Consolidate
 
 Merge all findings into one list:
@@ -139,12 +151,18 @@ Render a grouped, ID'd list to the user, one finding per line:
 ```
 [redundancy-1] 🟡 redundancy · src/auth.ts:40 — token-decode block duplicated in
                session.ts:88 — extract a decodeToken() helper — small
+               measured: 2 copies, 24 lines each; ~24 lines removable
 ```
 
-Then summarize: how many findings at each severity, which lenses were quiet, and
-the **surface stats** from Phase 1 — files scanned, shard count, and anything
-skipped or capped. Keep it skimmable; the user is choosing what to act on, not
-reading four reports.
+Then summarize: how many findings at each severity, which lenses were quiet, the
+**net lines the accepted findings would remove**, and the **surface stats** from
+Phase 1 — files scanned, shard count, and anything skipped or capped. Keep it
+skimmable; the user is choosing what to act on, not reading four reports.
+
+List any **removal candidates** (whole capabilities that look unused or
+over-built) in their own short block below the findings, each with what it costs
+to keep and what it would take with it. They are for the user to decide on, not
+for path (b) to apply.
 
 ## Phase 5 — Decide
 
@@ -185,6 +203,8 @@ severity:  critical | important | nice-to-have   (🔴 | 🟡 | 🟢)
 lens:      redundancy | complexity | clarity | docs
 location:  path:line
 problem:   one-line description of what is more complex than it needs to be
+measured:  the size of the thing, in numbers (`4 near-identical copies, 31 lines
+           each`; `nesting 5 deep`; `~180 lines removable`) — else `not measured`
 fix:       proposed simplification, concrete enough to act on (behavior-preserving)
 effort:    small | medium | large
 ```

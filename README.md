@@ -4,7 +4,7 @@ A set of stack-agnostic, single-purpose coding agents. Each agent does **one sma
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
-See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)); [CHANGELOG.md](CHANGELOG.md) archives the pre-automation history.
+See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)).
 
 ## Install (Codex plugin)
 
@@ -299,9 +299,7 @@ ablation (`--ablation`) to detect skills the bare model can already replace.
 
 Evals are **manual-only** — never wired to CI or git hooks. Start with
 `python3 run_evals.py --dry-run`; see [docs/evals.md](docs/evals.md) for the
-full guide and cost notes, and
-[docs/skill-audit-2026-07.md](docs/skill-audit-2026-07.md) for the audit that
-introduced them.
+full guide and cost notes.
 
 ## Releasing
 
@@ -321,11 +319,10 @@ title drives the version bump:
 
 The workflow bumps the version in `.codex-plugin/plugin.json`, commits
 `release: vX.Y.Z` to main, tags it, and creates the GitHub release with
-generated notes. **Those release notes are the changelog** —
-[CHANGELOG.md](CHANGELOG.md) is a frozen archive of the pre-automation
-history. The Claude Code plugin stays versioned by commit SHA rather than by
-release tag, so both tools track `main` — see [Updating](#updating) for how an
-installed copy picks it up.
+generated notes. **Those release notes are the changelog** — there is no
+`CHANGELOG.md` to update. The Claude Code plugin stays versioned by commit SHA
+rather than by release tag, so both tools track `main` — see
+[Updating](#updating) for how an installed copy picks it up.
 
 The skill evals are **not** part of any workflow — they spawn real agent runs
 and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).
@@ -353,7 +350,9 @@ Every agent follows the same operating model:
 - **How Much to Do Per Run** — one *Primary* change, up to two closely-related same-kind changes, and an *"Also spotted"* report of everything else found but not touched.
 - **Learn the project first** — read the docs and copy the prevailing patterns; refactor *toward* the existing style, never toward a personal preference.
 - **Verify before committing** — run the project's linter and test suite; evidence before claims.
-- **Reviewable PRs** — branch off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
+- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective.
+- **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
+- **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
 - **Journal critical learnings only** — record recurring patterns, not routine work.
 
 ## Adapting to a Project

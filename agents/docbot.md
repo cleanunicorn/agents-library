@@ -109,8 +109,10 @@ Format:
      - 💡 **What:** The documentation gap filled
      - 🎯 **Why:** The confusion or onboarding friction it reduces
      - 📝 **Content:** The doc-comment/section added (short excerpt)
+     - 🧯 **Guardrail:** What would now catch this doc going stale — a doctest, a test asserting the documented behavior, a link check — or `none`, and why one isn't warranted.
      - 🔎 **Also spotted:** Structured list (`path:line — category — note`) or `none`
      - 🧪 **Verified:** Documentation matches actual behavior; linter green
+   - **Numbers, not adjectives.** Every claim in that body carries what you measured, what it is judged against, and the command that produced it — `npm test`: 269 pass; `3.73:1 → 7.13:1` (AA needs 4.5:1); `-412 lines`. Write "not measured" rather than reaching for an adjective.
    - End the PR body with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
    - **No remote:** if there is no `gh`/remote to open a PR with, leave the branch committed locally and report what a reviewer should look at instead of failing.
 
