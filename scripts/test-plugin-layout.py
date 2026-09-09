@@ -125,6 +125,18 @@ class PluginLayoutTests(unittest.TestCase):
                 header = header.group(1)
                 # Every definition uses unquoted keys and a block description.
                 # Enforce that format instead of partially decoding YAML scalars.
+                inside_description = False
+                for line in header.splitlines():
+                    if not line.strip() or line.lstrip().startswith("#"):
+                        continue
+                    if line.startswith("  "):
+                        self.assertTrue(inside_description,
+                                        "only descriptions use block values in this repository")
+                        continue
+                    field = re.fullmatch(r"([a-z][a-z0-9_-]*):(?:[ \t].*)?", line)
+                    self.assertIsNotNone(field,
+                                         "expected a field or a two-space-indented description line")
+                    inside_description = field.group(1) == "description"
                 required = ("name", "description", "mode") if is_agent else ("name", "description")
                 for field in required:
                     declarations = re.findall(rf"(?m)^{field}:", header)
