@@ -46,7 +46,7 @@ and run inside the workspace. Fixture `bin/` files are made executable and
 prepended to PATH (for CLI shims like a fake `gh`). Results are printed and
 written as JSON under eval-results/.
 
-Cost note: the full suite is 7 skills x 10+ cases x 3 trials of a real agent.
+Cost note: each case runs a real agent once per trial. See docs/evals.md.
 Use --skill/--case/--trials to scope, and --model to pick a cheaper model.
 """
 

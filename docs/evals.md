@@ -11,14 +11,14 @@ root executes them. The evals exist for two reasons:
   candidate; its evals stay in the repo as regression tests either way.
 
 **Evals are manual-only.** The runner is never wired to CI, git hooks, or push
-automation, and must not be — a full sweep is 210 real agent runs. Run it by
-hand, scoped, when you change a skill or update the model.
+automation, and must not be — a full sweep launches hundreds of real agent
+runs. Run it by hand, scoped, when you change a skill or update the model.
 
 ## Layout
 
 ```
 run_evals.py                      # the shared runner (stdlib Python 3)
-skills/<name>/evals/cases.json    # 10 cases per skill: 5 positive, 5 negative
+skills/<name>/evals/cases.json    # at least 5 positive and 5 negative cases per skill
 eval-results/                     # JSON results per run (gitignored)
 ```
 
@@ -83,10 +83,12 @@ python3 run_evals.py --build-only --keep-workspaces --case bm-h1 --skill batch-m
 python3 run_evals.py --skill triage-issues --case ti-h5 --trials 1 --keep-workspaces
 ```
 
-**Cost note:** the full suite is 7 skills × 10 cases × 3 trials = 210 agent
-runs, several of them multi-sub-agent orchestrations — hours of wall clock and
-meaningful token spend. Ramp up: `--dry-run` → `--trials 1` → full runs per
-skill → ablation.
+**Cost note:** for a normal sweep, multiply the case counts printed by
+`--dry-run` by `--trials` (default 3) to get the number of agent runs. Ablation
+runs only positive cases, twice per trial (with and without the skill). Several
+cases orchestrate multiple subagents, so a full sweep can take hours and spend
+meaningful tokens. Ramp up: `--dry-run` → `--trials 1` → full runs per skill →
+ablation.
 
 ## Reading the output
 
