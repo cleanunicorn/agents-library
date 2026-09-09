@@ -209,135 +209,108 @@ claude plugin install agents-library@agents-library --scope user
 ## The PR Review Skill
 
 [`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
-before you finalize it — the reviewer you start in a fresh agent after
-implementing a change. It orients on the project, computes the local branch
-diff, fans out ten specialized review sub-agents (correctness, architecture,
-dead code, docs, refactor, testing, UX polish, visual design, security,
-conventions), independently verifies every finding with a fresh skeptical agent
-to screen out false positives before you see them, consolidates the survivors
-into one ranked list, and then either applies a chosen subset or runs an
-autonomous improve-until-converged loop — every applied fix gated on the
-project's lint and tests. No GitHub remote required; it works on the local diff
-before a PR exists.
+before you finalize it. Ten specialized reviewers inspect the local diff, and a
+separate verification pass screens their findings before presenting a ranked
+list. It can apply approved fixes or run an improve-until-converged loop behind
+the project's lint and test gate; no GitHub remote is required.
 
 ## The Review Design Skill
 
 [`/review-design`](skills/review-design/SKILL.md) is the design-focused
-counterpart to `review-pr`: it reviews the **visual design** of a UI against core
-UI/UX principles, for a target you choose — a single view or component, a
-path/glob of frontend files, or the current branch diff. It orients on the
-project's design system (tokens, type and spacing scales, palette, components,
-dark mode), fans out five specialized sub-agents across the design lenses
-(hierarchy & spacing, typography, color & dark mode, depth/icons/buttons, and
-interaction/states/motion), and consolidates their findings — each tracing to a
-named principle — into one ranked list. You then either apply a chosen subset or
-run an autonomous improve-until-converged loop, every applied fix reusing the
-project's design tokens and gated on its lint and build. No `gh` or remote
-required.
+counterpart to `review-pr`: it reviews a view, component, frontend path, or
+branch diff against the project's visual system and core UI principles. It
+ranks findings across five design lenses, then can apply approved fixes or run
+an improve-until-converged loop behind the lint and build gate. No `gh` or
+remote is required.
 
 ## The UX Psychology Review Skill
 
 [`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
-behavior-and-conversion counterpart to `review-design`: where `review-design`
-judges how a UI *looks*, this skill judges how a flow works against the way people
-actually decide, in the service of a **specific product metric**. For a target you
-choose — a screen or flow (onboarding, signup, checkout, pricing, a form), a
-path/glob, or the current branch diff — it orients on the product goal and the
-metric the flow is being optimized for (signup, activation, trial-to-paid,
-checkout completion, retention), best-effort renders the flow to
-screenshots/video so findings are grounded in what the user actually sees, then
-fans out six specialized sub-agents across behavioral-design lenses: decision
-fatigue & smart defaults, goal-gradient progress, reciprocity & value-first,
-endowment & the IKEA effect, loss aversion & framing, and anchoring & the contrast
-effect. Every finding traces to a named psychology principle and names the metric
-it is meant to move. Following `review-pr`, it then independently **verifies** each
-finding against the real code/flow to screen out false positives, consolidates the
-survivors into one list ranked by expected impact, presents them for you to pick
-from, and then either applies a chosen subset or runs an autonomous
-improve-until-converged loop — every applied fix reusing the project's patterns and
-gated on its lint and build. No `gh` or remote required.
+behavior-and-conversion counterpart to `review-design`. It reviews a screen,
+flow, path, or branch diff against behavioral principles for a named product
+metric, using rendered evidence when available and independently verifying each
+finding. It can apply approved fixes or iterate behind the project's lint and
+build gate; no `gh` or remote is required.
 
 ## The Batch PR Merge Skill
 
 [`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
-pull requests and collects the trivial ones onto a branch you name. It lists
-every open PR, fans out one review sub-agent per PR that reads the diff and
-judges it across four lenses (size/scope, change type, mergeability/CI, and an
-actual correctness read), then recommends include / review / skip with
-reasoning. It consolidates the verdicts into one ranked decision table, lets you
-pick which to take, and locally `git merge`s the chosen PRs into your target
-branch — aborting cleanly on conflict — before reporting a final ledger. The
-sub-agents only assess; you confirm what merges. Nothing is pushed and no PRs are
-closed on GitHub. Requires the `gh` CLI.
+pull requests and collects approved trivial ones onto a branch you name. Each PR
+is assessed for scope, type, correctness, CI, and mergeability before you choose
+what to include. Merges are local and abort cleanly on conflict; nothing is
+pushed or closed on GitHub. Requires the `gh` CLI.
 
 ## The Issue Triage Skill
 
 [`/triage-issues`](skills/triage-issues/SKILL.md) triages the project's open
-GitHub issues into a ranked action plan. It lists the untriaged open issues and
-fans out one assessment sub-agent per issue that reads the full thread *and the
-actual codebase*, judging it across five lenses (validity — does the bug still
-exist in the code? — completeness, classification, two-stage duplicate
-detection, and a code-grounded effort estimate). It resolves the duplicate
-claims into clusters, consolidates everything into one ranked decision table
-(easy wins, duplicates, needs-info, larger work, close-candidates), and lets
-you pick which actions to take. Only after your per-group confirmation does it
-write to GitHub: applying labels from the repo's existing vocabulary, posting
-issue-specific needs-more-info comments (exact text shown first), closing
-confirmed duplicates and already-fixed issues with references, and **fixing
-the easy wins you approve** — one fix sub-agent per issue, each in its own git
-worktree, reproducing the issue with a failing test first, gating on the
-project's lint and tests, and opening **one pull request per issue** (`Fixes
-#n`). Nothing is ever committed to the default branch; a fixer that discovers
-its issue isn't actually easy bails out with a report instead of forcing a PR.
-The assessment sub-agents only assess; you confirm every write. Requires the
-`gh` CLI.
+GitHub issues into a code-grounded action plan covering duplicates, easy wins,
+needs-info cases, and larger work. Every GitHub write needs per-action approval;
+approved easy wins are fixed in separate worktrees and pull requests behind the
+project's lint and test gate. Requires the `gh` CLI.
 
 ## The Simplify Sweep Skill
 
 [`/simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
 the whole repository, a path/glob, or the current branch diff — for
-**behavior-preserving** simplification opportunities. It orients on the project,
-builds and shards a scan surface (so a whole-repo scan stays tractable), and fans
-out parallel sub-agents across four lenses (redundancy & dead code, complexity &
-structure, clarity & idiom, and docs simplification). It consolidates and ranks
-their findings into one list, presents them for you to pick from, and then either
-applies a chosen subset or runs an autonomous improve-until-converged loop —
-every applied fix gated on the project's lint and tests and behavior-preserving
-by construction. It's the whole-codebase counterpart to `review-pr`'s
-diff-scoped review. No `gh` or remote required.
+**behavior-preserving** simplifications across redundancy, complexity, clarity,
+and documentation. It ranks findings, then can apply approved changes or run an
+improve-until-converged loop behind the project's lint and test gate. No `gh` or
+remote is required.
 
 ## The Describe Codebase Skill
 
 [`/describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
-counterpart to `review-pr`: it explains how a codebase is shaped so you can get
-your bearings. It orients on the project, fans out read-only explorer sub-agents
-across three lenses (layering & entry points — including config, auth, and error
-handling — data & persistence, and conventions & build), and consolidates their
-findings into one skimmable orientation brief where every claim carries a
-`file:line` reference. It supports three scopes: the whole repository (default),
-a path/glob for a single subsystem, or a feature/flow trace that follows one
-execution path end to end. The brief is shown in the conversation; you can
-optionally persist it to a new `ARCHITECTURE.md` or append it to `AGENTS.md`. It
-never modifies code and writes a doc only on your explicit confirmation. No `gh`
-or remote required.
+counterpart to `review-pr`. It maps a whole repository or subsystem, or traces
+one feature end to end, producing an orientation brief with `file:line`
+evidence. The analysis is read-only; it writes `ARCHITECTURE.md` or updates
+`AGENTS.md` only with explicit approval. No `gh` or remote is required.
 
 ## The Install Agents Skill
 
 [`/install-agents`](skills/install-agents/SKILL.md) puts a project on automatic
-maintenance: it installs the agents below into the current project and
-schedules them to run periodically — **once per week by default**, staggered so
-at most one agent runs at a time and the PRs arrive as a steady drip rather
-than a Monday-morning flood. It locates the agent definitions (the installed
-plugin or a library checkout), copies your chosen subset into `.claude/agents/`
-with a deterministic script that never silently overwrites a locally customized
-agent, seeds each agent's journal, and wires the cadence through the best
-available mechanism: Claude Code scheduled agents, a GitHub Actions workflow
-(`.github/workflows/periodic-agents.yml`, one cron slot per agent), or plain
-crontab lines for machine-local repos. Every scheduled run tells its agent to
-make one primary change, verify with the project's linter and tests, open a
-reviewable PR — and to stop instead when a previous run's PR still covers the
-same ground or nothing qualifies. Re-running the skill upgrades or extends an
-existing install, and "install but don't schedule" is a supported choice.
+maintenance by copying a chosen set into `.claude/agents/`, seeding journals,
+and optionally scheduling staggered runs weekly by default. It supports Claude
+Code schedules, GitHub Actions, and local cron, and preserves locally customized
+agent files unless you explicitly approve an overwrite. Re-running upgrades or
+extends an installation.
+
+## Local checks
+
+Run the repository's local validation before opening a PR:
+
+```sh
+bash scripts/check.sh
+```
+
+The same command covers all three supported platforms:
+
+| Platform | Local coverage |
+| --- | --- |
+| Claude Code | Plugin/marketplace identity, GitHub source, agent and skill discovery paths, and the intentionally versionless manifest. |
+| Codex | Plugin/marketplace identity, local source path, release version, interface metadata, availability policy, and skill discovery. |
+| opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
+
+It also checks shell and manifest JSON syntax, shared definition names and
+required frontmatter fields, and eval cases with `run_evals.py --dry-run`.
+The command is local and manual: it starts no model runs, needs no credentials,
+and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
+Unix command-line tools.
+
+These are repository packaging checks, not complete host schema validation or
+behavioral evals in Claude/Codex. The frontmatter checks cover the library's
+existing unquoted keys/names and block descriptions (`description: >-`), not
+arbitrary YAML. Required fields must appear exactly once.
+When Claude Code is installed, its manifest checks can also be run explicitly:
+
+```sh
+claude plugin validate .claude-plugin/plugin.json
+claude plugin validate .claude-plugin/marketplace.json
+```
+
+The missing-version warning for Claude is intentional; Codex owns the release
+version. `claude plugin validate .` selects the marketplace in this repository,
+so it must not be treated as validation of every skill and agent. The local gate
+does not require either CLI or depend on their user-specific plugin caches.
 
 ## Skill Evals
 
