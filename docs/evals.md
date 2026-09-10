@@ -161,6 +161,7 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 
 | Suite | Fixture | Signature assertions |
 |-------|---------|----------------------|
+| plan-feature | layered task app with behavioral tests, a missing-harness variant, and a roadmap doc to update in place | plans cite real integration points and observable tests; report-only leaves the baseline intact; requested plan updates preserve unrelated content |
 | review-pr | feature branch with a spec-violating boundary bug (`> 8` vs "at least 8"), a dead function, a test gap | review names the bug/dead code; fix case leaves `>= 8` and `make test` green |
 | describe-codebase | small layered service (app → handlers → db → config) | brief cites real layers; flow trace hits all hops; tree stays clean; `ARCHITECTURE.md` written only on explicit approval |
 | review-design | tokens file + component with `#999` on white, 13px body text, off-scale spacing, two primary buttons | findings name contrast/scale issues; fix case removes `#999` in favor of a token |

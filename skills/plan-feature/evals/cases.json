@@ -1,0 +1,409 @@
+{
+  "skill": "plan-feature",
+  "fixtures": {
+    "task-service": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "docs/roadmap.md": "# Roadmap\n\n## Existing commitment\n\nKeep offline operation available. Owner: Mira.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    },
+    "task-service-without-tests": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nThere is no test directory, test command, or test dependency yet.\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "docs/roadmap.md": "# Roadmap\n\n## Existing commitment\n\nKeep offline operation available. Owner: Mira.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "pf-h1",
+      "prompt": "Plan a completed-status filter for list: omitted means all tasks, True means completed, False means pending. Ground the plan in this repo and cover scope, acceptance checks, and implementation order. Planning only; leave every file unchanged.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "src/app\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "src/repository\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "tests/test_tasks\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "make test"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(omitt|default|existing|backward)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "pf-h2",
+      "prompt": "Before we build it, plan optional list limits: execute(\"list\", limit=2) should return the first two tasks. Keep existing callers unchanged. Reject zero, negative, boolean, and non-integer limits. Include observable acceptance criteria and how to validate compatibility. Do not edit files.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "tests/test_tasks\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "make test"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(omitt|default|existing|all tasks)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(zero|limit\\s*(=|==|of|is)?\\s*0\\b)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(negative|minus|limit\\s*(=|==|of|is)?\\s*-\\d)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(isinstance|bool.{0,60}\\bints?\\b|subclass)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(empty|no tasks|zero tasks|\\[\\])"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "pf-h3",
+      "prompt": "Plan a task-title substring search for this repository. This project has no tests yet; include the smallest executable feedback loop before feature code and identify which commands and test files are proposals. Return the plan here without creating files.",
+      "should_trigger": true,
+      "fixture": "task-service-without-tests",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(no test|missing test|test.{0,30}(absent|missing|not exist))"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(propos|add|creat).{0,100}(test|unittest)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(python3? -m unittest|pytest|make test)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "pf-h4",
+      "prompt": "Plan optional list limits with the default preserving all results. Add the plan to docs/roadmap.md, preserving its existing commitments and owner. Include concrete acceptance criteria, affected files, and validation commands. Only edit that plan document; do not implement.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "file_regex",
+          "path": "docs/roadmap.md",
+          "pattern": "Keep offline operation available\\. Owner: Mira\\."
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/roadmap.md",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/roadmap.md",
+          "pattern": "tests/test_tasks\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/roadmap.md",
+          "pattern": "make test"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/roadmap.md",
+          "pattern": "(?i)limit"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . \":(exclude)docs/roadmap.md\" && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "pf-h5",
+      "prompt": "Plan a CSV export command returning task data as text, with id/title/completed columns and a header even when there are no tasks. Users may put commas, quotes, and newlines in titles. Reuse this project's architecture; no files or network should be written by the command. Explain relevant failure boundaries and which deployment concerns do not apply here. Plan only, no edits.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "src/app\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(import csv|csv\\.(writer|DictWriter)|csv module|io\\.StringIO)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(quot|escap)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(newline|line break|multiline)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(empty|no tasks|header only)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "tests/test_tasks\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "make test"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(in.memory|offline|no (database|deployment|network)|not applicable)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "pf-h6",
+      "prompt": "Plan and then implement optional list limits now; implementation is already authorized. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty, and an oversized limit returns all tasks. Add behavior tests and run make test. Do not stop after planning or ask for approval again.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(plan|checklist|acceptance)"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
+        {
+          "type": "file_regex",
+          "path": "tests/test_tasks.py",
+          "pattern": "limit"
+        },
+        {
+          "type": "shell",
+          "cmd": "make test"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert len(all_tasks) == 3\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nassert execute('list') == all_tasks\nPYTEST"
+        }
+      ]
+    },
+    {
+      "id": "pf-n1",
+      "prompt": "Explain how the existing add and list commands flow through this codebase. I want to understand the architecture, not plan any new feature. Do not edit files.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "app\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "repository\\.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ],
+      "expect_skill": "describe-codebase"
+    },
+    {
+      "id": "pf-n2",
+      "prompt": "Review my branch changes before merge. Report only; do not invent a future feature or edit files.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|same as|up.to.date)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ],
+      "expect_skill": "review-pr"
+    },
+    {
+      "id": "pf-n3",
+      "prompt": "Survey the whole repository for duplication, dead code, and unnecessary complexity. Report behavior-preserving cleanup opportunities only; leave the files alone.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(duplic|dead|simpl|unnecessary|no.{0,30}(finding|issue|cleanup))"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ],
+      "expect_skill": "simplify-sweep"
+    },
+    {
+      "id": "pf-n4",
+      "prompt": "Review the visual design of the existing application. Report only and do not create a UI.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(no (visual|ui|frontend|user interface)|backend|not.{0,20}(UI|interface)|nothing to.{0,20}(review|design))"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ],
+      "expect_skill": "review-design"
+    },
+    {
+      "id": "pf-n5",
+      "prompt": "Implement optional list limits now, keeping it minimal. execute(\"list\", limit=2) returns the first two tasks; omitted limit returns all tasks; empty lists remain empty and oversized limits return all tasks. Reject zero, negative, boolean, string, or float limits with ValueError. Add tests and run make test.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
+        {
+          "type": "file_regex",
+          "path": "tests/test_tasks.py",
+          "pattern": "limit"
+        },
+        {
+          "type": "shell",
+          "cmd": "make test"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert len(all_tasks) == 3\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nassert execute('list') == all_tasks\nPYTEST"
+        }
+      ],
+      "expect_skill": null
+    }
+  ]
+}

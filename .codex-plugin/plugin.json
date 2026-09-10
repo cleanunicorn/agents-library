@@ -1,7 +1,7 @@
 {
   "name": "agents-library",
   "version": "0.7.0",
-  "description": "Orchestrator skills for PR review, design review, issue triage, simplification, batch merging, codebase mapping, and installing periodic maintenance agents.",
+  "description": "Orchestrator skills for feature planning, PR review, design review, issue triage, simplification, batch merging, codebase mapping, and installing periodic maintenance agents.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com",
@@ -14,14 +14,15 @@
     "agents",
     "code-review",
     "design-review",
+    "feature-planning",
     "issue-triage",
     "skills"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Agents Library",
-    "shortDescription": "Focused coding review and triage skills.",
-    "longDescription": "Agents Library provides Codex skills for reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; and installing the library's maintenance agents into a project on a periodic schedule.",
+    "shortDescription": "Feature planning, coding review, and triage skills.",
+    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; and installing the library's maintenance agents into a project on a periodic schedule.",
     "developerName": "Daniel Luca",
     "category": "Developer Tools",
     "capabilities": [
@@ -30,9 +31,9 @@
     ],
     "websiteURL": "https://github.com/cleanunicorn/agents-library",
     "defaultPrompt": [
+      "Plan a feature before we build it.",
       "Review this branch for correctness.",
-      "Triage open issues in this repo.",
-      "Describe this codebase."
+      "Triage open issues in this repo."
     ],
     "brandColor": "#2563EB"
   }

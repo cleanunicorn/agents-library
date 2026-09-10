@@ -174,9 +174,10 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode registers them as
-  subagents). `skills/<name>/SKILL.md` are 8 orchestrators that fan out to
+  subagents). `skills/<name>/SKILL.md` are 9 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
-  review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase), or
+  review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
+  plan-feature), or
   `references/` (batch-merge-prs, triage-issues, install-agents). Each skill
   also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
@@ -192,12 +193,17 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   `scripts/install-opencode.sh` installs the agents and skills into an
   opencode discovery path (global `~/.config/opencode/` by default, or a
   target project's `.opencode/` with `--project`) via symlinks or copies.
-- **Skill shape** — every skill is Phase 0 *orient* → Phase 1 *fan out in
-  parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
+- **Skill shape** — the review and survey skills follow Phase 0 *orient* →
+  Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
   each finding) between fan-out and consolidate, so their consolidate step is
-  Phase 3. install-agents is the one exception: a linear installer with no
-  fan-out (orient → one confirmation → install via script → schedule → ledger).
+  Phase 3. plan-feature investigates integration and verification in parallel
+  when useful (locally for small changes or hosts without delegation), then
+  produces an implementation plan and saves it when requested. triage-issues
+  and batch-merge-prs follow the same orient → fan out → consolidate shape and
+  then add *decide* → *act* → *summarize* phases, acting only on what was
+  approved. install-agents is a linear installer with no fan-out (orient → one
+  confirmation → install via script → schedule → ledger).
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -239,7 +245,8 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   simplify-sweep; `{id, severity, lens, principle, location, problem, fix,
   hypothesis, effort}` for review-ux-psychology, which (like review-pr) runs a verify pass that annotates
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
-  describe-codebase; `{issue, recommendation, kind, validity, evidence, labels,
+  describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
+  plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
   …}` verdicts for triage-issues; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
