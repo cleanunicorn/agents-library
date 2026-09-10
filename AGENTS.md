@@ -199,9 +199,11 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   each finding) between fan-out and consolidate, so their consolidate step is
   Phase 3. plan-feature investigates integration and verification in parallel
   when useful (locally for small changes or hosts without delegation), then
-  produces an implementation plan and saves it when requested. install-agents
-  is a linear installer with no fan-out (orient → one confirmation → install
-  via script → schedule → ledger).
+  produces an implementation plan and saves it when requested. triage-issues
+  and batch-merge-prs follow the same orient → fan out → consolidate shape and
+  then add *decide* → *act* → *summarize* phases, acting only on what was
+  approved. install-agents is a linear installer with no fan-out (orient → one
+  confirmation → install via script → schedule → ledger).
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`

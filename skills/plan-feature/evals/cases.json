@@ -81,15 +81,15 @@
         },
         {
           "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
+        },
+        {
+          "type": "output_regex",
           "pattern": "(?i)(omitt|default|existing|backward)"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)(True|completed)"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)(False|pending)"
         },
         {
           "type": "shell",
@@ -117,27 +117,31 @@
         },
         {
           "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
+        },
+        {
+          "type": "output_regex",
           "pattern": "(?i)(omitt|default|existing|all tasks)"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(zero|\\b0\\b)"
+          "pattern": "(?i)(zero|limit\\s*(=|==|of|is)?\\s*0\\b)"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(negative|minus|-[1-9])"
+          "pattern": "(?i)(negative|minus|limit\\s*(=|==|of|is)?\\s*-\\d)"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(boolean|bool|True|False)"
+          "pattern": "(?i)(isinstance|bool.{0,60}\\bints?\\b|subclass)"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(empty|no tasks)"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)(integer|float|string)"
+          "pattern": "(?i)(empty|no tasks|zero tasks|\\[\\])"
         },
         {
           "type": "shell",
@@ -226,7 +230,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(csv|DictWriter)"
+          "pattern": "(?i)(import csv|csv\\.(writer|DictWriter)|csv module|io\\.StringIO)"
         },
         {
           "type": "output_regex",
@@ -238,7 +242,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)(empty|no tasks)"
+          "pattern": "(?i)(empty|no tasks|header only)"
         },
         {
           "type": "output_regex",
@@ -247,6 +251,14 @@
         {
           "type": "output_regex",
           "pattern": "make test"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(def test_|assert(Equal|Raises|True|False)?\\b)"
         },
         {
           "type": "output_regex",
@@ -264,6 +276,18 @@
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(plan|checklist|acceptance)"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
         {
           "type": "file_regex",
           "path": "tests/test_tasks.py",
@@ -312,7 +336,7 @@
       "assertions": [
         {
           "type": "output_regex",
-          "pattern": "(?i)(no (diff|change|commit)|nothing to review|clean|same as|up.to.date)"
+          "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|same as|up.to.date)"
         },
         {
           "type": "shell",
@@ -361,6 +385,10 @@
       "should_trigger": false,
       "fixture": "task-service",
       "assertions": [
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
         {
           "type": "file_regex",
           "path": "tests/test_tasks.py",

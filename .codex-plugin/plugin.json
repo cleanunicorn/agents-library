@@ -14,6 +14,7 @@
     "agents",
     "code-review",
     "design-review",
+    "feature-planning",
     "issue-triage",
     "skills"
   ],
@@ -30,9 +31,9 @@
     ],
     "websiteURL": "https://github.com/cleanunicorn/agents-library",
     "defaultPrompt": [
+      "Plan a feature before we build it.",
       "Review this branch for correctness.",
-      "Triage open issues in this repo.",
-      "Describe this codebase."
+      "Triage open issues in this repo."
     ],
     "brandColor": "#2563EB"
   }

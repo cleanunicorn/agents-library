@@ -210,19 +210,13 @@ claude plugin install agents-library@agents-library --scope user
 ## The Feature Planning Skill
 
 [`/plan-feature`](skills/plan-feature/SKILL.md) turns a feature request into a
-plan grounded in the current repository before coding starts. It identifies
-reuse and integration points, maps acceptance criteria to tests, and produces
-an ordered checklist covering implementation, wiring, and relevant delivery
-risks. Missing test infrastructure becomes an explicit first step.
-
-For example: “Plan CSV export for the orders screen, following the existing
-permissions model. Include acceptance criteria and tests. Save the plan to
-`docs/plans/order-export.md`.”
-
-The default is a plan in chat; it writes a document when requested. It works
-without a remote or host-specific CLI and can investigate locally when
-subagents are unavailable. A request to plan and implement continues into
-implementation with the authorization already given.
+plan grounded in the current repository before coding starts: reuse and
+integration points, acceptance criteria mapped to real tests and the command
+that runs them, and an ordered checklist covering implementation, wiring, and
+delivery risk. Missing test infrastructure becomes the first step. The plan
+stays in chat unless you ask for a file, and a request to plan *and* implement
+continues into implementation without asking again; no GitHub remote is
+required.
 
 ## The PR Review Skill
 
