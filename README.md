@@ -48,8 +48,8 @@ changes, see [Updating](#updating).
 
 This repo is a Claude Code plugin marketplace. Installing it gives you the
 `/review-pr`, `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`,
-`/triage-issues`, `/simplify-sweep`, `/describe-codebase`, and
-`/install-agents` skills plus all eight agents as subagents.
+`/triage-issues`, `/simplify-sweep`, `/describe-codebase`,
+`/plan-feature`, and `/install-agents` skills plus all eight agents as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -59,7 +59,7 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
 `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
-`/simplify-sweep`, `/describe-codebase`, and `/install-agents`.
+`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, and `/install-agents`.
 
 Outside a session, the same works from the CLI:
 
@@ -79,9 +79,10 @@ This repo is directly compatible with [opencode](https://opencode.ai).
   refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
   `mode: subagent` so opencode registers them as subagents (invokable via
   `@mention` or dispatched by the orchestrator skills).
-- `.opencode/skills/<name>/SKILL.md` → the eight orchestrator skills
+- `.opencode/skills/<name>/SKILL.md` → the nine orchestrator skills
   (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
-  `triage-issues`, `simplify-sweep`, `describe-codebase`, `install-agents`),
+  `triage-issues`, `simplify-sweep`, `describe-codebase`, `plan-feature`,
+  `install-agents`),
   loaded on demand via opencode's `skill` tool.
 
 Both directories symlink to the canonical `agents/` and `skills/` at the repo
@@ -91,7 +92,7 @@ root, so there is a single source of truth.
 the repo root:
 
 ```
-# Global: symlink all 8 agents + 8 skills into ~/.config/opencode/
+# Global: symlink all 8 agents + 9 skills into ~/.config/opencode/
 ./scripts/install-opencode.sh
 
 # Project: copy into a specific project's .opencode/
@@ -205,6 +206,23 @@ scopes with `claude plugin list --json`. If the entry really is gone from
 ```
 claude plugin install agents-library@agents-library --scope user
 ```
+
+## The Feature Planning Skill
+
+[`/plan-feature`](skills/plan-feature/SKILL.md) turns a feature request into a
+plan grounded in the current repository before coding starts. It identifies
+reuse and integration points, maps acceptance criteria to tests, and produces
+an ordered checklist covering implementation, wiring, and relevant delivery
+risks. Missing test infrastructure becomes an explicit first step.
+
+For example: “Plan CSV export for the orders screen, following the existing
+permissions model. Include acceptance criteria and tests. Save the plan to
+`docs/plans/order-export.md`.”
+
+The default is a plan in chat; it writes a document when requested. It works
+without a remote or host-specific CLI and can investigate locally when
+subagents are unavailable. A request to plan and implement continues into
+implementation with the authorization already given.
 
 ## The PR Review Skill
 

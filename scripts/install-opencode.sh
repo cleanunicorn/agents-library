@@ -20,7 +20,7 @@ Options:
 
 name ...            Limit to specific agent and/or skill names (default: all)
 
-Defaults: --global --symlink.  Symlinks all 8 agents and 8 skills into
+Defaults: --global --symlink.  Symlinks all available agents and skills into
 ~/.config/opencode/ using absolute symlinks, so `git pull` in this repo
 updates every linked install.  Use --project for a self-contained copy in
 a specific project, or --copy anywhere files should not depend on this clone.
