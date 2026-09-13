@@ -124,6 +124,9 @@ Present these elements, combining them where the feature is small:
   feature in one PR; checklist steps are milestones, not separate dependent
   PRs. Propose a split only when a piece genuinely ships on its own, and say
   why in one line.
+  When the plan fixes a defect or a pattern, a step covers **every instance of
+  it in the repository**, not only the reported one — with the search that
+  found them as its evidence.
 - **Compatibility and delivery:** address only boundaries this change touches.
   For stored data or public contracts, include old/new compatibility, migration
   order, and recovery limitations. For irreversible changes, explain what a

@@ -139,6 +139,11 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 - Keep diffs focused: everything in the diff should serve that one change.
   Focused is about relevance, not size — don't ship half a feature to keep the
   diff short.
+- **Fix it everywhere.** When you fix a problem, search the repo for the same
+  problem — the *shape*, not the literal text — and fix every instance in the
+  same PR. One instance fixed while identical ones remain is an incomplete fix.
+  Confirm the scope first if the sweep passes ~10 instances or reaches
+  generated or vendored code.
 
 ### 4. Commit
 
@@ -208,6 +213,8 @@ Keep it short and useful:
 - **The gap**, for a bug fix: what was supposed to catch this, why it didn't,
   and what now would. Give it its own heading — it is the half of the fix a
   reviewer can't reconstruct from the diff.
+- **The sweep**, for any fix: the search you ran for other instances of the
+  problem, and its count — found, fixed, and left (with why).
 - **How to test** / what you ran ({{LINT_CMD}}, {{TEST_CMD}}, any extra gate).
 - **Linked issues**: `Closes #123` when it resolves one.
 - Screenshots for UI changes.

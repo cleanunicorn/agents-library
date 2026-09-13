@@ -60,7 +60,8 @@ not from your own preference.
 ### Bug fixes
 
 1. Reproduce the bug with a failing test FIRST. Do not attempt a fix before this.
-2. Then fix. Prove the fix with the test passing.
+2. Then fix — every instance, not just the one reported (see
+   [Fix it everywhere](#fix-it-everywhere)). Prove the fix with the test passing.
 3. **Close the gap that let it through.** A bug that reached a user got past
    whatever was supposed to stop it. Name that thing and fix it in the same PR.
    It is usually one of:
@@ -77,6 +78,26 @@ not from your own preference.
    much review attention as what changed.
 4. If the bug genuinely cannot be expressed as a test, say so explicitly and
    explain why.
+
+### Fix it everywhere
+
+The problem in front of you is rarely the only copy. When you find one — a
+bug, a hygiene gap, a stale doc, a pattern violation — before fixing it:
+
+1. Search the whole repository for the same problem. Search for the *shape*,
+   not the literal text: the pattern, the call, the rule a linter would apply.
+2. Fix every instance in the same PR, the same way. An instance that needs a
+   judgement call is listed in the PR as a follow-up, not forced. Confirm the
+   scope first if the sweep passes ~10 instances, or reaches generated code,
+   vendored dependencies, or anything the project says to ask about.
+3. Put the search and its count in the PR — the exact query, and
+   `7 found · 6 fixed · 1 left (needs a design call)`.
+
+A fix applied to one instance while identical ones remain is incomplete: the
+next contributor copies whichever one they find first. This is the instance
+twin of *Close the gap* above — that step widens the check, this one widens
+the fix. It does not license bundling: a *different* problem next door still
+gets its own PR.
 
 ### Feature work
 
@@ -254,7 +275,8 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
-  shared frontmatter fields, opencode link validation and regression tests,
+  shared frontmatter fields, the fix-everywhere contract
+  (`scripts/test-fix-everywhere.py`), opencode link validation and regression tests,
   installer smoke tests, and eval case validation (`--dry-run`). Requires
   Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs.
   These are repository contracts, not full host schema or arbitrary YAML

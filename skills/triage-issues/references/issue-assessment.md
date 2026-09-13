@@ -93,7 +93,10 @@ hours: how many files/layers would change, whether tests exist nearby to
 extend, whether the fix is local or ripples through callers and contracts.
 `easy-win` is a high bar — reserve it for issues where you can point at the
 spot and sketch the fix in a sentence, and the change stays within one or two
-files with test coverage nearby. A fix that touches a public contract, crosses
+files with test coverage nearby. Identical instances of the *same* defect
+count as one instance for containment — the fixer is required to sweep and
+fix them all — so a one-line bug repeated at six call sites is still an
+easy win, while six different bugs are not. A fix that touches a public contract, crosses
 layers, or requires a design decision is `larger` no matter how few lines it
 might be. Never call something an easy win from the issue text alone. And
 check whether someone is already on it: an assignee or a linked open PR means

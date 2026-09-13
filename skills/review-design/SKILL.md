@@ -153,7 +153,9 @@ Keep it skimmable — the user is choosing what to act on, not reading five essa
 
 Ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply.
+- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
+  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
+  and asks before editing anything outside the target you chose.
 - **(b) Autonomous loop (significant only)** — apply all 🔴/🟡 findings,
   re-review, repeat until convergence or the round cap. Skips 🟢 refinements
   (see loop rules).
@@ -170,12 +172,24 @@ For each accepted finding, in order:
    scale, and components**. Never inline a one-off value where a token exists,
    and never introduce a new color, font, or pattern to satisfy a finding; if no
    suitable token exists, note it and prefer the smallest in-system change.
-2. **Run the gate** — the project's lint and build commands from Phase 0. Where a
+2. **Fix every instance, not just the one found.** Search the whole
+   repository for the same problem — its *shape*, not the literal text (the
+   same off-scale value, the same failing color pair, the same mismatched
+   icon). Apply the same token-reusing fix wherever it is mechanical and safe,
+   in the same commit, and record the search and its count (`N found · N fixed
+   · N left`) in the commit body and in the round report. Two limits hold:
+   every swept view is checked like the original — re-verify contrast in each
+   theme it affects, and cut the sweep to the views you can actually verify;
+   and instances outside the reviewed surface are reported with their count and
+   edited only on the user's say-so — in the autonomous loop they are reported,
+   never auto-applied. A finding fixed on one view while identical ones remain
+   is not fixed.
+3. **Run the gate** — the project's lint and build commands from Phase 0. Where a
    finding touches contrast or a theme, re-verify the ratio in **every** theme it
    affects (light-mode ratios don't carry to dark).
-3. **Hold the gate hard.** If lint or the build goes red, fix it or revert that
+4. **Hold the gate hard.** If lint or the build goes red, fix it or revert that
    one finding. Never commit red.
-4. **Commit on the current branch** — one commit per finding, Conventional
+5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `fix(ui): …`,
    `style(banner): …`), scoped to the finding's lens. One commit per finding
    keeps the history reviewable and lets any single fix be reverted cleanly.

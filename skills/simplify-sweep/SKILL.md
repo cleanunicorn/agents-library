@@ -168,7 +168,9 @@ for path (b) to apply.
 
 Ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply.
+- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
+  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
+  and asks before editing anything outside the target you chose.
 - **(b) Autonomous loop** — apply all significant findings, re-scan, repeat until
   convergence or the round cap (see loop rules). On a whole-repo target this can
   run long: each round gates every fix and then re-surveys — say so before
@@ -180,11 +182,23 @@ Ask the user to choose one path:
 For each accepted finding, in order:
 
 1. **Apply the edit** to the working tree.
-2. **Run the gate** — the project's lint and test commands from Phase 0.
-3. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
+2. **Fix every instance, not just the one found.** Search the whole
+   repository for the same problem — its *shape*, not the literal text. Apply
+   the same simplification wherever it is mechanical and safe, in the same
+   commit, and record the search and its count (`N found · N fixed · N left`)
+   in the commit body and in the round report. Two limits hold: the Phase 1
+   exclusions apply to the sweep as well — never edit generated code, vendored
+   dependencies, lockfiles, minified bundles, or binaries, which the scan
+   surface filtered out for good reason; and instances outside the resolved
+   target are reported with their count and edited only on the user's say-so —
+   in the autonomous loop they are reported, never auto-applied. An instance
+   needing judgement is listed for the user instead of forced. A finding fixed
+   at one site while identical ones remain is not fixed.
+3. **Run the gate** — the project's lint and test commands from Phase 0.
+4. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
    finding. Never commit red. A simplification that breaks the build is worse
    than no simplification.
-4. **Commit on the current branch** — one commit per finding, Conventional
+5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `refactor(auth): …`,
    `docs(readme): …`), scoped to the finding's lens.
 
