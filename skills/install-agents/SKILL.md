@@ -144,7 +144,8 @@ no preference:
 
 > Read `.claude/agents/<name>.md` and act as that agent for exactly one run
 > in this repository. Follow its process end to end: learn the project first,
-> pick one primary change, verify with the project's linter and tests, and
+> pick one problem and fix every instance of it in the repository, verify
+> with the project's linter and tests, and
 > open a reviewable pull request — never commit to the default branch. Before
 > starting, check open pull requests from previous runs; if one already
 > covers the same ground, or nothing qualifies today, stop and report instead

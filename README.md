@@ -1,6 +1,6 @@
 # Agents Library
 
-A set of stack-agnostic, single-purpose coding agents. Each agent does **one small, focused, well-verified change per run** and opens a reviewable pull request — never committing directly to the main branch.
+A set of stack-agnostic, single-purpose coding agents. Each agent fixes **one problem per run — at every place it occurs in the repository —** verifies it, and opens a reviewable pull request — never committing directly to the main branch.
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
@@ -384,7 +384,8 @@ Install them into any project as weekly periodic agents with
 
 Every agent follows the same operating model:
 
-- **How Much to Do Per Run** — one *Primary* change, up to two closely-related same-kind changes, and an *"Also spotted"* report of everything else found but not touched.
+- **How Much to Do Per Run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
+- **Fix it everywhere** — the PR body reports the exact search run for other instances and its count (`N found · N fixed · N left`). A *different* problem, however close by, still gets its own PR.
 - **Learn the project first** — read the docs and copy the prevailing patterns; refactor *toward* the existing style, never toward a personal preference.
 - **Verify before committing** — run the project's linter and test suite; evidence before claims.
 - **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective.

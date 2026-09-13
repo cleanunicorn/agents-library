@@ -283,7 +283,9 @@ Two boundaries hold no matter what:
   code; this skill doesn't merge its own fixes.
 - **One issue, one PR.** A fixer that discovers its issue can't be fixed in
   isolation reports back instead of growing the PR to swallow neighboring
-  problems.
+  problems. The same bug at other call sites is not a neighboring problem —
+  it *is* the issue, so the fixer sweeps the repository for it and fixes every
+  instance in that one PR.
 
 ## Phase 6 — Summarize
 

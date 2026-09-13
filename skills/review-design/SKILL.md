@@ -170,12 +170,19 @@ For each accepted finding, in order:
    scale, and components**. Never inline a one-off value where a token exists,
    and never introduce a new color, font, or pattern to satisfy a finding; if no
    suitable token exists, note it and prefer the smallest in-system change.
-2. **Run the gate** — the project's lint and build commands from Phase 0. Where a
+2. **Fix every instance, not just the one found.** Search the whole repository
+   for the same problem — its *shape*, not the literal text (the same off-scale
+   value, the same failing color pair, the same mismatched icon) — and apply the
+   same fix to every instance where it is mechanical and safe, in the same
+   commit. Report the search and its count (`N found · N fixed · N left`); an
+   instance that needs judgement is listed for the user instead of forced. A
+   finding fixed on one view while identical ones remain elsewhere is not fixed.
+3. **Run the gate** — the project's lint and build commands from Phase 0. Where a
    finding touches contrast or a theme, re-verify the ratio in **every** theme it
    affects (light-mode ratios don't carry to dark).
-3. **Hold the gate hard.** If lint or the build goes red, fix it or revert that
+4. **Hold the gate hard.** If lint or the build goes red, fix it or revert that
    one finding. Never commit red.
-4. **Commit on the current branch** — one commit per finding, Conventional
+5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `fix(ui): …`,
    `style(banner): …`), scoped to the finding's lens. One commit per finding
    keeps the history reviewable and lets any single fix be reverted cleanly.

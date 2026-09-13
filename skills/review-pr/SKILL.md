@@ -217,15 +217,21 @@ Ask the user to choose one path:
 For each accepted finding, in order:
 
 1. **Apply the edit** to the working tree.
-2. **Close the finding's `gap` in the same commit** — widen the test, add the
+2. **Fix every instance, not just the one found.** Search the whole repository
+   for the same problem — its *shape*, not the literal text — and apply the same
+   fix to every instance where it is mechanical and safe, in the same commit.
+   Report the search and its count (`N found · N fixed · N left`); an instance
+   that needs judgement is listed for the user instead of forced. A finding
+   fixed at one site while identical ones remain elsewhere is not fixed.
+3. **Close the finding's `gap` in the same commit** — widen the test, add the
    lint rule, extend the check to the shape that slipped through. A defect fix
    that leaves the thing which missed it untouched will be needed again. If the
    gap genuinely can't be closed here, say so in the commit body.
-3. **Run the gate** — the project's lint and test commands from Phase 0.
-4. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
+4. **Run the gate** — the project's lint and test commands from Phase 0.
+5. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
    finding. Never commit red. A review that breaks the build is worse than no
    review.
-5. **Commit on the current branch** — one commit per finding, Conventional
+6. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`), scoped to the finding's domain.
    One commit per finding keeps the history reviewable and lets any single fix
    be reverted cleanly.

@@ -180,11 +180,18 @@ Ask the user to choose one path:
 For each accepted finding, in order:
 
 1. **Apply the edit** to the working tree.
-2. **Run the gate** — the project's lint and test commands from Phase 0.
-3. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
+2. **Fix every instance, not just the one found.** Search the whole repository
+   for the same problem — its *shape*, not the literal text — and apply the same
+   simplification to every instance where it is mechanical and safe, in the
+   same commit, even outside the surveyed target. Report the search and its
+   count (`N found · N fixed · N left`); an instance that needs judgement is
+   listed for the user instead of forced. A finding fixed at one site while
+   identical ones remain elsewhere is not fixed.
+3. **Run the gate** — the project's lint and test commands from Phase 0.
+4. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
    finding. Never commit red. A simplification that breaks the build is worse
    than no simplification.
-4. **Commit on the current branch** — one commit per finding, Conventional
+5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `refactor(auth): …`,
    `docs(readme): …`), scoped to the finding's lens.
 

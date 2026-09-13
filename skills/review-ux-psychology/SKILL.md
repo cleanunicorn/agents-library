@@ -283,14 +283,22 @@ For each accepted finding, in order:
    pricing component, its CTA button). Never invent a new pattern where one
    exists, and rest the change on a **true signal** (real progress, a real
    reference number, a real stake) — a fabricated one won't hold the metric.
-2. **Run the gate** — the project's lint and build commands from Phase 0. This is
+2. **Fix every instance, not just the one found.** Search the whole repository
+   for the same anti-pattern — its *shape*, not the literal text (the same blank
+   default in other forms, the same "Submit" CTA on other steps) — and apply the
+   same fix to every instance where it is a mechanical, in-pattern edit, in the
+   same commit. Report the search and its count (`N found · N fixed · N left`).
+   Structural instances follow the rule below: surface them, don't force them.
+   A finding fixed in one flow while identical ones remain elsewhere is not
+   fixed.
+3. **Run the gate** — the project's lint and build commands from Phase 0. This is
    a *doesn't-break-the-build* gate; it confirms the change is safe to ship. It
    **does not** prove the metric moved — that needs a real measurement. Carry each
    finding's `hypothesis` (metric + expected direction) into the commit so the
    change is set up to be validated (e.g. by an experiment) afterward.
-3. **Hold the gate hard.** If lint or the build goes red, fix it or revert that one
+4. **Hold the gate hard.** If lint or the build goes red, fix it or revert that one
    finding. Never commit red.
-4. **Commit on the current branch** — one commit per finding, Conventional Commits
+5. **Commit on the current branch** — one commit per finding, Conventional Commits
    style (`<type>(<scope>): <subject>`, e.g. `feat(onboarding): …`), scoped to the
    finding's lens, and mention the target metric in the body. One commit per
    finding keeps the history reviewable and lets any single change be reverted —

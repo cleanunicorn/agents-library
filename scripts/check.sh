@@ -19,6 +19,9 @@ done
 echo "Checking Claude/Codex plugin layout..."
 python3 scripts/test-plugin-layout.py
 
+echo "Checking every fix sweeps the whole repository..."
+python3 scripts/test-fix-everywhere.py
+
 bash scripts/check-opencode-sync.sh
 python3 scripts/test-check-opencode-sync.py
 bash scripts/test-install-opencode.sh
