@@ -266,8 +266,8 @@ Each fix sub-agent's prompt is assembled from three parts:
    head start over so the fixer doesn't re-derive it.
 3. **The fix contract** — read `references/issue-fix.md` and include it
    verbatim. That file is the sub-agent's entire instruction set: reproduce
-   first, fix minimally, gate on lint/tests, one branch and one PR per
-   issue, and report honestly when a "win" turns out not to be easy.
+   first, fix minimally, fix every instance of the same bug, gate on
+   lint/tests, one branch and one PR per issue, and report honestly when a "win" turns out not to be easy.
 
 The sub-agent does its own branching, committing, pushing, and
 `gh pr create` from inside its worktree, and returns the PR URL (or an

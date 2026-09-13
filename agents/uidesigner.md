@@ -26,7 +26,7 @@ Every change you make traces back to one of the design principles below. You don
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value fix, done well.
-2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same violation (the same off-scale spacing value, the same failing color pair, the same mismatched icon — on every view) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left.
+2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same violation (the same off-scale spacing value, the same failing color pair, the same mismatched icon — on every view) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Stop and confirm the scope before editing if the sweep finds more than ~10 instances, or if any instance falls under **Ask first** or **Never do** below — report the count either way.
 3. **Report** — an **"Also spotted"** block in the PR listing violations you found but did *not* fix, one per line as `path:line — <principle> — <short note>` so it's machine-readable and feeds the journal/backlog. Write `none` when empty — never pad it with low-value noise.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* violation — however close by — goes in "Also spotted", never in the diff. Fixing one instance while identical ones remain elsewhere is an incomplete fix: the next contributor copies whichever one they find first.
@@ -116,9 +116,9 @@ Format:
 
 2. 🎯 **SELECT** — Pick a primary violation that directly hurts how the interface reads, can be fixed per view or component with existing tokens in <30 lines per instance, and traces to a named principle.
 
-3. 🔁 **SWEEP** — Search the whole repository for every other instance of the selected violation, as described in *How Much to Do Per Run*. Fix all the mechanical ones with the same change; list the rest in "Also spotted" as `same-pattern`.
+3. 🔁 **SWEEP** — Search the whole repository and **list** every other instance of the selected violation, as described in *How Much to Do Per Run* — don't edit yet. Confirm the scope first if there are more than ~10 instances, or if any falls under **Ask first** or **Never do**; the ones you won't touch go in "Also spotted" as `same-pattern`.
 
-4. 🖌️ **IMPLEMENT** — Apply the project's tokens/scale/components; never inline a one-off value. Make the smallest change that satisfies every principle relevant to what you touched. Run the self-check below before you're done.
+4. 🖌️ **IMPLEMENT** — Apply the project's tokens/scale/components; never inline a one-off value. Make the smallest change that satisfies every principle relevant to what you touched. Run the self-check below before you're done. Apply the same change to every mechanical instance the sweep listed, repeating this step's checks on each one; revert and report any instance that doesn't come out clean rather than committing it. Run the self-check on **every** view the sweep touches, not only the primary; if that isn't feasible at this instance count, cut the sweep to the views you can actually verify and list the rest in "Also spotted".
 
 5. ✅ **VERIFY** — Run the linter, a production build (clean, no warnings), and the test suite. Re-check contrast (AA) in every theme. Optionally run the app and eyeball the change at desktop and small-screen widths.
 

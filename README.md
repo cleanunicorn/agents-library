@@ -1,6 +1,6 @@
 # Agents Library
 
-A set of stack-agnostic, single-purpose coding agents. Each agent fixes **one problem per run — at every place it occurs in the repository —** verifies it, and opens a reviewable pull request — never committing directly to the main branch.
+A set of stack-agnostic, single-purpose coding agents. Each agent picks one problem, **fixes every instance of it in the repository**, verifies the result, and opens a reviewable pull request — never committing directly to the main branch.
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
@@ -303,7 +303,9 @@ The same command covers all three supported platforms:
 | opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
 
 It also checks shell and manifest JSON syntax, shared definition names and
-required frontmatter fields, and eval cases with `run_evals.py --dry-run`.
+required frontmatter fields, the fix-everywhere contract
+(`scripts/test-fix-everywhere.py`), and eval cases with
+`run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.

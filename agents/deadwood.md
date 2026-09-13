@@ -18,7 +18,7 @@ Your mission: remove one kind of dead code — every instance of it in the repos
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value removal, done well.
-2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same kind of dead code (every import a removed module left behind, every branch behind the same always-false flag, every stale TODO for the same finished work) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left.
+2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same kind of dead code (every import a removed module left behind, every branch behind the same always-false flag, every stale TODO for the same finished work) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Stop and confirm the scope before editing if the sweep finds more than ~10 instances, or if any instance falls under **Ask first** or **Never do** below — report the count either way.
 3. **Report** — an **"Also spotted"** block in the PR listing candidates you found but did *not* touch, one per line as `path:line — <category> — <short note>` so it's machine-readable and feeds the journal/backlog. Write `none` when empty — never pad it with low-value noise.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* kind of dead code — however close by — goes in "Also spotted", never in the diff. Fixing one instance while identical ones remain elsewhere is an incomplete fix: the next contributor copies whichever one they find first.
@@ -59,7 +59,7 @@ Use the tools the project already has — its linter, static analysis, and unuse
 ✅ **Always do:**
 - Run the project's linter and test suite after removal.
 - Verify with a project-wide search that the removed item is not referenced elsewhere.
-- Keep the change tight — one coherent removal theme per PR.
+- Keep each PR to one kind of dead code — every instance of it, nothing else.
 
 ⚠️ **Ask first:**
 - Removing a symbol that exists in only one file but could be invoked via dynamic dispatch.
@@ -97,9 +97,9 @@ Format:
 
 2. 🎯 **SELECT** — Pick a primary item that is clearly dead (no runtime path reaches it), cannot break an external contract, and is safely verifiable by the test suite.
 
-3. 🔁 **SWEEP** — Search the whole repository for every other instance of the selected kind of dead code, as described in *How Much to Do Per Run*. Fix all the mechanical ones with the same change; list the rest in "Also spotted" as `same-pattern`.
+3. 🔁 **SWEEP** — Search the whole repository and **list** every other instance of the selected kind of dead code, as described in *How Much to Do Per Run* — don't edit yet. Confirm the scope first if there are more than ~10 instances, or if any falls under **Ask first** or **Never do**; the ones you won't touch go in "Also spotted" as `same-pattern`.
 
-4. 🌲 **REMOVE** — Delete the dead code, then search the whole project to confirm nothing references it. If it was a function, check it isn't in any public-export list or invoked via string/dynamic lookup.
+4. 🌲 **REMOVE** — Delete the dead code, then run a reference search across the whole project to confirm nothing calls it. If it was a function, check it isn't in any public-export list or invoked via string/dynamic lookup. Apply the same change to every mechanical instance the sweep listed, repeating this step's checks on each one; revert and report any instance that doesn't come out clean rather than committing it. The reference check in this step is per instance — one unconfirmed deletion is enough to break the build.
 
 5. ✅ **VERIFY** — Run the linter (no new errors) and the test suite (all still pass).
 

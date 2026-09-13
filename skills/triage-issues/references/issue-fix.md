@@ -35,13 +35,19 @@ or bail out if honoring it would grow the change.
    don't skip silently.
 3. **Fix minimally.** The smallest change that makes the test pass and reads
    like the surrounding code. Resist "while I'm here" improvements — every
-   extra hunk is review burden on someone else's queue.
+   extra hunk is review burden on someone else's queue. The same bug at its
+   other call sites is not "while I'm here"; that is step 4. A *different*
+   problem is.
 4. **Fix every instance.** The reported site is rarely the only copy. Search
    the whole repository for the same bug — its *shape*, not the literal text
    (the same unchecked call, the same off-by-one comparison) — and apply the
    same fix to every instance, covering them with the test from step 2 where
    it generalizes. An instance that needs a design decision goes in the PR
-   body as a follow-up, not into the diff.
+   body as a follow-up, not into the diff. Sweeping never triggers a bail-out
+   on its own, but an instance that crosses a layer or touches a public
+   contract still does — leave those as follow-ups. If the sweep would take
+   the PR past ~10 files, fix the reported site, list the rest, and say so:
+   a 60-file PR from a bot is a cost to the maintainer, not a gift.
 5. **Gate on the project's checks.** Run the lint and test commands you were
    given (or that the project's docs name). Green is the price of opening a
    PR. If you can't get green and the cause isn't yours (the suite was

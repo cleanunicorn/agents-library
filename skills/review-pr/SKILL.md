@@ -201,7 +201,9 @@ skimmable — the user is choosing what to act on, not reading ten essays.
 
 Ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply.
+- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
+  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
+  and asks before editing anything outside the target you chose.
 - **(b) Autonomous loop (significant only)** — apply all verified 🔴/🟡 findings,
   re-review, repeat until convergence or the round cap. Skips 🟢 nice-to-haves
   (see loop rules).
@@ -217,12 +219,19 @@ Ask the user to choose one path:
 For each accepted finding, in order:
 
 1. **Apply the edit** to the working tree.
-2. **Fix every instance, not just the one found.** Search the whole repository
-   for the same problem — its *shape*, not the literal text — and apply the same
-   fix to every instance where it is mechanical and safe, in the same commit.
-   Report the search and its count (`N found · N fixed · N left`); an instance
-   that needs judgement is listed for the user instead of forced. A finding
-   fixed at one site while identical ones remain elsewhere is not fixed.
+2. **Fix every instance, not just the one found.** Search the whole
+   repository for the same problem — its *shape*, not the literal text. This is
+   a grep, not a second review fan-out. Apply the same fix wherever it is
+   mechanical and safe, in the same commit, and record the search and its count
+   (`N found · N fixed · N left`) in the commit body and in the round report.
+   Two limits hold: a swept site earns the same scrutiny Phase 2 gave the
+   original — open it and confirm the problem is really there and the fix is
+   safe *there*, because a verdict confirmed at one location does not carry to
+   forty; and instances outside the review target (the branch diff) are
+   reported with their count and edited only on the user's say-so — in the
+   autonomous loop they are reported, never auto-applied. An instance needing
+   judgement is listed for the user instead of forced. A finding fixed at one
+   site while identical ones remain is not fixed.
 3. **Close the finding's `gap` in the same commit** — widen the test, add the
    lint rule, extend the check to the shape that slipped through. A defect fix
    that leaves the thing which missed it untouched will be needed again. If the

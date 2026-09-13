@@ -87,7 +87,9 @@ bug, a hygiene gap, a stale doc, a pattern violation — before fixing it:
 1. Search the whole repository for the same problem. Search for the *shape*,
    not the literal text: the pattern, the call, the rule a linter would apply.
 2. Fix every instance in the same PR, the same way. An instance that needs a
-   judgement call is listed in the PR as a follow-up, not forced.
+   judgement call is listed in the PR as a follow-up, not forced. Confirm the
+   scope first if the sweep passes ~10 instances, or reaches generated code,
+   vendored dependencies, or anything the project says to ask about.
 3. Put the search and its count in the PR — the exact query, and
    `7 found · 6 fixed · 1 left (needs a design call)`.
 
@@ -273,7 +275,8 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   the file(s) and add a README entry. No manifest edit needed.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
-  shared frontmatter fields, opencode link validation and regression tests,
+  shared frontmatter fields, the fix-everywhere contract
+  (`scripts/test-fix-everywhere.py`), opencode link validation and regression tests,
   installer smoke tests, and eval case validation (`--dry-run`). Requires
   Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs.
   These are repository contracts, not full host schema or arbitrary YAML

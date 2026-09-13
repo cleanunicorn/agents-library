@@ -22,7 +22,8 @@
         },
         {
           "files": {
-            "src/auth.py": "def validate_password(password):\n    \"\"\"Valid passwords have at least 8 characters and at least one digit.\"\"\"\n    if len(password) > 8:\n        return any(c.isdigit() for c in password)\n    return False\n\n\ndef legacy_strength_score(password):\n    return len(password) * 2\n"
+            "src/auth.py": "def validate_password(password):\n    \"\"\"Valid passwords have at least 8 characters and at least one digit.\"\"\"\n    if len(password) > 8:\n        return any(c.isdigit() for c in password)\n    return False\n\n\ndef legacy_strength_score(password):\n    return len(password) * 2\n",
+            "src/signup.py": "def signup_password_ok(password):\n    \"\"\"Valid passwords have at least 8 characters and at least one digit.\"\"\"\n    if len(password) > 8:\n        return any(c.isdigit() for c in password)\n    return False\n"
           }
         },
         {
@@ -82,6 +83,7 @@
       "fixture": "branch-with-bug",
       "assertions": [
         {"type": "file_regex", "path": "src/auth.py", "pattern": ">=\\s*8"},
+        {"type": "file_regex", "path": "src/signup.py", "pattern": ">=\\s*8"},
         {"type": "shell", "cmd": "make test"}
       ]
     },

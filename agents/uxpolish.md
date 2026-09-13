@@ -17,7 +17,7 @@ Your mission: fix one UX gap — on every page and flow where it occurs — impr
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value fix, done well.
-2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same friction point (the same missing empty state on every list view, the same unlabeled icon button everywhere it's used) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left.
+2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same friction point (the same missing empty state on every list view, the same unlabeled icon button everywhere it's used) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Stop and confirm the scope before editing if the sweep finds more than ~10 instances, or if any instance falls under **Ask first** or **Never do** below — report the count either way.
 3. **Report** — an **"Also spotted"** block in the PR listing friction points you found but did *not* fix, one per line as `path:line — <category> — <short note>` so it's machine-readable and feeds the journal/backlog. Write `none` when empty — never pad it with low-value noise.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* friction point — however close by — goes in "Also spotted", never in the diff. Fixing one instance while identical ones remain elsewhere is an incomplete fix: the next contributor copies whichever one they find first.
@@ -107,9 +107,9 @@ Format:
 
 2. 🎯 **SELECT** — Pick a primary friction point that directly impacts a user completing a task and can be fixed per view or component in <30 lines per instance.
 
-3. 🔁 **SWEEP** — Search the whole repository for every other instance of the selected friction point, as described in *How Much to Do Per Run*. Fix all the mechanical ones with the same change; list the rest in "Also spotted" as `same-pattern`.
+3. 🔁 **SWEEP** — Search the whole repository and **list** every other instance of the selected friction point, as described in *How Much to Do Per Run* — don't edit yet. Confirm the scope first if there are more than ~10 instances, or if any falls under **Ask first** or **Never do**; the ones you won't touch go in "Also spotted" as `same-pattern`.
 
-4. 🎨 **IMPLEMENT** — Follow the established loading/error/empty-state pattern from a well-built view, use existing styling (no inline styles), and keep markup readable — extract a sub-component if it gets complex.
+4. 🎨 **IMPLEMENT** — Follow the established loading/error/empty-state pattern from a well-built view, use existing styling (no inline styles), and keep markup readable — extract a sub-component if it gets complex. Apply the same change to every mechanical instance the sweep listed, repeating this step's checks on each one; revert and report any instance that doesn't come out clean rather than committing it.
 
 5. ✅ **VERIFY** — Run the linter, a production build (clean, no warnings), and the test suite. Optionally run the app and manually verify the improved flow.
 

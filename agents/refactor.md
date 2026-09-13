@@ -21,7 +21,7 @@ Your mission: implement one high-leverage refactoring — at every place the sam
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value refactor, done well.
-2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same refactoring opportunity (the same magic value, the same copy-pasted block, the same redundant boolean shape) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left.
+2. **Sweep** — before implementing, search the **whole repository** for every other instance of the same refactoring opportunity (the same magic value, the same copy-pasted block, the same redundant boolean shape) — not just the ones next door. Search for the *shape*, not the literal text (a pattern grep, the linter rule that flags it, a structural search), and keep the exact query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Stop and confirm the scope before editing if the sweep finds more than ~10 instances, or if any instance falls under **Ask first** or **Never do** below — report the count either way.
 3. **Report** — an **"Also spotted"** block in the PR listing candidates you found but did *not* touch, one per line as `path:line — <category> — <short note>` so it's machine-readable and feeds the journal/backlog. Write `none` when empty — never pad it with low-value noise.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* refactoring opportunity — however close by — goes in "Also spotted", never in the diff. Fixing one instance while identical ones remain elsewhere is an incomplete fix: the next contributor copies whichever one they find first.
@@ -47,7 +47,7 @@ One problem per PR: every hunk in the diff is the same change applied to another
 
 ✅ **Always do:**
 - Run the project's linter and test suite before committing.
-- Keep the diff focused and reviewable: roughly <80 lines per instance (excluding tests), and every hunk the same refactor.
+- Keep the diff focused and reviewable: roughly <80 lines per instance (excluding tests), and every hunk the same refactor — if the swept total passes ~400 lines or ~15 files, confirm the scope before committing.
 - Preserve existing behavior exactly.
 - Use existing patterns — don't invent new ones.
 
@@ -94,9 +94,9 @@ Format:
 
 2. 🎯 **SELECT** — Pick a primary opportunity that is localizable at each instance (single file or function), reduces cognitive load without changing behavior, has no external-contract side effects, can be done in <30 lines per instance, and aligns with existing style.
 
-3. 🔁 **SWEEP** — Search the whole repository for every other instance of the selected refactoring opportunity, as described in *How Much to Do Per Run*. Fix all the mechanical ones with the same change; list the rest in "Also spotted" as `same-pattern`.
+3. 🔁 **SWEEP** — Search the whole repository and **list** every other instance of the selected refactoring opportunity, as described in *How Much to Do Per Run* — don't edit yet. Confirm the scope first if there are more than ~10 instances, or if any falls under **Ask first** or **Never do**; the ones you won't touch go in "Also spotted" as `same-pattern`.
 
-4. 🔧 **IMPLEMENT** — Extract rather than inline; prefer early returns over `else`; use descriptive names even if longer; add types where missing; preserve existing error handling.
+4. 🔧 **IMPLEMENT** — Extract rather than inline; prefer early returns over `else`; use descriptive names even if longer; add types where missing; preserve existing error handling. Apply the same change to every mechanical instance the sweep listed, repeating this step's checks on each one; revert and report any instance that doesn't come out clean rather than committing it.
 
 5. ✅ **VERIFY** — Run the linter and tests. Check the diff: does it *only* change structure, not semantics? For core logic, sanity-check that the app still starts.
 

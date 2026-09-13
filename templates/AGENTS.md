@@ -142,6 +142,8 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 - **Fix it everywhere.** When you fix a problem, search the repo for the same
   problem — the *shape*, not the literal text — and fix every instance in the
   same PR. One instance fixed while identical ones remain is an incomplete fix.
+  Confirm the scope first if the sweep passes ~10 instances or reaches
+  generated or vendored code.
 
 ### 4. Commit
 

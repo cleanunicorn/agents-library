@@ -258,7 +258,9 @@ product decisions** vs. **mechanical edits** (see Phase 4). Keep it skimmable.
 
 Ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply.
+- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
+  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
+  and asks before editing anything outside the target you chose.
 - **(b) Autonomous loop (significant only)** — apply all verified 🔴/🟡 findings,
   re-review, repeat until convergence or the round cap. Skips 🟢 refinements
   (see loop rules).
@@ -283,14 +285,20 @@ For each accepted finding, in order:
    pricing component, its CTA button). Never invent a new pattern where one
    exists, and rest the change on a **true signal** (real progress, a real
    reference number, a real stake) — a fabricated one won't hold the metric.
-2. **Fix every instance, not just the one found.** Search the whole repository
-   for the same anti-pattern — its *shape*, not the literal text (the same blank
-   default in other forms, the same "Submit" CTA on other steps) — and apply the
-   same fix to every instance where it is a mechanical, in-pattern edit, in the
-   same commit. Report the search and its count (`N found · N fixed · N left`).
-   Structural instances follow the rule below: surface them, don't force them.
-   A finding fixed in one flow while identical ones remain elsewhere is not
-   fixed.
+2. **Fix every instance, not just the one found.** Search the whole
+   repository for the same anti-pattern — its *shape*, not the literal text
+   (the same blank default in other forms, the same "Submit" CTA on other
+   steps). Apply the same fix wherever it is a mechanical, in-pattern edit, in
+   the same commit as its finding so each change stays revertible and
+   A/B-testable, and record the search and its count (`N found · N fixed · N
+   left`) in the commit body and in the round report. Three limits hold: each
+   swept instance must rest on a **true signal in its own flow** — a default
+   that is right for checkout may be wrong for an admin form, and a destructive
+   or payment field is never swept blind; structural instances follow the rule
+   below, surfaced and not forced; and instances outside the reviewed flow are
+   reported with their count and edited only on the user's say-so — in the
+   autonomous loop they are reported, never auto-applied. A finding fixed in
+   one flow while identical ones remain is not fixed.
 3. **Run the gate** — the project's lint and build commands from Phase 0. This is
    a *doesn't-break-the-build* gate; it confirms the change is safe to ship. It
    **does not** prove the metric moved — that needs a real measurement. Carry each
