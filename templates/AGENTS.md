@@ -8,6 +8,12 @@ its own: the concrete commands, the layering, the conventions that aren't
 written down, and the project-specific gotchas. Keep it short and factual —
 this is a map, not a tutorial. If something is obvious from a glance at the
 code, leave it out.
+
+Every instruction here costs context on every task, and several different
+models will read it. Keep what an agent cannot infer and what it must not do;
+drop what a capable agent already does on its own (reading the code it needs,
+running the tests). Give the reason behind each rule rather than tuning its
+wording to one model: a rule with no reason is either ignored or over-applied.
 -->
 
 # {{PROJECT_NAME}} — Agent guide
@@ -19,9 +25,9 @@ for a change. State the working model up front — e.g. "This project follows
 GitHub flow: `{{DEFAULT_BRANCH}}` is always releasable, all work happens on
 short-lived branches, and every change lands through a reviewed pull request."}}
 
-Read [README.md](README.md) for setup{{, and [ARCHITECTURE.md](ARCHITECTURE.md)
-for the full design}}. This file is the operational checklist for *how to work*
-here.
+Use [README.md](README.md) for setup{{, and [ARCHITECTURE.md](ARCHITECTURE.md)
+when a change crosses a service or layer boundary}}. This file says how work
+lands here and what done looks like.
 
 ## Prerequisites
 
@@ -56,7 +62,10 @@ it as the single source of truth (see Golden rules).
   see [End-to-end tests](#end-to-end-tests-playwright)}}
 - **Build:** `{{BUILD_CMD}}`
 
-Always run the linter and the test suite before opening a PR.
+{{SAFE TO RUN UNATTENDED — e.g. "Lint, format, type-check, test, and build use
+disposable fixtures and touch nothing shared. Run them as often as needed, fix
+what your change broke, and rerun without asking." Name any command that does
+hit a shared or live resource, so the agent checks in before that one only.}}
 
 ## Golden rules
 
@@ -67,8 +76,8 @@ real damage or break an invariant an agent can't see from the code.
    {{If it's protected and/or merging ships something, say so here — e.g. "it is
    the release branch; merging auto-publishes a release."}}
 2. **Never force-push a shared branch.**
-3. **Keep `{{DEFAULT_BRANCH}}` green.** Run the checks locally before opening a
-   PR (see [Run the checks](#5-run-the-checks-locally)).
+3. **Keep `{{DEFAULT_BRANCH}}` green.** The checks in
+   [Run the checks](#5-run-the-checks-locally) mirror CI.
 4. **Use the project's task runner.** `{{TASK_RUNNER}}` ({{e.g. `make`, npm
    scripts}}) is the single source of the dev flow — don't hand-roll the
    underlying commands. If the flow needs to change, change the runner so
@@ -85,9 +94,35 @@ real damage or break an invariant an agent can't see from the code.
    dependencies without a good reason" / "Business logic never reads env
    directly; config flows through `config/`."}}
 
+## What done looks like
+
+A change is done when {{e.g. "its code, tests, docs, and wiring are in one PR,
+the checks pass locally, the PR is open against `{{DEFAULT_BRANCH}}`, and CI is
+green"}}. The first working implementation is not a stopping point: if the task
+includes running the result, inspecting it, and fixing what fails, that is part
+of the task — do it rather than returning for review.
+
+{{Name any stage that needs a person in the loop, and why — e.g. "a schema
+migration is reviewed before it is applied to staging". Everything else runs
+through to the end.}}
+
+## Decision boundaries
+
+What is safe here, and what genuinely needs a person. Write the risk behind each
+line, not just "ask first": a rule with no reason stops work you would want
+continued, or gets ignored.
+
+- **Safe without asking:** {{e.g. "running the full check suite, deleting local
+  worktrees, regenerating fixtures with `{{FIXTURE_CMD}}`"}}
+- **Needs a person, and why:** {{e.g. "anything under `migrations/` — applied
+  to shared staging on merge"; "the public API in `api/` — external clients
+  pin its shapes"}}. In an unattended run there is nobody to ask: leave that
+  part out of the diff and list it in the PR with the reason.
+- **Never:** see [Golden rules](#golden-rules).
+
 ## Communication
 
-- Always explain the reasoning behind decisions and approaches.
+- Explain the reasoning behind decisions and approaches.
 - When claiming something works or is fixed, prove it — a passing test, a
   script that validates the behavior, or a clear explanation of why. Don't just
   assert.
@@ -142,8 +177,9 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 - **Fix it everywhere.** When you fix a problem, search the repo for the same
   problem — the *shape*, not the literal text — and fix every instance in the
   same PR. One instance fixed while identical ones remain is an incomplete fix.
-  Confirm the scope first if the sweep passes ~10 instances or reaches
-  generated or vendored code.
+  Stop at generated or vendored code and list those instead. A large count is
+  not a reason to stop when every hunk is the same change — put the count up
+  front so the reviewer sees the scale.
 
 ### 4. Commit
 
@@ -167,7 +203,7 @@ characters and explain the *why* in the body when it isn't obvious.
 
 ### 5. Run the checks locally
 
-Do not open a PR with these failing — they mirror what CI runs:
+These mirror what CI runs:
 
 ```bash
 {{LINT_CMD}}
@@ -400,8 +436,11 @@ Short hazards that genuinely need no recipe can stay one-liners:
 When an incident produces a rule, add it here in the same PR that fixes the
 incident — that is when the mechanism is still understood.
 
-## Start here
+## Where to look
 
-The fastest path to understanding this codebase:
+Point at files by the question they answer, so an agent reads what its task
+needs and nothing more — never "read these before every change".
 
-{{FILE_1}} → {{FILE_2}} → {{FILE_3}}
+- `{{FILE_1}}` — {{e.g. "service boundaries and who may call whom"}}
+- `{{FILE_2}}` — {{e.g. "the schema, and how a migration is written"}}
+- `{{FILE_3}}` — {{e.g. "how a release is cut"}}
