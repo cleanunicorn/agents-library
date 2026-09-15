@@ -98,7 +98,8 @@ real damage or break an invariant an agent can't see from the code.
 
 A change is done when {{e.g. "its code, tests, docs, and wiring are in one PR,
 the checks pass locally, the PR is open against `{{DEFAULT_BRANCH}}`, and CI is
-green"}}. The first working implementation is not a stopping point: if the task
+green" — or, for a request that ends at a patch, "the branch is committed and
+reported"}}. The first working implementation is not a stopping point: if the task
 includes running the result, inspecting it, and fixing what fails, that is part
 of the task — do it rather than returning for review. A read-only request
 (explain, review, diagnose) is done when the report is delivered.
@@ -119,8 +120,9 @@ continued, or gets ignored.
 - **Needs confirmation unless already authorized, and why:** {{e.g. "anything
   under `migrations/` — applied to shared staging on merge"; "the public API
   in `api/` — external clients pin its shapes"}}. A request that already
-  covers it is the confirmation. In an unattended run there is nobody to ask:
-  leave that part unchanged and list it in the PR with the reason.
+  covers it is the confirmation. Without it, in an unattended run there is
+  nobody to ask: leave that part unchanged and list it in the PR with the
+  reason.
 - **Never:** see [Golden rules](#golden-rules).
 
 ## Communication

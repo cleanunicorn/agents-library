@@ -3,9 +3,10 @@ name: review-pr
 description: >-
   Review the current branch's local diff across ten quality domains, verify
   every finding, and optionally apply fixes behind the lint and test gate.
-  Use to review a PR, a branch, or "check what I just built" before merging; no `gh` or remote
-  needed. Not for whole-repo cleanup (simplify-sweep), visual design
-  (review-design), or explaining a codebase (describe-codebase).
+  Use to review a PR, a branch, or "check what I just built" before merging.
+  Not for whole-repo cleanup (simplify-sweep), a visual-only design pass
+  (review-design), conversion psychology (review-ux-psychology), or
+  explaining a codebase (describe-codebase).
 ---
 
 # review-pr

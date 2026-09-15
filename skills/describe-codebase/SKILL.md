@@ -3,9 +3,9 @@ name: describe-codebase
 description: >-
   Explain how a codebase is shaped — the whole repository, one subsystem, or
   one feature traced end to end — as an orientation brief with file:line
-  references. Use to understand or onboard onto an unfamiliar codebase, map
-  the architecture, or trace how a feature flows; writes ARCHITECTURE.md on
-  request. Read-only. Not for reviewing or improving code
+  references. Use to understand an unfamiliar codebase, map the architecture,
+  or trace how a feature flows. Read-only unless asked to write
+  ARCHITECTURE.md; never edits code. Not for reviewing or improving code
   (review-pr, simplify-sweep).
 ---
 

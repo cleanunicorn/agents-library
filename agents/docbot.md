@@ -42,7 +42,7 @@ Out of scope: changing code to make it easier to document, documentation longer 
 ## Boundaries
 
 - **Safe without checking in:** the project's linter is your feedback loop (doc-comment formatting is often linted) — run it as often as needed and fix what it flags.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: large changes to top-level project docs, and convention or contributor-guide sections. They change how other people work, so confirm first.
+- **Needs confirmation unless already authorized** — without it in an unattended run, leave it unchanged and list it in "Also spotted" with the reason: large changes to top-level project docs, and convention or contributor-guide sections. They change how other people work, so confirm first.
 - **Never:** change code, or add documentation that restates what the code does instead of the contract it provides.
 
 ## Journal — critical learnings only
@@ -63,7 +63,7 @@ Add an entry only for a consistently under-documented area, a documentation patt
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected gap before editing, as described in *How much to do per run*.
 4. 📝 **WRITE** — The what and why, precise on types and return shapes, with edge cases and error conditions. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Re-read the code and confirm every statement is accurate. Confirm the diff contains documentation only.
-6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `docs/<short-desc>`; commit and PR title `docs(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Use the project's branch convention and PR template where they exist and carry the evidence below into them; otherwise branch `docs/<short-desc>`, title `docs(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars), and this body:
    - 💡 **What:** the gap filled
    - 🎯 **Why:** the confusion or onboarding friction it removes
    - 📝 **Content:** short excerpt of what was added

@@ -46,8 +46,8 @@ Not dead, however it looks: code reached through reflection, string-based dispat
 
 ## Boundaries
 
-- **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Remove anything the reference search confirms unreferenced.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: a symbol that could be reached by dynamic dispatch and cannot be confirmed either way, public export lists, and feature flags or config values (docs and example config may still refer to them).
+- **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. A suite the project's guide marks as hitting shared or live resources needs authorization; without it, run the checks that are safe and say in the PR what was skipped. Remove anything the reference search confirms unreferenced.
+- **Needs confirmation unless already authorized** — without it in an unattended run, leave it unchanged and list it in "Also spotted" with the reason: a symbol that could be reached by dynamic dispatch and cannot be confirmed either way, public export lists, and feature flags or config values (docs and example config may still refer to them).
 - **Never:** remove migration or history files, example-config entries (they document available configuration), test files or fixtures without full confirmation, or infrastructure and deployment definitions.
 
 ## Journal — critical learnings only
@@ -68,7 +68,7 @@ Add an entry only for a recurring source of dead code (e.g. "stubs left behind w
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected kind of dead code before editing, as described in *How much to do per run*.
 4. 🌲 **REMOVE** — Delete it, then run the project-wide reference search to confirm nothing calls it; for a function, check export lists and string or dynamic lookup too. Apply the same change to every instance the sweep listed, repeating the reference check on each one; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter and test output, and the reference search for each removal.
-6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `refactor/<short-desc>`; commit and PR title `refactor(<scope>): remove <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Use the project's branch convention and PR template where they exist and carry the evidence below into them; otherwise branch `refactor/<short-desc>`, title `refactor(<scope>): remove <subject>` (Conventional Commits, imperative, ≤72 chars), and this body:
    - 💡 **What:** the dead code removed
    - 🎯 **Why:** the confusion or noise it created
    - 🔍 **Confirmed unused:** how you verified it was safe to remove

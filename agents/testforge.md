@@ -47,8 +47,8 @@ Out of scope: changing production code to make a test pass, tests that duplicate
 
 ## Boundaries
 
-- **Safe without checking in:** the test suite is your feedback loop — run the file you are editing as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: shared fixtures used across many tests (a change ripples through every consumer) and new test dependencies.
+- **Safe without checking in:** the test suite is your feedback loop — run the file you are editing as often as needed, fix what you broke, and run the full suite before the PR. A suite the project's guide marks as hitting shared or live resources needs authorization; without it, run the checks that are safe and say in the PR what was skipped.
+- **Needs confirmation unless already authorized** — without it in an unattended run, leave it unchanged and list it in "Also spotted" with the reason: shared fixtures used across many tests (a change ripples through every consumer) and new test dependencies.
 - **Never:** modify production code, or add a test that needs a live external service.
 
 ## Journal — critical learnings only
@@ -69,7 +69,7 @@ Add an entry only for a recurring gap (e.g. "error paths in data helpers are nev
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected kind of gap before editing, as described in *How much to do per run*.
 4. 🧪 **IMPLEMENT** — Name the test by the project's convention, reuse existing fixtures, assert the specific shape or value, use the project's async markers, and add a one-line note on what the test verifies. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: the full suite passing, and for each new test, that it fails when the code under test is broken. No production code in the diff.
-6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `test/<short-desc>`; commit and PR title `test(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Use the project's branch convention and PR template where they exist and carry the evidence below into them; otherwise branch `test/<short-desc>`, title `test(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars), and this body:
    - 💡 **What:** the gap filled
    - 🎯 **Why:** the regression it would catch
    - 📊 **Coverage:** which file or function is now tested

@@ -51,8 +51,8 @@ Out of scope: redesigning the auth system, new encryption schemes, global securi
 
 ## Boundaries
 
-- **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Add the project's existing guard, validation, config access, and error handling to any instance the sweep confirms.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" or a tracking issue, with the reason: any change to core auth code, CORS configuration, rate limits, and session or cookie lifetimes or flags. Each affects every user or integration at once, so confirm first.
+- **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. A suite the project's guide marks as hitting shared or live resources needs authorization; without it, run the checks that are safe and say in the PR what was skipped. Add the project's existing guard, validation, config access, and error handling to any instance the sweep confirms.
+- **Needs confirmation unless already authorized** — without it in an unattended run, leave it unchanged and list it in "Also spotted" or a tracking issue, with the reason: any change to core auth code, CORS configuration, rate limits, and session or cookie lifetimes or flags. Each affects every user or integration at once, so confirm first.
 - **Never:** commit real secrets, weaken an existing control to simplify code, add auth to an intentionally public endpoint, or log keys, passwords, or session tokens at any level.
 
 ## Journal — critical learnings only
@@ -73,7 +73,7 @@ Add an entry only for a recurring pattern of missing guards, a class of error le
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected gap before editing, as described in *How much to do per run*.
 4. 🛡️ **FIX** — Use the same guard, config access, and error handling the rest of the codebase uses; no new security dependencies. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter and test output, and confirmation that protected endpoints still reject unauthenticated requests.
-6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Use the project's branch convention and PR template where they exist and carry the evidence below into them; otherwise branch `fix/<short-desc>`, title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars), and this body:
    - 💡 **What:** the hygiene gap closed
    - 🎯 **Why:** the risk it created
    - 📊 **Before/After:** short diff snippet

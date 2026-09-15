@@ -152,7 +152,9 @@ gets its own PR.
 
 Define done before starting, and work to it. For an implementation request,
 done means the change is implemented, wired, tested, and documented, the checks
-are green, and the PR is open — not that the first implementation compiles. A
+are green, and it is delivered at the terminal state the workflow calls for — a
+PR where the project or the request asks for one, otherwise a committed branch
+— not that the first implementation compiles. A
 read-only request (explain, diagnose, review) is done when the report is
 delivered, and a terminal state the user named ("stop after the plan") wins
 over both. If the request includes getting the result running, inspecting it,
@@ -171,13 +173,15 @@ ignored.
 - **Safe by default:** the project's linter, formatter, type-checker, and test
   suite are the feedback loop. Run them as often as needed, fix what your
   change broke, and rerun without checking in. A project-specific section
-  names any suite that touches a shared or live resource.
+  names any suite that touches a shared or live resource; that one needs
+  authorization, and without it you run what is safe and report what was
+  skipped.
 - **Needs confirmation unless already authorized:** external contracts
   (public API paths and shapes, serialized field names, stored data), anything
   the project lists as ask-first, and destructive or hard-to-reverse actions.
   A request that already covers it ("rename the endpoint too") is the
-  confirmation. In an unattended run there is nobody to ask: leave that
-  instance unchanged and list it in the PR with the reason.
+  confirmation. Without it, in an unattended run there is nobody to ask:
+  leave that instance unchanged and list it in the PR with the reason.
 - **Never:** the Security section below, and whatever the project marks as
   such.
 

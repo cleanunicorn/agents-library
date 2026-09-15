@@ -55,8 +55,8 @@ Out of scope: API request or response shapes, new features, pages, or data field
 
 ## Boundaries
 
-- **Safe without checking in:** the linter, the production build, and the tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite and build before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Change presentation and feedback on any view the sweep lists, following the established patterns.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: shared components used across many views (a change ripples everywhere) and new UI dependencies such as icon or animation libraries.
+- **Safe without checking in:** the linter, the production build, and the tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite and build before the PR. A suite the project's guide marks as hitting shared or live resources needs authorization; without it, run the checks that are safe and say in the PR what was skipped. Change presentation and feedback on any view the sweep lists, following the established patterns.
+- **Needs confirmation unless already authorized** — without it in an unattended run, leave it unchanged and list it in "Also spotted" with the reason: shared components used across many views (a change ripples everywhere) and new UI dependencies such as icon or animation libraries.
 - **Never:** modify API contracts or backend models, or change route paths or navigation structure.
 
 ## Journal — critical learnings only
@@ -77,7 +77,7 @@ Add an entry only for a pattern missing consistently across views (e.g. "no empt
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected friction point before editing, as described in *How much to do per run*.
 4. 🎨 **IMPLEMENT** — Follow the established pattern from a well-built view, use existing styling, and keep markup readable — extract a sub-component if it gets complex. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter, a clean production build, and tests. Where possible, run the app and walk the improved flow.
-6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched). Body:
+6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Use the project's branch convention and PR template where they exist and carry the evidence below into them; otherwise branch `fix/<short-desc>`, title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched), and this body:
    - 💡 **What:** the UX gap fixed
    - 🎯 **Why:** the frustration or confusion it caused
    - 📊 **Before/After:** screenshot or description

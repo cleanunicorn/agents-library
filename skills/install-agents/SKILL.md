@@ -2,10 +2,10 @@
 name: install-agents
 description: >-
   Install the library's maintenance agents into the current project and
-  schedule them to run periodically through Claude Code schedules, GitHub
-  Actions, or cron. Use when the user wants to install the agents or put a
-  repo on recurring maintenance. Not for running one agent once (act as it
-  directly) or installing this plugin (/plugin).
+  optionally schedule them to run periodically through Claude Code schedules,
+  GitHub Actions, or cron. Use when the user wants to install the agents or
+  put a repo on recurring maintenance. Not for running one agent once (act as
+  it directly) or installing this plugin (/plugin).
 ---
 
 # install-agents
