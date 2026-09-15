@@ -1,18 +1,12 @@
 ---
 name: review-ux-psychology
 description: >-
-  Review a flow's decision architecture — defaults, progress, value-before-ask,
-  ownership, loss/gain framing, price anchoring — against behavioral psychology,
-  to move a named product metric (signup, activation, trial-to-paid, checkout
-  completion, retention). Targets a screen or flow (onboarding, signup,
-  checkout, pricing, a form), a path/glob, or the branch diff; every finding
-  names its principle and the metric it moves, is verified against the real
-  code/flow, and fixes apply behind the lint/build gate. Use when the user
-  wants to lift conversion or a metric, reduce drop-off/friction in a flow,
-  critique onboarding/signup/checkout/pricing, or audit a form for decision
-  fatigue. Do NOT use for how the UI looks — hierarchy, spacing, color (use
-  review-design) — or general code review (use review-pr). No `gh` or remote
-  required.
+  Review a flow's decision architecture — defaults, progress, framing,
+  anchoring — against behavioral psychology to move a named metric such as
+  signup, activation, or checkout completion, and optionally apply fixes. Use
+  to lift conversion, reduce drop-off, or critique onboarding, signup,
+  checkout, or pricing. Not for how the UI looks (review-design) or code
+  review (review-pr).
 ---
 
 # review-ux-psychology
@@ -256,7 +250,7 @@ product decisions** vs. **mechanical edits** (see Phase 4). Keep it skimmable.
 
 ## Phase 4 — Decide
 
-Ask the user to choose one path:
+If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
   identical instances elsewhere; Phase 5 sweeps for them, reports the count,

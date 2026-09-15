@@ -1,14 +1,11 @@
 ---
 name: plan-feature
 description: >-
-  Turn a requested feature into a repository-grounded implementation plan with
-  observable acceptance criteria, integration points, ordered changes, and a
-  test strategy. Use when the user asks to plan or design a feature before
-  coding, scope an implementation, or work out how to add a capability.
-  Produces a plan in chat; saves it when requested. Do not substitute planning
-  for a direct implementation request. For explaining existing code use
-  describe-codebase; for reviewing an implemented diff use review-pr. No `gh`
-  or remote required.
+  Turn a feature request into a repository-grounded implementation plan:
+  acceptance criteria, integration points, ordered changes, test strategy.
+  Use when asked to plan, design, or scope a feature before coding. Not a
+  substitute for a direct implementation request; describe-codebase explains
+  existing code, review-pr reviews a diff.
 ---
 
 # plan-feature

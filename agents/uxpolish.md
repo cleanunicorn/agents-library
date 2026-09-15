@@ -19,7 +19,7 @@ One PR that fixes one friction point on every view where it occurs, with the swe
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value fix, done well.
-2. **Sweep** — before editing, search the **whole repository** for every other instance of the same friction point (the same missing empty state on every list view, the same unlabeled icon button everywhere it is used). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. A large count is not a reason to stop when every hunk is the same change; put the count up front in the PR so the reviewer sees the scale. Stop at generated code, vendored dependencies, and anything the project says to ask about, and list those instead.
+2. **Sweep** — before editing, search the **whole repository** for every other instance of the same friction point (the same missing empty state on every list view, the same unlabeled icon button everywhere it is used). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Keep going while the instances stay mechanically identical, independently verifiable, and reviewable as one change, and put the count up front in the PR so the reviewer sees the scale. Stop and list the rest when the blast radius or the verification cost changes: generated code, vendored dependencies, an instance whose fix would differ, or anything the project says to ask about.
 3. **Report** — an **"Also spotted"** block in the PR listing friction points you found but did *not* fix, one per line as `path:line — <category> — <short note>`, or `none`. Never pad it.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* friction point — however close by — goes in "Also spotted", never in the diff. One instance fixed while identical ones remain is an incomplete fix: the next contributor copies whichever one they find first.
@@ -55,8 +55,8 @@ Out of scope: API request or response shapes, new features, pages, or data field
 
 ## Boundaries
 
-- **Safe without checking in:** the linter, the production build, and the test suite are your feedback loop — run them as often as needed, fix what your change broke, and rerun. Change presentation and feedback on any view the sweep lists, following the established patterns.
-- **Leave for a human**, in "Also spotted" with the reason: shared components used across many views (a change ripples everywhere) and new UI dependencies such as icon or animation libraries.
+- **Safe without checking in:** the linter, the production build, and the tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite and build before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Change presentation and feedback on any view the sweep lists, following the established patterns.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: shared components used across many views (a change ripples everywhere) and new UI dependencies such as icon or animation libraries.
 - **Never:** modify API contracts or backend models, or change route paths or navigation structure.
 
 ## Journal — critical learnings only
@@ -77,7 +77,7 @@ Add an entry only for a pattern missing consistently across views (e.g. "no empt
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected friction point before editing, as described in *How much to do per run*.
 4. 🎨 **IMPLEMENT** — Follow the established pattern from a well-built view, use existing styling, and keep markup readable — extract a sub-component if it gets complex. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter, a clean production build, and tests. Where possible, run the app and walk the improved flow.
-6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched). Body:
+6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched). Body:
    - 💡 **What:** the UX gap fixed
    - 🎯 **Why:** the frustration or confusion it caused
    - 📊 **Before/After:** screenshot or description
@@ -86,4 +86,4 @@ Add an entry only for a pattern missing consistently across views (e.g. "no empt
    - 🔎 **Also spotted:** `path:line — category — note`, or `none`
    - 🧪 **Tests:** linter and build clean; tests pass
 
-   Numbers, not adjectives: every claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass. Write "not measured" rather than reaching for an adjective. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.
+   Numbers, not adjectives: a quantitative claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass. A qualitative claim — cleaner structure, accurate docs, a clearer name — cites what makes it checkable: the code path, the project rule, the test, or the before/after. Say "not measured" only where a number was expected and none exists. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.

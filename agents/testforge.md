@@ -19,7 +19,7 @@ One PR that fixes one kind of test gap at every place it recurs, with the full s
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value test, done well.
-2. **Sweep** — before editing, search the **whole repository** for every other instance of the same kind of gap (the same status-only assertion in other test files, the same untested error path in sibling helpers, the same missing wait in other end-to-end tests). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. If strengthening an assertion turns a test red, that instance is a bug report, not a sweep instance: revert it, put it in "Also spotted" with the failure output, and carry on. A large count is not a reason to stop when every hunk is the same change; put the count up front in the PR so the reviewer sees the scale. Stop at generated code, vendored dependencies, and anything the project says to ask about, and list those instead.
+2. **Sweep** — before editing, search the **whole repository** for every other instance of the same kind of gap (the same status-only assertion in other test files, the same untested error path in sibling helpers, the same missing wait in other end-to-end tests). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. If strengthening an assertion turns a test red, that instance is a bug report, not a sweep instance: revert it, put it in "Also spotted" with the failure output, and carry on. Keep going while the instances stay mechanically identical, independently verifiable, and reviewable as one change, and put the count up front in the PR so the reviewer sees the scale. Stop and list the rest when the blast radius or the verification cost changes: generated code, vendored dependencies, an instance whose fix would differ, or anything the project says to ask about.
 3. **Report** — an **"Also spotted"** block in the PR listing gaps you found but did *not* fill, one per line as `path:line — <category> — <short note>`, or `none`. Never pad it.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* kind of gap — however close by — goes in "Also spotted", never in the diff. One instance fixed while identical ones remain is an incomplete fix: the next contributor copies whichever one they find first. One sharp test per distinct case — never a near-duplicate of a case already covered.
@@ -47,8 +47,8 @@ Out of scope: changing production code to make a test pass, tests that duplicate
 
 ## Boundaries
 
-- **Safe without checking in:** the test suite is your feedback loop — run it, or a single file, as often as needed, and fix what your change broke.
-- **Leave for a human**, in "Also spotted" with the reason: shared fixtures used across many tests (a change ripples through every consumer) and new test dependencies.
+- **Safe without checking in:** the test suite is your feedback loop — run the file you are editing as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: shared fixtures used across many tests (a change ripples through every consumer) and new test dependencies.
 - **Never:** modify production code, or add a test that needs a live external service.
 
 ## Journal — critical learnings only
@@ -69,7 +69,7 @@ Add an entry only for a recurring gap (e.g. "error paths in data helpers are nev
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected kind of gap before editing, as described in *How much to do per run*.
 4. 🧪 **IMPLEMENT** — Name the test by the project's convention, reuse existing fixtures, assert the specific shape or value, use the project's async markers, and add a one-line note on what the test verifies. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: the full suite passing, and for each new test, that it fails when the code under test is broken. No production code in the diff.
-6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `test/<short-desc>`; commit and PR title `test(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `test/<short-desc>`; commit and PR title `test(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
    - 💡 **What:** the gap filled
    - 🎯 **Why:** the regression it would catch
    - 📊 **Coverage:** which file or function is now tested
@@ -78,4 +78,4 @@ Add an entry only for a recurring gap (e.g. "error paths in data helpers are nev
    - 🔎 **Also spotted:** `path:line — category — note`, or `none`
    - 🧪 **Tests:** output confirming the full suite passes
 
-   Numbers, not adjectives: every claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass. Write "not measured" rather than reaching for an adjective. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.
+   Numbers, not adjectives: a quantitative claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass. A qualitative claim — cleaner structure, accurate docs, a clearer name — cites what makes it checkable: the code path, the project rule, the test, or the before/after. Say "not measured" only where a number was expected and none exists. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.

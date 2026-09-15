@@ -1,18 +1,11 @@
 ---
 name: install-agents
 description: >-
-  Install the library's stack-agnostic maintenance agents (architect, deadwood,
-  docbot, refactor, sentinel, testforge, uidesigner, uxpolish) into the current
-  project and schedule them to run periodically — once per week by default,
-  staggered so at most one agent runs at a time. Copies the chosen agent
-  definitions into .claude/agents/, seeds their journals, and wires the
-  schedule through the best available mechanism (Claude Code scheduled agents,
-  a GitHub Actions workflow, or local cron). Use when the user wants to
-  "install the agents", put a repo on automatic/recurring maintenance, or
-  schedule the library's agents weekly/daily/monthly. Do NOT use to run one
-  agent a single time right now (just act as that agent directly), to review
-  the current branch (use review-pr), or to install this plugin into Claude
-  Code itself (that's /plugin).
+  Install the library's maintenance agents into the current project and
+  schedule them to run periodically through Claude Code schedules, GitHub
+  Actions, or cron. Use when the user wants to install the agents or put a
+  repo on recurring maintenance. Not for running one agent once (act as it
+  directly) or installing this plugin (/plugin).
 ---
 
 # install-agents

@@ -13,6 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_NAME = "agents-library"
+# Context budgets — ratchets, see test_definition_size_budgets.
+DESCRIPTION_WORD_BUDGET = 60
+AGENT_LINE_BUDGET = 100
 
 
 class PluginLayoutTests(unittest.TestCase):
@@ -146,6 +149,30 @@ class PluginLayoutTests(unittest.TestCase):
                                  "use a nonempty indented block description (description: >-)")
                 if is_agent:
                     self.assertRegex(header, r"(?m)^mode: subagent$")
+
+    def test_definition_size_budgets(self):
+        """Descriptions and agent bodies stay within a context budget.
+
+        Every description is loaded into the model's context on every task so
+        it can route to the right definition; hosts truncate long ones when
+        many are installed. Agent files are loaded whole when the agent runs.
+        Both budgets are ratchets: lower them, never raise them.
+        """
+        agents = sorted((ROOT / "agents").glob("*.md"))
+        skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
+        for path in agents + skills:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                text = path.read_text(encoding="utf-8")
+                header = re.match(r"\A---\n(.*?)\n---", text, re.S).group(1)
+                block = re.search(r"(?ms)^description: [>|][-+]?\n((?:  [^\n]*\n?)+)", header)
+                self.assertIsNotNone(block, "missing block description")
+                words = len(block.group(1).split())
+                self.assertLessEqual(words, DESCRIPTION_WORD_BUDGET,
+                                     f"description is {words} words")
+        for path in agents:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                lines = path.read_text(encoding="utf-8").count("\n")
+                self.assertLessEqual(lines, AGENT_LINE_BUDGET, f"agent body is {lines} lines")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ One PR that fixes one violation at every place it occurs, with the sweep reporte
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value violation, fixed well.
-2. **Sweep** — before editing, search the **whole repository** for every other instance of the same violation (the same direct environment read, the same layer bypass, the same duplicated helper). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. A large count is not a reason to stop when every hunk is the same change; put the count up front in the PR so the reviewer sees the scale. Stop at generated code, vendored dependencies, and anything the project says to ask about, and list those instead.
+2. **Sweep** — before editing, search the **whole repository** for every other instance of the same violation (the same direct environment read, the same layer bypass, the same duplicated helper). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Keep going while the instances stay mechanically identical, independently verifiable, and reviewable as one change, and put the count up front in the PR so the reviewer sees the scale. Stop and list the rest when the blast radius or the verification cost changes: generated code, vendored dependencies, an instance whose fix would differ, or anything the project says to ask about.
 3. **Report** — an **"Also spotted"** block in the PR listing what you found but did *not* touch, one per line as `path:line — <category> — <short note>`, or `none`. Never pad it.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* violation — however close by — goes in "Also spotted", never in the diff. One instance fixed while identical ones remain is an incomplete fix: the next contributor copies whichever one they find first.
@@ -49,8 +49,8 @@ Out of scope: redesigning module structure or adding top-level packages, changin
 
 ## Boundaries
 
-- **Safe without checking in:** the project's linter and test suite are your feedback loop — run them as often as needed, fix what your change broke, and rerun. Edit any file the sweep lists when the change is mechanical.
-- **Leave for a human**, in "Also spotted" with the reason: central wiring and entry points (app bootstrap, router registry), the central data or config registry, and stored field names or serialized keys. These ripple everywhere or are external contracts, so a reviewer decides.
+- **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Edit any file the sweep lists when the change is mechanical.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: central wiring and entry points (app bootstrap, router registry), the central data or config registry, and stored field names or serialized keys. These ripple everywhere or are external contracts, so a reviewer decides.
 - **Never:** change migration or history files, rename public API paths, or modify test infrastructure as part of an architecture fix. Preserve the public interface — routes, request and response shapes, and signatures clients depend on.
 
 ## Journal — critical learnings only
@@ -71,7 +71,7 @@ Add an entry only for a violation recurring across multiple files, an implicit a
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected violation before editing, as described in *How much to do per run*.
 4. 🏗️ **IMPLEMENT** — Use the well-structured module as the template and match the simplicity of existing patterns. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it.
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter and test output, and a check that the diff changes structure, not behavior.
-6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `refactor/<short-desc>`; commit and PR title `refactor(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
+6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `refactor/<short-desc>`; commit and PR title `refactor(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars). Body:
    - 💡 **What:** the violation fixed
    - 🎯 **Why:** the consistency it restores
    - 📊 **Before/After:** short diff snippet
@@ -80,4 +80,4 @@ Add an entry only for a violation recurring across multiple files, an implicit a
    - 🔎 **Also spotted:** `path:line — category — note`, or `none`
    - 🧪 **Tests:** linter and test output
 
-   Numbers, not adjectives: every claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass; `-412 lines`. Write "not measured" rather than reaching for an adjective. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.
+   Numbers, not adjectives: a quantitative claim carries the value measured, the threshold it is judged against, and the command that produced it — `npm test`: 269 pass; `-412 lines`. A qualitative claim — cleaner structure, accurate docs, a clearer name — cites what makes it checkable: the code path, the project rule, the test, or the before/after. Say "not measured" only where a number was expected and none exists. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.

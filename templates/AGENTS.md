@@ -100,7 +100,8 @@ A change is done when {{e.g. "its code, tests, docs, and wiring are in one PR,
 the checks pass locally, the PR is open against `{{DEFAULT_BRANCH}}`, and CI is
 green"}}. The first working implementation is not a stopping point: if the task
 includes running the result, inspecting it, and fixing what fails, that is part
-of the task — do it rather than returning for review.
+of the task — do it rather than returning for review. A read-only request
+(explain, review, diagnose) is done when the report is delivered.
 
 {{Name any stage that needs a person in the loop, and why — e.g. "a schema
 migration is reviewed before it is applied to staging". Everything else runs
@@ -112,12 +113,14 @@ What is safe here, and what genuinely needs a person. Write the risk behind each
 line, not just "ask first": a rule with no reason stops work you would want
 continued, or gets ignored.
 
-- **Safe without asking:** {{e.g. "running the full check suite, deleting local
-  worktrees, regenerating fixtures with `{{FIXTURE_CMD}}`"}}
-- **Needs a person, and why:** {{e.g. "anything under `migrations/` — applied
-  to shared staging on merge"; "the public API in `api/` — external clients
-  pin its shapes"}}. In an unattended run there is nobody to ask: leave that
-  part out of the diff and list it in the PR with the reason.
+- **Safe without asking:** {{e.g. "running the full check suite, regenerating
+  fixtures with `{{FIXTURE_CMD}}`, removing a merged task worktree once it has
+  no uncommitted work"}}
+- **Needs confirmation unless already authorized, and why:** {{e.g. "anything
+  under `migrations/` — applied to shared staging on merge"; "the public API
+  in `api/` — external clients pin its shapes"}}. A request that already
+  covers it is the confirmation. In an unattended run there is nobody to ask:
+  leave that part unchanged and list it in the PR with the reason.
 - **Never:** see [Golden rules](#golden-rules).
 
 ## Communication
@@ -177,9 +180,10 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
 - **Fix it everywhere.** When you fix a problem, search the repo for the same
   problem — the *shape*, not the literal text — and fix every instance in the
   same PR. One instance fixed while identical ones remain is an incomplete fix.
-  Stop at generated or vendored code and list those instead. A large count is
-  not a reason to stop when every hunk is the same change — put the count up
-  front so the reviewer sees the scale.
+  Keep going while the instances stay mechanically identical and reviewable
+  as one change, and put the count up front so the reviewer sees the scale.
+  Stop and list the rest at generated or vendored code, or where the fix
+  would differ.
 
 ### 4. Commit
 
@@ -245,7 +249,8 @@ Keep it short and useful:
   measured, the threshold it is judged against, and how to reproduce it —
   `3.73:1 → 7.13:1 (AA needs 4.5:1)`, `{{TEST_CMD}}: 269 pass`, `-412 lines`.
   A table when there is more than one pair. "Not measured" beats a vague
-  adjective.
+  adjective. A qualitative claim cites what makes it checkable instead: the
+  code path, the project rule, the test, or the before/after.
 - **The gap**, for a bug fix: what was supposed to catch this, why it didn't,
   and what now would. Give it its own heading — it is the half of the fix a
   reviewer can't reconstruct from the diff.

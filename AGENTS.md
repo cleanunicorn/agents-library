@@ -12,9 +12,11 @@ behind each boundary; how to get there is left to judgement.
 
 ## Always start in a worktree
 
-Before doing anything else, create a git worktree updated from `origin/main`
-and do all work there — never on `main` directly, and never in a worktree
-that's stale relative to `origin/main`.
+Before the first edit, create a git worktree updated from `origin/main` and
+do all work there — never on `main` directly, and never in a worktree that's
+stale relative to `origin/main`. Read-only work (explaining, diagnosing,
+reviewing) can use the current checkout and must not fetch, switch, reset, or
+rebase unless asked.
 
 ```
 git fetch origin
@@ -92,11 +94,13 @@ bug, a hygiene gap, a stale doc, a pattern violation — before fixing it:
 1. Search the whole repository for the same problem. Search for the *shape*,
    not the literal text: the pattern, the call, the rule a linter would apply.
 2. Fix every instance in the same PR, the same way. An instance that needs a
-   judgement call is listed in the PR as a follow-up, not forced. Stop at
-   generated code, vendored dependencies, and anything the project says to ask
-   about, and list those instead. A large count is not a reason to stop when
-   every hunk is the same change; put the count up front so the reviewer sees
-   the scale.
+   judgement call is listed in the PR as a follow-up, not forced. Keep going
+   while the instances stay mechanically identical, independently verifiable,
+   and reviewable as one change, and put the count up front so the reviewer
+   sees the scale. Stop and list the rest when the blast radius or the
+   verification cost changes: generated code, vendored dependencies, an
+   instance whose fix would differ, or anything the project says to ask
+   about.
 3. Put the search and its count in the PR — the exact query, and
    `7 found · 6 fixed · 1 left (needs a design call)`.
 
@@ -146,9 +150,12 @@ gets its own PR.
 
 ## Finish the job
 
-Define done before starting, and work to it. A task is done when the change is
-implemented, wired, tested, and documented, the checks are green, and the PR is
-open — not when the first implementation compiles. If the request includes
+Define done before starting, and work to it. For an implementation request,
+done means the change is implemented, wired, tested, and documented, the checks
+are green, and the PR is open — not that the first implementation compiles. A
+read-only request (explain, diagnose, review) is done when the report is
+delivered, and a terminal state the user named ("stop after the plan") wins
+over both. If the request includes
 getting the result running, inspecting it, and fixing what fails, that is part
 of the task: do it rather than returning for review. When the scope is
 ambiguous, state the scope you are completing and any part you left, with the
@@ -166,11 +173,12 @@ ignored.
   suite are the feedback loop. Run them as often as needed, fix what your
   change broke, and rerun without checking in. A project-specific section
   names any suite that touches a shared or live resource.
-- **A person decides:** external contracts (public API paths and shapes,
-  serialized field names, stored data), anything the project lists as
-  ask-first, and destructive or hard-to-reverse actions. In an unattended run
-  there is nobody to ask: leave that instance out of the diff and list it in
-  the PR with the reason.
+- **Needs confirmation unless already authorized:** external contracts
+  (public API paths and shapes, serialized field names, stored data), anything
+  the project lists as ask-first, and destructive or hard-to-reverse actions.
+  A request that already covers it ("rename the endpoint too") is the
+  confirmation. In an unattended run there is nobody to ask: leave that
+  instance unchanged and list it in the PR with the reason.
 - **Never:** the Security section below, and whatever the project marks as
   such.
 
@@ -191,6 +199,10 @@ ignored.
   assertion wearing a number's clothes.
 - If something could not be measured, say that instead of reaching for the
   adjective — and name what would measure it.
+- A qualitative claim — cleaner structure, accurate docs, a clearer name — is
+  not exempt from evidence, but its evidence is not a number: cite the code
+  path, the project rule, the test, or the before/after that lets a reader
+  check it.
 - When uncertain about something, say so rather than presenting it as fact.
 - End each response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
 

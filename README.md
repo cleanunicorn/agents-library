@@ -303,7 +303,8 @@ The same command covers all three supported platforms:
 | opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
 
 It also checks shell and manifest JSON syntax, shared definition names and
-required frontmatter fields, the fix-everywhere contract
+required frontmatter fields, context budgets (descriptions ≤ 60 words, agent
+files ≤ 100 lines), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), and eval cases with
 `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,

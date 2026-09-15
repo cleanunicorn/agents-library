@@ -1,15 +1,11 @@
 ---
 name: triage-issues
 description: >-
-  Triage the project's open GitHub issues into a ranked action plan: duplicates
-  clustered, easy wins backed by code-grounded evidence, needs-info drafts,
-  larger work classified. Only after per-action approval it applies labels,
-  posts comments, closes duplicates, and fixes approved easy wins — one PR per
-  issue, never committing to the default branch. Use when the user wants to
-  triage or groom the issue tracker/backlog, find duplicate issues, find and
-  fix easy wins or good first issues, or label open issues. Requires the `gh`
-  CLI. Do NOT use for pull requests (use batch-merge-prs for the PR queue,
-  review-pr for the current branch).
+  Triage open GitHub issues into a ranked plan: duplicates, easy wins with
+  code evidence, needs-info drafts, larger work. Applies labels, comments,
+  closes duplicates, and fixes easy wins only after per-action approval. Use
+  to groom the backlog, find duplicates, or fix good first issues. Requires
+  `gh`. Not for pull requests (batch-merge-prs, review-pr).
 ---
 
 # triage-issues

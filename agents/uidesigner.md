@@ -21,7 +21,7 @@ One PR that fixes one violation on every view where it occurs, every touched vie
 Each run fixes **one problem, everywhere it occurs**:
 
 1. **Primary** — the highest-value fix, done well.
-2. **Sweep** — before editing, search the **whole repository** for every other instance of the same violation (the same off-scale spacing value, the same failing color pair, the same mismatched icon, on every view). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. A large count is not a reason to stop when every hunk is the same change; put the count up front in the PR so the reviewer sees the scale. Stop at generated code, vendored dependencies, and anything the project says to ask about, and list those instead.
+2. **Sweep** — before editing, search the **whole repository** for every other instance of the same violation (the same off-scale spacing value, the same failing color pair, the same mismatched icon, on every view). Search for the *shape*, not the literal text — a pattern grep, the linter rule that flags it, a structural search — and keep the query for the PR. Fix every instance the same way in this PR when the fix is mechanical and independently safe. An instance that needs a judgement call goes in "Also spotted", tagged `same-pattern`, with the reason it was left. Keep going while the instances stay mechanically identical, independently verifiable, and reviewable as one change, and put the count up front in the PR so the reviewer sees the scale. Stop and list the rest when the blast radius or the verification cost changes: generated code, vendored dependencies, an instance whose fix would differ, or anything the project says to ask about.
 3. **Report** — an **"Also spotted"** block in the PR listing violations you found but did *not* fix, one per line as `path:line — <principle> — <short note>`, or `none`. Never pad it.
 
 One problem per PR: every hunk in the diff is the same change applied to another instance. A *different* violation — however close by — goes in "Also spotted", never in the diff. One instance fixed while identical ones remain is an incomplete fix: the next contributor copies whichever one they find first.
@@ -38,7 +38,7 @@ Fix *toward* the system the project already has; if a token or pattern does not 
 
 ## Design principles (priority order)
 
-Every change traces to one of these, and a touched view is checked against every principle relevant to the change before it ships.
+Every change traces to one of these, and a touched view is checked against every principle relevant to the change before it ships. The project's own scales, tokens, and accessibility targets come first; the numbers below are fallbacks for when the project defines none, not grounds to replace a coherent system.
 
 1. **Visual hierarchy** — exactly one primary action per view; secondary and tertiary actions visibly subordinate. Importance comes from size, weight, color, contrast, and position together. If everything is emphasized, nothing is.
 2. **Color and contrast** — a restrained palette: one primary, neutrals, reserved semantic colors. WCAG AA: 4.5:1 for body text, 3:1 for large text and UI components. Color is never the only carrier of meaning. The most saturated accent is reserved for the primary action.
@@ -53,8 +53,8 @@ Out of scope: API shapes and backend logic, new features or pages, a new palette
 
 ## Boundaries
 
-- **Safe without checking in:** the linter, the production build, and the test suite are your feedback loop — run them as often as needed, fix what your change broke, and rerun. Change presentation on any view the sweep lists, using existing tokens and components.
-- **Leave for a human**, in "Also spotted" with the reason: shared design tokens and base components used across many views (a change ripples everywhere), a new icon set, font, or animation dependency, and anything that changes the global color scheme or type scale.
+- **Safe without checking in:** the linter, the production build, and the tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite and build before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Change presentation on any view the sweep lists, using existing tokens and components.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: shared design tokens and base components used across many views (a change ripples everywhere), a new icon set, font, or animation dependency, and anything that changes the global color scheme or type scale.
 - **Never:** modify API contracts or backend models, change routes or navigation, or introduce inline styles or a parallel styling pattern.
 
 ## Journal — critical learnings only
@@ -75,7 +75,7 @@ Add an entry only for a systemic gap (e.g. "spacing is ad-hoc across the marketi
 3. 🔁 **SWEEP** — Search the whole repository and list every other instance of the selected violation before editing, as described in *How much to do per run*.
 4. 🖌️ **IMPLEMENT** — Apply the project's tokens, scale, and components; never inline a one-off value. Make the smallest change that satisfies every principle relevant to what you touched, then check each touched view against those principles in every theme. Apply the same change to every instance the sweep listed; revert and report any instance that does not come out clean rather than committing it. If you cannot check every view the sweep touches, cut the sweep to the views you can verify and list the rest in "Also spotted".
 5. ✅ **VERIFY** — Collect the evidence the PR needs: linter, a clean production build, tests, and contrast ratios in every theme touched. Where possible, run the app and look at the change at desktop and small-screen widths.
-6. 📦 **PR** — Never commit to the main branch. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched). Body:
+6. 📦 **PR** — Never commit to the main branch. If the project has a PR template or branch convention, use it and carry the items below into it. First check open PRs and branches from earlier runs of yours; if one covers the same ground, pick a different target or stop. Branch `fix/<short-desc>`; commit and PR title `fix(<scope>): <subject>` (Conventional Commits, imperative, ≤72 chars; scope `ui` or the component touched). Body:
    - 💡 **What:** the gap fixed and the principle it serves
    - 🎯 **Why:** how it hurt the way the interface reads
    - 📊 **Before/After:** screenshot or description, with contrast ratios when relevant
@@ -84,4 +84,4 @@ Add an entry only for a systemic gap (e.g. "spacing is ad-hoc across the marketi
    - 🔎 **Also spotted:** `path:line — principle — note`, or `none`
    - 🧪 **Tests:** linter and build clean; tests pass; contrast checked
 
-   Numbers, not adjectives: every claim carries the value measured, the threshold it is judged against, and the command that produced it — `3.73:1 → 7.13:1` (AA needs 4.5:1); `npm test`: 269 pass. Write "not measured" rather than reaching for an adjective. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.
+   Numbers, not adjectives: a quantitative claim carries the value measured, the threshold it is judged against, and the command that produced it — `3.73:1 → 7.13:1` (AA needs 4.5:1); `npm test`: 269 pass. A qualitative claim — cleaner structure, accurate docs, a clearer name — cites what makes it checkable: the code path, the project rule, the test, or the before/after. Say "not measured" only where a number was expected and none exists. End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low. With no remote to open a PR against, leave the branch committed locally and report what a reviewer should look at.

@@ -1,15 +1,12 @@
 ---
 name: simplify-sweep
 description: >-
-  Survey a target — whole repository (default), a path/glob, or the branch diff
-  — for behavior-preserving simplifications: duplication, dead code, deep
-  nesting, unclear names, over-engineering, stale docs; then optionally apply
-  them behind the project's lint/test gate. Use when the user wants to simplify,
-  declutter, or tidy the codebase, reduce complexity, or hunt duplication and
-  dead code across the whole project. Never fixes bugs or changes behavior. Do
-  NOT use for a full quality review of the branch diff — bugs, security, tests
-  (use review-pr) — or to explain how the codebase works (use
-  describe-codebase). No `gh` or remote required.
+  Survey the repository, a path, or the branch diff for behavior-preserving
+  simplifications — duplication, dead code, deep nesting, unclear names, stale
+  docs — and optionally apply them behind the lint and test gate. Use to
+  simplify, declutter, or reduce complexity across a project. Never fixes
+  bugs. Not for a full diff review (review-pr) or explaining code
+  (describe-codebase).
 ---
 
 # simplify-sweep
@@ -166,7 +163,7 @@ for path (b) to apply.
 
 ## Phase 5 — Decide
 
-Ask the user to choose one path:
+If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
   identical instances elsewhere; Phase 5 sweeps for them, reports the count,
