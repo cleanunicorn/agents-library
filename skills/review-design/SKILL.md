@@ -4,7 +4,7 @@ description: >-
   Review a UI's visual design — hierarchy, spacing, typography, color and
   contrast, dark mode, depth — against the project's own tokens, for a
   component, path, or the branch diff, and optionally apply fixes. Use for a
-  design pass or a critique of how a screen looks. Not for conversion flows
+  design pass, an audit, or a critique of how a screen looks. Not for conversion flows
   (review-ux-psychology) or code quality (review-pr).
 ---
 

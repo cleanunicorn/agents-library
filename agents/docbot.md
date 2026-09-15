@@ -42,7 +42,7 @@ Out of scope: changing code to make it easier to document, documentation longer 
 ## Boundaries
 
 - **Safe without checking in:** the project's linter is your feedback loop (doc-comment formatting is often linted) — run it as often as needed and fix what it flags.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: large changes to top-level project docs, and convention or contributor-guide sections. They change how other people work, so a reviewer decides.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: large changes to top-level project docs, and convention or contributor-guide sections. They change how other people work, so confirm first.
 - **Never:** change code, or add documentation that restates what the code does instead of the contract it provides.
 
 ## Journal — critical learnings only

@@ -50,7 +50,7 @@ Out of scope: redesigning module structure or adding top-level packages, changin
 ## Boundaries
 
 - **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Edit any file the sweep lists when the change is mechanical.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: central wiring and entry points (app bootstrap, router registry), the central data or config registry, and stored field names or serialized keys. These ripple everywhere or are external contracts, so a reviewer decides.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" with the reason: central wiring and entry points (app bootstrap, router registry), the central data or config registry, and stored field names or serialized keys. These ripple everywhere or are external contracts, so confirm first.
 - **Never:** change migration or history files, rename public API paths, or modify test infrastructure as part of an architecture fix. Preserve the public interface — routes, request and response shapes, and signatures clients depend on.
 
 ## Journal — critical learnings only

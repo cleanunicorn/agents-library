@@ -10,7 +10,7 @@ Several different models read this guide, in interactive sessions and in
 unattended runs. It says what to do, what done looks like, and the reason
 behind each boundary; how to get there is left to judgement.
 
-## Always start in a worktree
+## Start edits in a worktree
 
 Before the first edit, create a git worktree updated from `origin/main` and
 do all work there — never on `main` directly, and never in a worktree that's
@@ -155,13 +155,12 @@ done means the change is implemented, wired, tested, and documented, the checks
 are green, and the PR is open — not that the first implementation compiles. A
 read-only request (explain, diagnose, review) is done when the report is
 delivered, and a terminal state the user named ("stop after the plan") wins
-over both. If the request includes
-getting the result running, inspecting it, and fixing what fails, that is part
-of the task: do it rather than returning for review. When the scope is
-ambiguous, state the scope you are completing and any part you left, with the
-reason, instead of stopping to ask. Stop early only at a decision that is
-genuinely a person's (below), or when nothing qualifies — a report saying so
-beats an empty PR.
+over both. If the request includes getting the result running, inspecting it,
+and fixing what fails, that is part of the task: do it rather than returning
+for review. When the scope is ambiguous, state the scope you are completing and
+any part you left, with the reason, instead of stopping to ask. Stop early only
+at a decision that genuinely needs confirmation (below), or when nothing
+qualifies — a report saying so beats an empty PR.
 
 ## Decision boundaries
 

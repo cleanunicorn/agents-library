@@ -52,7 +52,7 @@ Out of scope: redesigning the auth system, new encryption schemes, global securi
 ## Boundaries
 
 - **Safe without checking in:** the project's linter and tests are your feedback loop — run the checks your change touches as often as needed, fix what you broke, and run the full suite before the PR. If the project's guide names a suite that hits shared or live resources, treat that one as needing confirmation. Add the project's existing guard, validation, config access, and error handling to any instance the sweep confirms.
-- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" or a tracking issue, with the reason: any change to core auth code, CORS configuration, rate limits, and session or cookie lifetimes or flags. Each affects every user or integration at once, so a reviewer decides.
+- **Needs confirmation unless already authorized** — unattended, leave it unchanged and list it in "Also spotted" or a tracking issue, with the reason: any change to core auth code, CORS configuration, rate limits, and session or cookie lifetimes or flags. Each affects every user or integration at once, so confirm first.
 - **Never:** commit real secrets, weaken an existing control to simplify code, add auth to an intentionally public endpoint, or log keys, passwords, or session tokens at any level.
 
 ## Journal — critical learnings only

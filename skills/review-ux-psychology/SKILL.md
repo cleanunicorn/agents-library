@@ -2,11 +2,11 @@
 name: review-ux-psychology
 description: >-
   Review a flow's decision architecture — defaults, progress, framing,
-  anchoring — against behavioral psychology to move a named metric such as
-  signup, activation, or checkout completion, and optionally apply fixes. Use
-  to lift conversion, reduce drop-off, or critique onboarding, signup,
-  checkout, or pricing. Not for how the UI looks (review-design) or code
-  review (review-pr).
+  anchoring — with behavioral psychology to move a named metric (signup,
+  activation, checkout), and optionally apply fixes. Use to lift conversion
+  or trial-to-paid, reduce drop-off, audit a form for decision fatigue, or
+  critique onboarding, signup, checkout, or pricing. Not for how the UI
+  looks (review-design) or code review (review-pr).
 ---
 
 # review-ux-psychology

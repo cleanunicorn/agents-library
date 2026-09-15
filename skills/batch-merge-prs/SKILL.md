@@ -2,7 +2,7 @@
 name: batch-merge-prs
 description: >-
   Triage open GitHub pull requests and batch-merge the trivial ones locally
-  onto one branch. Use to sweep or clean up the PR queue, or collect the
+  onto one branch. Use to sweep, bulk-merge, or clean up the PR queue, or collect the
   low-risk PRs onto one branch. Requires `gh`; never pushes or closes PRs.
   Not for reviewing one PR (review-pr) or triaging issues (triage-issues).
 ---

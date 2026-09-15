@@ -182,8 +182,8 @@ Examples: `{{fix/short-example}}`, `{{feat/short-example}}`.
   same PR. One instance fixed while identical ones remain is an incomplete fix.
   Keep going while the instances stay mechanically identical and reviewable
   as one change, and put the count up front so the reviewer sees the scale.
-  Stop and list the rest at generated or vendored code, or where the fix
-  would differ.
+  Stop and list the rest at generated or vendored code, where the fix would
+  differ, or anything this file says needs confirmation.
 
 ### 4. Commit
 

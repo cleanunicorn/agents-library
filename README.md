@@ -387,11 +387,11 @@ Install them into any project as weekly periodic agents with
 
 Every agent follows the same operating model:
 
-- **How Much to Do Per Run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
+- **How much to do per run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
 - **Fix it everywhere** — the PR body reports the exact search run for other instances and its count (`N found · N fixed · N left`). A *different* problem, however close by, still gets its own PR.
-- **Learn the project first** — read the docs and copy the prevailing patterns; refactor *toward* the existing style, never toward a personal preference.
-- **Verify before committing** — run the project's linter and test suite; evidence before claims.
-- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective.
+- **Look where the fix needs** — the project's docs and a well-built module, read as far as the change requires; refactor *toward* the existing style, never toward a personal preference.
+- **Evidence before claims** — the linter and tests are the feedback loop, run without asking; the PR carries their output.
+- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective; a qualitative claim cites the code path, rule, test, or before/after that makes it checkable.
 - **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
 - **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
 - **Journal critical learnings only** — record recurring patterns, not routine work.

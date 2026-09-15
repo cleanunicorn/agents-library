@@ -4,7 +4,7 @@ description: >-
   Survey the repository, a path, or the branch diff for behavior-preserving
   simplifications — duplication, dead code, deep nesting, unclear names, stale
   docs — and optionally apply them behind the lint and test gate. Use to
-  simplify, declutter, or reduce complexity across a project. Never fixes
+  simplify, declutter, tidy, or reduce complexity across a project. Never fixes
   bugs. Not for a full diff review (review-pr) or explaining code
   (describe-codebase).
 ---
