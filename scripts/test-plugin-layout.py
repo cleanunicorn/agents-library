@@ -13,6 +13,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_NAME = "agents-library"
+# Context ceilings — see test_definition_size_budgets. Lower them as
+# definitions shrink; never raise one to admit growth.
+DESCRIPTION_WORD_CEILING = 60
+DESCRIPTION_CHAR_CEILING = 420
+AGENT_WORD_CEILING = 1800
+# Per-skill root ceilings, keyed by name: each is the current size rounded up.
+# domains/, lenses/, references/ are loaded on demand and not budgeted here.
+SKILL_ROOT_WORD_CEILINGS = {
+    "batch-merge-prs": 1700,
+    "describe-codebase": 1300,
+    "install-agents": 1500,
+    "plan-feature": 1600,
+    "review-design": 2500,
+    "review-pr": 3100,
+    "review-ux-psychology": 4100,
+    "simplify-sweep": 2200,
+    "triage-issues": 3300,
+}
 
 
 class PluginLayoutTests(unittest.TestCase):
@@ -146,6 +164,37 @@ class PluginLayoutTests(unittest.TestCase):
                                  "use a nonempty indented block description (description: >-)")
                 if is_agent:
                     self.assertRegex(header, r"(?m)^mode: subagent$")
+
+    def test_definition_size_budgets(self):
+        """Descriptions and definition bodies stay within a context ceiling.
+
+        Every description is loaded into the model's context on every task so
+        it can route to the right definition; hosts truncate long ones when
+        many are installed. A definition's root file is loaded whole when it
+        runs. Words (and characters, so one long token cannot hide) are the
+        measure, not lines: a single 1,000-character line costs as much as
+        twenty short ones.
+        """
+        agents = sorted((ROOT / "agents").glob("*.md"))
+        skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
+        self.assertEqual({path.parent.name for path in skills}, set(SKILL_ROOT_WORD_CEILINGS),
+                         "a skill was added or removed — give it a root ceiling")
+        for path in agents + skills:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                text = path.read_text(encoding="utf-8")
+                header = re.match(r"\A---\n(.*?)\n---", text, re.S).group(1) + "\n"
+                # The block runs to the next top-level field, blank lines included.
+                block = re.search(r"(?ms)^description: [>|][-+]?\n((?:(?:  [^\n]*)?\n)+?)(?=^\S|\Z)", header)
+                self.assertIsNotNone(block, "missing block description")
+                description = " ".join(block.group(1).split())
+                words = len(description.split())
+                self.assertLessEqual(words, DESCRIPTION_WORD_CEILING, f"description is {words} words")
+                self.assertLessEqual(len(description), DESCRIPTION_CHAR_CEILING,
+                                     f"description is {len(description)} characters")
+                body_words = len(text.split())
+                ceiling = (AGENT_WORD_CEILING if path.parent.name == "agents"
+                           else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
+                self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
 
 if __name__ == "__main__":

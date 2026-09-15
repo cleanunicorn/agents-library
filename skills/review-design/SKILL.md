@@ -1,15 +1,12 @@
 ---
 name: review-design
 description: >-
-  Review the visual design of a UI — hierarchy, spacing, typography,
-  color/contrast, dark mode, depth, interaction states — judged against the
-  project's own design tokens, for a view/component, a path/glob, or the branch
-  diff; then optionally apply fixes behind the project's lint/build gate. Use
-  when the user wants a design pass, a critique of how a screen looks, or an
-  audit of visual hierarchy / spacing / typography / color / dark mode. Do NOT
-  use for conversion, persuasion, or metric-moving flow reviews (use
-  review-ux-psychology) or a general code-quality review of the diff (use
-  review-pr). No `gh` or remote required.
+  Review a UI's visual design — hierarchy, spacing, typography, color and
+  contrast, dark mode, depth, interaction states — against the project's own
+  tokens, for a component, path, or the branch diff, and optionally apply
+  fixes. Use for a design pass, an audit, or a critique of how a screen
+  looks. Not for conversion flows (review-ux-psychology) or code quality
+  (review-pr).
 ---
 
 # review-design
@@ -151,7 +148,7 @@ Keep it skimmable — the user is choosing what to act on, not reading five essa
 
 ## Phase 4 — Decide
 
-Ask the user to choose one path:
+If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
   identical instances elsewhere; Phase 5 sweeps for them, reports the count,

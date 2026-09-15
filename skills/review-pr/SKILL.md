@@ -1,17 +1,12 @@
 ---
 name: review-pr
 description: >-
-  Review the current branch's local diff across ten quality domains
-  (correctness, architecture, dead code, docs, refactor, testing, UX polish,
-  visual design, security, conventions), with every finding independently
-  verified to screen out false positives; then optionally apply fixes behind
-  the project's lint/test gate. Use when the user wants to review a PR, a
-  branch, or their changes before merging — "review my changes", "check what I
-  just built", a pre-merge / pre-PR review. Works on the local diff before a
-  GitHub PR exists; no `gh` or remote required. Do NOT use for whole-repo
-  cleanup (use simplify-sweep), a visual-only design pass (use review-design),
-  conversion/flow psychology (use review-ux-psychology), or explaining a
-  codebase (use describe-codebase).
+  Review the current branch's local diff across ten quality domains, verify
+  every finding, and optionally apply fixes behind the lint and test gate.
+  Use to review a PR, a branch, or "check what I just built" before merging.
+  Not for whole-repo cleanup (simplify-sweep), a visual-only design pass
+  (review-design), conversion psychology (review-ux-psychology), or
+  explaining a codebase (describe-codebase).
 ---
 
 # review-pr
@@ -199,7 +194,7 @@ skimmable — the user is choosing what to act on, not reading ten essays.
 
 ## Phase 4 — Decide
 
-Ask the user to choose one path:
+If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
   identical instances elsewhere; Phase 5 sweeps for them, reports the count,

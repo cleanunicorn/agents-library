@@ -6,11 +6,17 @@ bars — without assuming a particular language, framework, or stack. Pair it
 with the single-purpose agents in [`agents/`](agents/), and supplement it with
 a project-specific section once you know the codebase.
 
-## Always start in a worktree
+Several different models read this guide, in interactive sessions and in
+unattended runs. It says what to do, what done looks like, and the reason
+behind each boundary; how to get there is left to judgement.
 
-Before doing anything else, create a git worktree updated from `origin/main`
-and do all work there — never on `main` directly, and never in a worktree
-that's stale relative to `origin/main`.
+## Start edits in a worktree
+
+Before the first edit, create a git worktree updated from `origin/main` and
+do all work there — never on `main` directly, and never in a worktree that's
+stale relative to `origin/main`. Read-only work (explaining, diagnosing,
+reviewing) can use the current checkout and must not fetch, switch, reset, or
+rebase unless asked.
 
 ```
 git fetch origin
@@ -25,21 +31,23 @@ Follow the project's convention for where worktrees live if it has one (often a
 gitignored directory such as `.claude/worktrees/`). If the harness offers a
 worktree tool, use it — it does the same thing and moves the session into it.
 
-## Orient yourself first
+## Where to look
 
-Before changing anything, build an accurate map of the project:
+Read what the change needs, not the whole project: a typo fix needs nothing
+below; a change that crosses a layer needs the layering; a new component needs
+the registration pattern.
 
-- Read the project docs (README, CONTRIBUTING, architecture notes) and any
-  existing agent/contributor guides.
-- Identify the **layering**: how entry points, business logic, data access,
+- Project docs (README, CONTRIBUTING, architecture notes, agent guides) for
+  the intended **layering** — how entry points, business logic, data access,
   configuration, presentation, and background work are separated, and which
-  layer is allowed to call which.
-- Find the **shared infrastructure**: the central config object, shared
-  dependencies/helpers, the data layer, and where cross-cutting concerns
+  layer may call which.
+- The **shared infrastructure** when the change touches it: the central config
+  object, shared helpers, the data layer, and where cross-cutting concerns
   (auth, error reporting, logging) live.
-- Find the **conventions that aren't written down** by reading a couple of
-  well-built modules and copying their structure.
-- Locate the **commands** that matter: how to lint, format, test, and build.
+- A couple of well-built modules for the **conventions that aren't written
+  down**; copy their structure.
+- The lint, format, test, and build **commands** — in the project-specific
+  section below when one exists.
 
 When in doubt, infer the rule from the prevailing pattern in the codebase —
 not from your own preference.
@@ -53,7 +61,6 @@ not from your own preference.
   directly from business code.
 - Keep data-structure ownership where the project puts it (e.g. schema and
   migrations own structure; runtime code does not create it).
-- Run the linter and the test suite before committing.
 
 ## Workflow
 
@@ -87,9 +94,13 @@ bug, a hygiene gap, a stale doc, a pattern violation — before fixing it:
 1. Search the whole repository for the same problem. Search for the *shape*,
    not the literal text: the pattern, the call, the rule a linter would apply.
 2. Fix every instance in the same PR, the same way. An instance that needs a
-   judgement call is listed in the PR as a follow-up, not forced. Confirm the
-   scope first if the sweep passes ~10 instances, or reaches generated code,
-   vendored dependencies, or anything the project says to ask about.
+   judgement call is listed in the PR as a follow-up, not forced. Keep going
+   while the instances stay mechanically identical, independently verifiable,
+   and reviewable as one change, and put the count up front so the reviewer
+   sees the scale. Stop and list the rest when the blast radius or the
+   verification cost changes: generated code, vendored dependencies, an
+   instance whose fix would differ, or anything the project says to ask
+   about.
 3. Put the search and its count in the PR — the exact query, and
    `7 found · 6 fixed · 1 left (needs a design call)`.
 
@@ -137,9 +148,46 @@ gets its own PR.
 - Where a harness and the test suite both need the same fixtures, have them
   **share one definition** so they cannot drift apart and disagree later.
 
+## Finish the job
+
+Define done before starting, and work to it. For an implementation request,
+done means the change is implemented, wired, tested, and documented, the checks
+are green, and it is delivered at the terminal state the workflow calls for — a
+PR where the project or the request asks for one, otherwise a committed branch
+— not that the first implementation compiles. A
+read-only request (explain, diagnose, review) is done when the report is
+delivered, and a terminal state the user named ("stop after the plan") wins
+over both. If the request includes getting the result running, inspecting it,
+and fixing what fails, that is part of the task: do it rather than returning
+for review. When the scope is ambiguous, state the scope you are completing and
+any part you left, with the reason, instead of stopping to ask. Stop early only
+at a decision that genuinely needs confirmation (below), or when nothing
+qualifies — a report saying so beats an empty PR.
+
+## Decision boundaries
+
+Say what is safe, not only what is forbidden, and give the reason behind each
+boundary: a bare "ask first" either stops work that should continue or gets
+ignored.
+
+- **Safe by default:** the project's linter, formatter, type-checker, and test
+  suite are the feedback loop. Run them as often as needed, fix what your
+  change broke, and rerun without checking in. A project-specific section
+  names any suite that touches a shared or live resource; that one needs
+  authorization, and without it you run what is safe and report what was
+  skipped.
+- **Needs confirmation unless already authorized:** external contracts
+  (public API paths and shapes, serialized field names, stored data), anything
+  the project lists as ask-first, and destructive or hard-to-reverse actions.
+  A request that already covers it ("rename the endpoint too") is the
+  confirmation. Without it, in an unattended run there is nobody to ask:
+  leave that instance unchanged and list it in the PR with the reason.
+- **Never:** the Security section below, and whatever the project marks as
+  such.
+
 ## Communication
 
-- Always explain your reasoning behind decisions and approaches.
+- Explain your reasoning behind decisions and approaches.
 - When claiming something works or is fixed, prove it with a passing test, a
   script that validates the behavior, and a clear explanation of why it works.
   Don't just assert — convince with evidence.
@@ -154,6 +202,10 @@ gets its own PR.
   assertion wearing a number's clothes.
 - If something could not be measured, say that instead of reaching for the
   adjective — and name what would measure it.
+- A qualitative claim — cleaner structure, accurate docs, a clearer name — is
+  not exempt from evidence, but its evidence is not a number: cite the code
+  path, the project rule, the test, or the before/after that lets a reader
+  check it.
 - When uncertain about something, say so rather than presenting it as fact.
 - End each response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low
 
@@ -183,8 +235,10 @@ No subagents for serial or trivial work.
 ## Project-specific section
 
 Add a section below, per project, capturing what an agent can't infer quickly:
-the concrete lint/format/test/build commands, the layout and layering, the
-auth and configuration model, and the test layout and naming conventions.
+the concrete lint/format/test/build commands and whether they are safe to run
+unattended, the layout and layering, the auth and configuration model, the test
+layout and naming conventions, and the decisions that need a person, with the
+reason.
 
 ## Project-specific section — this repository
 
@@ -278,12 +332,15 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), opencode link validation and regression tests,
   installer smoke tests, and eval case validation (`--dry-run`). Requires
-  Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs.
+  Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs —
+  safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
   validation. Lint/format/build: no separate tools. Behavioral skill
   evals: `python3 run_evals.py` — **manual-only and expensive** (real agent
   runs); never wire them into CI, hooks, or push automation. See `docs/evals.md`.
   Prose quality is still enforced by the bars in this guide and each SKILL.md.
 
-**Start here:** README.md → AGENTS.md → agents/architect.md →
-skills/review-pr/SKILL.md → skills/review-pr/domains/correctness.md
+**Where to look:** README.md for install and update paths; this file for the
+working guide; `agents/architect.md` for the agent shape;
+`skills/review-pr/SKILL.md` for the orchestrator shape, and its `domains/` for
+the shape of a sub-prompt.
