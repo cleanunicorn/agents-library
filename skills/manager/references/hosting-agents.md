@@ -41,7 +41,8 @@ explicit request that overrides it.
    Never predict an id.
 2. **Make a pane per team member inside that workspace.** The first member
    takes the root pane; further panes come from
-   `herdr pane split --pane <a pane in the team workspace> --no-focus`, which
+   `herdr pane split --pane <a pane in the team workspace> --direction
+   right|down --cwd <worktree> --no-focus` (`--direction` is required), which
    returns the new id as `.result.pane.pane_id`. Never `--current`, and never
    the manager's `$HERDR_PANE_ID`.
 3. **Start and drive each member through the agent commands:**
@@ -60,9 +61,12 @@ explicit request that overrides it.
 4. **Long deliverables go to a file** in the run directory, not to scrollback.
    Tell each member the path to write, then read the file.
 5. **A pane that did start beside the manager is moved out:**
-   `herdr pane move <pane> --workspace <team workspace id>`, or
-   `--new-workspace --label "<work-item-slug>"` when no team workspace exists
-   yet. The pane gets a new id after a move; continue with the agent name.
+   `herdr pane move <pane> --new-tab --workspace <team workspace id>
+   --no-focus` (`--workspace` is accepted only with `--new-tab`), or
+   `herdr pane move <pane> --new-workspace --label "<work-item-slug>"
+   --no-focus` when no team workspace exists yet. The pane gets a new id
+   after a move — `.result.move_result.pane.pane_id`; continue with that or
+   the agent name.
 6. **At done, close only what you created:**
    `herdr workspace close <recorded workspace id>`. Phase 8 says when.
 

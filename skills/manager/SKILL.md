@@ -38,13 +38,12 @@ decides who runs them, on what, and what happens to their output.
   decision; a fresh agent would not.
 - The implementer is the worst judge of its own diff, so two agents of
   different kinds that saw none of the planning review it.
-- Reviewers over-report — review-pr says so about its own finders — so nothing
-  is fixed on a reviewer's word. Each finding is confirmed, refuted, or left
+- Reviewers over-report, so nothing is fixed on a reviewer's word. Each finding is confirmed, refuted, or left
   uncertain against the real code first.
 - Simplify runs after the fixes, so it tidies the final shape once. A fresh
   final reviewer then checks that the fixes introduced nothing new.
 
-The cost is real: 6 top-level agents, before the nested fan-outs of three
+The cost: 6 top-level agents, before the nested fan-outs of three
 `review-pr` runs, two `plan-feature` runs, and one `simplify-sweep`.
 
 ## Rules that hold in every phase
@@ -66,8 +65,8 @@ The cost is real: 6 top-level agents, before the nested fan-outs of three
    the terminal state is a committed branch.
 7. **Proportionality.** For a trivial item — a typo, a one-line change — say
    the pipeline is disproportionate and handle it as an ordinary direct change:
-   no team, no manager run. The user explicitly asking for the manager run
-   overrides this.
+   no team, no manager run. An explicit request for the manager run overrides
+   this.
 8. **Topology — your workspace stays clear.** The human watches several teams
    from the manager's workspace. The whole team for a work item starts in
    **one new dedicated workspace**, labelled after the work item — a sub-space
@@ -94,10 +93,14 @@ The cost is real: 6 top-level agents, before the nested fan-outs of three
    user's checkout.
 4. **Create a fresh dedicated worktree** from the current main branch per the
    project's convention. Detect the main branch; never hard-code it. Plans
-   then cite the exact base the code will be built on.
+   then cite the exact base the code will be built on. Run the gate there
+   once, before any edit, and record the result as the **baseline** — or
+   say you skipped a suite the project wants authorized first.
 5. **Create a run directory outside the repository tree.** Plans, SWOT
    records, reviews, and the ledger live there, so they never land in the PR.
-   An agent that cannot write there returns text and you save it.
+   An agent that cannot write there returns text and you save it. A plan file
+   the user asked for is a deliverable, not an artifact: the merged plan is
+   also saved where they said.
 6. **Open the team workspace** (rule 8) as `references/hosting-agents.md`
    describes, with the worktree as its working directory and without taking
    the human's focus. Record the id you created in the ledger. On a host with
@@ -129,7 +132,8 @@ the shared Phase 0 context, the work item and its acceptance criteria, and
 
 Start a third agent that wrote neither plan: the **coordinator**. Its prompt
 is the shared context, both plans labelled Plan A and Plan B **with the
-authoring kind removed** (no brand bias; you keep the mapping), and
+authoring kind removed** (no brand bias; you keep the mapping) — or the one
+plan of a single-plan run, which the brief also covers — and
 `references/coordinator-brief.md` verbatim. The brief has it check every
 load-bearing citation, **run a SWOT analysis on each plan** with no entry
 left without an action, decide topic by topic, and write **one merged plan**
@@ -198,16 +202,17 @@ The coordinator validates; you audit.
    the whole repository and record `N found · N fixed · N left`, close the
    finding's `gap` in the same commit, hold the gate, one commit per finding.
 
-This covers fixes, improvements, corrections, security issues, and
-documentation updates alike; severity sets the order, not whether one is
-addressed.
+Fixes, improvements, corrections, security issues, and documentation updates
+are all covered; severity sets only the order.
 
 ## Phase 6 — Simplify
 
 The coordinator runs `simplify-sweep` with the **branch diff** as its target,
-on its autonomous path, so the PR gains nothing unrelated. Removal candidates
-are reported to the user, never applied. Record findings applied, net lines,
-and the gate result.
+so the PR gains nothing unrelated — report only first. It then checks each
+finding against the code and applies, by id, every one that is
+behavior-preserving and in scope, whatever its severity: severity is not a
+safety verdict. Uncertain findings and removal candidates go to the user,
+never into the diff. Record findings applied, net lines, and the gate result.
 
 ## Phase 7 — Final review
 
@@ -221,14 +226,16 @@ the hand-back as open items.
 
 1. Run the gate one last time. Every delivery box in Progress is ticked;
    deferred follow-ups and open items stay unticked and are listed.
-2. **Only if this run opened a draft PR** (Phase 3): update its body from
-   Progress and mark it ready. **Never merge.** A branch-only run touches no
-   remote. If a push or PR step that was called for fails, keep the committed
-   branch, report the exact failed command, leave the delivery box unticked,
-   invent no URL — and the run is `blocked`, not `done`.
+2. **Only if this run opened a draft PR** (Phase 3): Phases 5–7 added
+   commits the draft has not seen, so have the coordinator push the branch,
+   then confirm the PR's head SHA equals local `HEAD`. Only then update its
+   body from Progress and mark it ready. **Never merge.** A branch-only run
+   touches no remote. If a push, the SHA check, or a PR step fails, keep the
+   committed branch, report the exact failed command, leave the delivery box
+   unticked, invent no URL — and the run is `blocked`, not `done`.
 3. **Close the team workspace as rule 8 says** — only when the run is `done`
-   or the user asks for teardown, and only after confirming the worktree is
-   clean and every artifact is in the run directory.
+   or the user asks for teardown, and only after confirming nothing
+   unintended is uncommitted and every artifact is in the run directory.
 4. Report with the **team block** below.
 
 ### The team block
@@ -289,14 +296,12 @@ tier; the fan-outs inside the sibling skills keep their lesser-tier default.
 ## Error handling
 
 - **Dirty or main-branch checkout:** leave it as it is; work in the worktree.
-- **The plans agree on everything:** the SWOT still runs; the merge log says
-  `0 contested decisions`.
 - **The plans conflict on a product decision the rules cannot settle:** ask;
   unattended, take the reversible option and label it.
 - **Gate command missing, or a placeholder:** ask for it, or for permission to
   build the smallest assertion loop. Never skip it silently or edit first.
-- **Gate already red before the first edit:** record baseline failures apart
-  from introduced ones; add none, and do not claim green.
+- **Gate red at the Phase 0 baseline:** hand the coordinator the failing
+  list; it adds none, and nobody claims green.
 - **The coordinator dies:** a new one gets the merged plan, Progress, and
   `git log`; ticked boxes are trusted only after the gate passes. Report the
   continuity exception.
@@ -304,6 +309,6 @@ tier; the fan-outs inside the sibling skills keep their lesser-tier default.
   re-check the citations the change touches.
 - **The team workspace cannot be created:** fall to the next hosting rung.
   Never fall back to your own workspace.
-- **The worktree already exists:** fetch and rebase it as the project says.
+- **The worktree already exists:** fetch and rebase as the project says.
 
 End every response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.
