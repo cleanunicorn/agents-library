@@ -209,7 +209,7 @@ The coordinator validates; you audit.
    becomes an open item. A real problem outside this work item is `deferred`
    and added to the Progress follow-ups — it gets its own PR.
 5. **Fix confirmed in-scope findings** in severity order. The mechanics live
-   in one place — Step 4 of the coordinator brief, which follows review-pr's
+   in one place — Phase 5b of the coordinator brief, which follows review-pr's
    Phase 5: **apply the edit**, fix every instance of the same shape across
    the whole repository and record `N found · N fixed · N left`, close the
    finding's `gap` in the same commit, hold the gate, one commit per finding.
