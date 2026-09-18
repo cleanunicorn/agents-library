@@ -197,6 +197,19 @@ class PluginLayoutTests(unittest.TestCase):
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
+    def test_manager_role_marker_agrees(self):
+        """The manager skill's two roles are told apart by one literal.
+
+        The root routes on it, the super manager sends it, and the launch
+        brief opens with it. If one file drifts, a started manager takes the
+        super manager's branch and starts managers of its own.
+        """
+        marker = "role: manager"
+        for name in ("SKILL.md", "references/super-manager.md", "references/manager-brief.md"):
+            with self.subTest(file=name):
+                text = (ROOT / "skills/manager" / name).read_text(encoding="utf-8")
+                self.assertIn(marker, text, f"{name} no longer names `{marker}`")
+
 
 if __name__ == "__main__":
     unittest.main()
