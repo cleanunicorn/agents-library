@@ -24,6 +24,9 @@ return it as text.
    an honest unknown is more useful to the merge than a confident guess.
 4. Prefer the smallest complete change that ships as one PR. Milestones are
    checklist steps inside that PR.
+5. Ask nobody. A missing decision goes in your plan as an open decision, with
+   its evidence and the exact question; the manager relays what matters. This
+   overrides `plan-feature`'s own step of asking the user.
 
 ## What to return
 
