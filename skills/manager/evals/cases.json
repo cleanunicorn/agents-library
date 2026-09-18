@@ -17,7 +17,7 @@
             "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
             "docs/plans/plan-a.md": "# Plan A — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
             "docs/plans/plan-b.md": "# Plan B — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n",
-            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with fixed ids: the manager lives in w1 (pane w1:p1), an unrelated\n# team in w2, and the first workspace this shim creates is w7.\nlog=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)/herdr-calls.log\"\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\nsplits=$(grep -c '^herdr pane split' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"w7\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"w7:t1\"},\"root_pane\":{\"pane_id\":\"w7:p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    [ \"$created\" -gt 0 ] && extra=',{\"workspace_id\":\"w7\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"w1:p1\",\"tab_id\":\"w1:t1\",\"workspace_id\":\"w1\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"w7:p'\"$((splits + 1))\"'\",\"workspace_id\":\"w7\"}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\"|\"agent wait\")\n    echo '{\"id\":\"cli:agent:'\"$2\"'\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent read\")\n    echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}' ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with fixed ids: the manager lives in w1 (pane w1:p1), an unrelated\n# team in w2, and the first workspace this shim creates is w7.\nlog=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)/herdr-calls.log\"\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\nsplits=$(grep -c '^herdr pane split' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"w7\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"w7:t1\"},\"root_pane\":{\"pane_id\":\"w7:p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    [ \"$created\" -gt 0 ] && extra=',{\"workspace_id\":\"w7\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"w1:p1\",\"tab_id\":\"w1:t1\",\"workspace_id\":\"w1\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"w7:p'\"$((splits + 1))\"'\",\"workspace_id\":\"w7\"}}}' ;;\n  \"tab create\")\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"w7:t2\"},\"root_pane\":{\"pane_id\":\"w7:p9\",\"workspace_id\":\"w7\"}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\"|\"agent wait\")\n    echo '{\"id\":\"cli:agent:'\"$2\"'\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent read\")\n    echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}' ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
           }
         },
         {
@@ -142,6 +142,21 @@
         {
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-[SWOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bB-[SWOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\b[AB]-[WT]\\d.{0,400}\\b(fix|mitigat|ask)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
           "pattern": "src/service\\.py"
         },
         {
@@ -192,6 +207,36 @@
           "pattern": "(?i)bool"
         },
         {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-S\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bB-W\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-[WOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bB-[SOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\bB-W\\d.{0,400}\\b(fix|mitigat|declin|ask)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\b[AB]-O\\d.{0,400}\\b(adopt|declin)"
+        },
+        {
           "type": "shell",
           "cmd": "git diff --exit-code eval-baseline -- docs/plans/plan-a.md docs/plans/plan-b.md src tests"
         }
@@ -202,10 +247,15 @@
       "prompt": "Deliver optional list limits end to end as manager: planners, SWOT merge, implementation, two reviewers, validated fixes, a simplify pass, and a final review. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary.",
       "should_trigger": true,
       "fixture": "task-service",
+      "timeout": 3600,
       "assertions": [
         {
           "type": "shell",
-          "cmd": "b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | head -1) && test -n \"$b\" && d=$(mktemp -d) && git worktree add -q --detach \"$d/v\" \"$b\" && cd \"$d/v\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nPYTEST"
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r w; do test -z \"$(git -C \"$w\" status --porcelain)\" || exit 1; done"
         },
         {
           "type": "shell",
@@ -217,7 +267,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^- Findings:"
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_regex",
@@ -314,6 +364,10 @@
         },
         {
           "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
           "pattern": "(🟢|🟡|🔴)"
         }
       ]
@@ -331,6 +385,10 @@
         {
           "type": "output_regex",
           "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_not_regex",
@@ -358,19 +416,31 @@
       "assertions": [
         {
           "type": "shell",
-          "cmd": "grep -Eq '^herdr workspace create.*--label' .git/herdr-calls.log"
+          "cmd": "grep -E '^herdr workspace create' .git/herdr-calls.log | grep -e '--label' | grep -e '--cwd' | grep -q -e '--no-focus'"
         },
         {
           "type": "shell",
-          "cmd": "test \"$(grep -c '^herdr agent start' .git/herdr-calls.log)\" -ge 2"
+          "cmd": "test \"$(grep -c '^herdr agent start' .git/herdr-calls.log)\" -eq 2"
         },
         {
           "type": "shell",
-          "cmd": "! grep -Eq '^herdr pane split.*(--current|w1:)' .git/herdr-calls.log"
+          "cmd": "grep -Eq '^herdr agent start.*--kind[ =]claude' .git/herdr-calls.log && grep -Eq '^herdr agent start.*--kind[ =]codex' .git/herdr-calls.log"
         },
         {
           "type": "shell",
-          "cmd": "! grep -Eq '^herdr agent start.*w1:' .git/herdr-calls.log"
+          "cmd": "! grep -E '^herdr agent start' .git/herdr-calls.log | grep -Evq -e '--pane[ =]w7:'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr (pane split|tab create)' .git/herdr-calls.log | grep -Evq 'w7'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr (pane split|tab create)' .git/herdr-calls.log | grep -Evq -e '--no-focus'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (pane|tab|agent) .*(--current|w1:|w2:)' .git/herdr-calls.log"
         },
         {
           "type": "shell",
@@ -478,7 +548,7 @@
       "assertions": [
         {
           "type": "shell",
-          "cmd": "b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | head -1); if [ -n \"$b\" ] && [ \"$b\" != \"$(git branch --show-current)\" ]; then d=$(mktemp -d) && git worktree add -q --detach \"$d/v\" \"$b\" && cd \"$d/v\"; fi; make test && grep -q limit tests/test_tasks.py"
+          "cmd": "n=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l); test \"$n\" -le 1 || exit 1; b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main); if [ -n \"$b\" ] && [ \"$b\" != \"$(git branch --show-current)\" ]; then d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\"; fi; make test && grep -q limit tests/test_tasks.py"
         },
         {
           "type": "output_not_regex",
