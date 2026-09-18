@@ -168,7 +168,15 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head` (one trivial PR, one conflicting) | batch branch exists with a `Merge PR #…` commit; conflict reported, never half-resolved; no-remote fixture exercises the Phase 0 guardrail |
+| manager | layered task app with two planted plans (one breaks layering and the one-PR rule), an implemented branch with a zero-limit bug, a variant whose required gate is absent, and a `herdr` shim logging calls to `.git/herdr-calls.log` | merged plan opens with Progress and carries all four SWOT quadrants; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the team runs in its own workspace and only that workspace is closed; hand-back carries the `done \| blocked \| in progress` team header; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
+
+The manager suite is mostly slices of the pipeline, sized to the default
+900-second trial. Its one end-to-end case, `mg-h3`, nests two `plan-feature`
+runs, three `review-pr` runs, and a `simplify-sweep`; run it alone with
+`--case mg-h3 --timeout 3600`. The runner sees only final text, files, and
+shell state, so whether planners and reviewers really ran in parallel and in
+isolation is checked by reading the transcript, not by an assertion.
 
 ## Adding evals for a new skill
 

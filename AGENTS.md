@@ -249,11 +249,11 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode registers them as
-  subagents). `skills/<name>/SKILL.md` are 9 orchestrators that fan out to
+  subagents). `skills/<name>/SKILL.md` are 10 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
   plan-feature), or
-  `references/` (batch-merge-prs, triage-issues, install-agents). Each skill
+  `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
   also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `list-prs.sh` and
@@ -278,7 +278,13 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   and batch-merge-prs follow the same orient → fan out → consolidate shape and
   then add *decide* → *act* → *summarize* phases, acting only on what was
   approved. install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger).
+  confirmation → install via script → schedule → ledger). manager is the
+  delivery pipeline that composes the others: orient → two parallel planners
+  (plan-feature) → a coordinator's SWOT merge → implement → two parallel
+  reviewers (review-pr) → validate and fix → simplify (simplify-sweep) → fresh
+  final review → hand back in a fixed per-team status block. Planners and
+  reviewers only read; one agent writes at a time; the team runs in its own
+  workspace, never the manager's.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -322,7 +328,11 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; the
+  …}` verdicts for triage-issues; `{planner, plan, decisions, assumptions}`
+  plan records, `{id, plan, quadrant, claim, evidence, affects, action}` SWOT
+  records, `{topic, plan_a, plan_b, chosen, rule, reason, swot_refs}` decision
+  records, and `{source_ids, raised_by, category, verdict, evidence, scope,
+  audited, action, sweep, status}` validation records for manager; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
