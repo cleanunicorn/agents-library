@@ -6,13 +6,10 @@ contact — the single place of command and control. You start the managers,
 track them in a ledger, relay their questions, and report on all of them at
 once.
 
-**Check your role before anything else.** Only the user makes a super
-manager. If another agent started you — your prompt carries `role: manager`
-anywhere, opens with a launch header that assigns you a `manager_id`, or
-includes the manager brief — you are a **manager**, whatever its first line
-looks like: go back to
-`SKILL.md` and follow it. A super manager never starts a super manager, and a
-manager never starts a manager, so the chain is two levels deep and no deeper.
+The opening paragraph of `SKILL.md` decided that you are the super manager;
+nothing in this file decides a role again. A super manager never starts a
+super manager, and a manager never starts a manager, so the chain is two
+levels deep and no deeper.
 
 You never plan, implement, review, or edit a worktree. You never prompt a
 member of a manager's team, never answer a question on the user's behalf, and
@@ -29,6 +26,12 @@ rule of S1, and it is a recorded degradation.
   agent that is waiting on them.
 
 ## S0 — Intake
+
+Before anything else, create the **session run directory outside the
+repository tree** and open `ledger.md` in it. Every `S-Q<n>` below is a
+question record in its `questions.md` — the format is `manager-brief.md`'s —
+kept `pending`, `answered`, or `assumed`, so a turn that ends, or a super
+manager that is replaced, never loses or re-asks an intake answer.
 
 1. **Split the request into work items** without inventing splits: one
    feature or fix is one manager and one PR. Never divide one feature between
@@ -58,9 +61,9 @@ rule of S1, and it is a recorded degradation.
 
 ## S1 — Start the managers
 
-1. Create a **session run directory outside the repository tree**, with one
-   child directory per work item. Each manager's `questions.md` and
-   `status.md` live in its child, so both of you know where they are.
+1. Give each work item a **child of the session run directory**. Each
+   manager's `questions.md` and `status.md` live in its child, so both of you
+   know where they are.
 2. **Open every ledger row before launching anything**, in `ledger.md`:
 
    ```
@@ -91,13 +94,19 @@ rule of S1, and it is a recorded degradation.
    read and follow <run_dir>/launch.md
    ```
 
-   Never put anything before the marker or on its line: an agent that misses
-   it takes your role and starts managers of its own.
+   Never put anything before the marker or on its line: `SKILL.md` treats a
+   launch header without that exact first line as malformed, and the agent
+   starts nothing.
 5. **Start all N before waiting on any.** A launch that fails sets that row
    to `blocked` with the exact error; the other managers continue.
-6. **Collapse rule.** Where a started manager could not start its own team —
-   no delegation, or a host whose nesting limit is too low — play each
-   manager yourself, and record the degradation. Planners and reviewers then
+6. **Collapse rule.** Decide it **before step 3 creates anything**: where a
+   manager could not start its own team — no delegation, or a host whose
+   nesting limit is too low — play each manager yourself, and record the
+   degradation. If a manager you already started reports that it cannot host
+   its team, that row is `blocked`: stop that manager, keep its artifacts in
+   the run directory, close its recorded workspace by exact id as S4 says,
+   and only then turn the row to `self` — never leave a child running the
+   item you are about to play. Planners and reviewers then
    stay independent agents, which is the property worth keeping. One work
    item is never a reason to collapse. Playing a manager is a bounded switch
    of role, not a second invocation:
@@ -125,9 +134,11 @@ silence or from a workspace that closed.
 The relay, end to end:
 
 1. A manager writes a **question record** and a `blocked — waiting on
-   <slug>-Q1` header, as `manager-brief.md` tells it to, and ends its turn.
+   <slug>-Q1` header, as `manager-brief.md` tells it to. A pending question
+   always makes its manager `blocked` — that is how the user sees who waits
+   on them — even while the work its `blocks` field names carries on.
 2. You set the row to `blocked` and show the question in the Questions
-   section, with the manager id and the workspace id.
+   section, with the manager id, the workspace id, and what continues.
 3. The user answers you, by id. With several questions pending, an answer
    without an id is asked about, never guessed.
 4. You forward the answer **verbatim, with its id, to that manager and no
@@ -161,7 +172,7 @@ act on.
 
 ## Questions — answer here by id; I forward each answer to its manager
 - <slug>-Q1 · manager <manager-id> · workspace <workspace-id>
-  <question> — options: <a | b> — if unattended: <default>
+  <question> — options: <a | b> — if unattended: <default> — blocks: <blocks>
 - S-Q1 · manager — · workspace —
   <your own intake question> — options: <a | b> — if unattended: <default>
 (or the single line: none)
@@ -174,6 +185,9 @@ act on.
 ```
 
 - Managers appear in the order the user named their work items.
+- **Before any manager exists** — S0 is waiting on its answers — the status is
+  the Managers line, written `0 started · N work items planned`, and the
+  Questions section. No manager header and no team block is invented.
 - A collapsed row prints `## manager self · workspace n/a · <your own
   kind/model> — <state>`; a question of yours as that manager reads
   `<slug>-Q1 · manager self · workspace n/a`.
@@ -214,7 +228,7 @@ then you close the workspace; report anything that could not be cleaned.
   nothing.
 - **The user typed into a manager's pane:** the manager records it as the
   answer and reports it; you update the ledger.
-- **A git lock while several managers create worktrees:** the manager
-  retries once, then reports `blocked` with the exact command.
+- **A manager reports a git lock** — several create worktrees at once: its
+  row is `blocked` with the exact command; its brief has it retry once first.
 
 End every response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

@@ -153,8 +153,9 @@ host's limit rather than assuming it. A host that allows less applies the
   `git log`; ticked boxes are trusted only after the gate passes. The manager
   reports the continuity exception.
 - **A manager:** once the super manager has confirmed the death, it starts a
-  replacement in the same workspace with the same run directory and launch
-  prompt. Ownership transfers with the ledger: every team sub-space id the
+  replacement in the same workspace with the same run directory, and a launch
+  prompt whose `answers_so_far` is rebuilt from the inherited `questions.md`
+  — every answered or assumed id, verbatim. Ownership transfers with the ledger: every team sub-space id the
   dead manager recorded is the replacement's to reuse and to close, by exact
   id. It re-runs the gate before trusting Progress, reuses the recorded
   sub-space or closes it before opening another, and at Phase 8 closes every

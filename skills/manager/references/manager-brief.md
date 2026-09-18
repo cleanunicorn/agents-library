@@ -39,8 +39,9 @@ answer:    the user's words, verbatim, as the super manager forwarded them
 ```
 
 1. After writing a record, rewrite `status.md` with the header
-   `blocked — waiting on <slug>-Q<n>` — or stay `in progress` while work that
-   does not depend on the answer continues — and end your turn when nothing
+   `blocked — waiting on <slug>-Q<n>`. A pending question always makes you
+   `blocked`, so the user sees who waits on them; the work your `blocks`
+   field names as continuing carries on, and you end your turn when nothing
    else can proceed.
 2. The super manager forwards the answer with its id. Record it verbatim, set
    `status: answered`, **acknowledge the id** in your reply and in
@@ -71,7 +72,12 @@ its head SHA, a clean worktree, and every team sub-space closed. Leave your
 own workspace open — the super manager created it and closes it.
 
 **If you replace a manager that died**, its run directory and ledger are
-yours: "When an agent dies" in `references/hosting-agents.md` says what you
+yours. Before Phase 0, read its `questions.md`, `status.md`, and ledger: keep
+every question id with its status and verbatim answer, and ask none of them
+again. "When an agent dies" in `references/hosting-agents.md` says what you
 inherit and must close.
+
+A git lock while creating your worktree — other managers are doing the same —
+is retried once; then you are `blocked` with the exact command.
 
 End every report with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

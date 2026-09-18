@@ -200,10 +200,12 @@ class PluginLayoutTests(unittest.TestCase):
     def test_manager_role_marker_agrees(self):
         """The manager skill's two roles are told apart by one literal line.
 
-        The root routes on it, the super manager sends it, and the launch
-        brief opens with it. If a sender puts anything else on that line, or
-        the router and the senders drift apart, a started manager takes the
-        super manager's branch and starts managers of its own.
+        SKILL.md's opening paragraph is the only router: the exact first line
+        makes a manager, a launch header without it fails closed, anyone else
+        is the super manager. The super manager sends that line and the launch
+        brief opens with it. A second router in a reference, or a sender that
+        puts anything else on the line, is how a started manager ends up
+        starting managers of its own.
         """
         marker = "role: manager"
         skill = ROOT / "skills/manager"
@@ -211,8 +213,16 @@ class PluginLayoutTests(unittest.TestCase):
                  for name in ("SKILL.md", "references/super-manager.md",
                               "references/manager-brief.md")}
         router = " ".join(texts["SKILL.md"].split())
-        self.assertRegex(router, rf"A prompt that opens with `{marker}` came from a super manager",
-                         "SKILL.md no longer routes on the marker")
+        self.assertRegex(router, rf"A prompt whose first line is exactly `{marker}` makes you a \*\*manager\*\*",
+                         "SKILL.md no longer routes on the exact first line")
+        self.assertRegex(router, r"without that first line is a malformed launch: start nobody",
+                         "SKILL.md no longer fails closed on a malformed launch")
+        self.assertRegex(router, r"Anyone else is the \*\*super manager\*\*",
+                         "SKILL.md no longer has a default role")
+        for name in ("references/super-manager.md", "references/manager-brief.md"):
+            self.assertNotRegex(" ".join(texts[name].split()),
+                                r"(?i)go back to `SKILL\.md`|makes you (a|the) \*\*",
+                                f"{name} decides a role; SKILL.md is the only router")
         # Every fenced block that carries the marker is a launch form: the
         # marker is its first line, alone.
         launch_forms = 0

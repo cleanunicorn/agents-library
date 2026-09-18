@@ -11,11 +11,12 @@ description: >-
 
 # manager
 
-**Two roles — find yours first.** A prompt that opens with
-`role: manager` came from a super manager: you are a **manager**, and the rest
-of this file is yours. Any other invocation makes you the **super manager**:
-read `references/super-manager.md` now and follow it — you start one manager
-per work item and stay the user's only contact.
+**Two roles — this paragraph alone decides yours.** A prompt whose first line
+is exactly `role: manager` makes you a **manager**: the rest of this file is
+yours. A prompt carrying a launch header — a `manager_id:` or `run_dir:`
+line — without that first line is a malformed launch: start nobody, change
+nothing, report it. Anyone else is the **super manager**: read and follow
+`references/super-manager.md`.
 
 As manager you deliver one work item end to end by directing a team of other
 coding agents: you start them, hand them briefs, check what they return, and
@@ -72,8 +73,9 @@ fan-outs of three `review-pr` runs, two `plan-feature` runs, and one
    the terminal state is a committed branch.
 7. **One channel to the user.** Neither you nor your team addresses the
    user. A question becomes a **question record** in the run directory; you
-   report it and go `blocked`, or stay `in progress` while other work can
-   proceed. The super manager relays it and forwards the answer verbatim.
+   report it and are `blocked` until it is answered — its `blocks` field says
+   what continues meanwhile. The super manager relays it and forwards the
+   answer verbatim.
    Unattended, take the record's labelled default — the reversible option —
    instead, never across an ask-first boundary.
 8. **Topology — two levels, every view stays clear.** The super manager gave
