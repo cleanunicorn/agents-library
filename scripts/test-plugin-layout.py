@@ -198,17 +198,37 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
     def test_manager_role_marker_agrees(self):
-        """The manager skill's two roles are told apart by one literal.
+        """The manager skill's two roles are told apart by one literal line.
 
         The root routes on it, the super manager sends it, and the launch
-        brief opens with it. If one file drifts, a started manager takes the
+        brief opens with it. If a sender puts anything else on that line, or
+        the router and the senders drift apart, a started manager takes the
         super manager's branch and starts managers of its own.
         """
         marker = "role: manager"
-        for name in ("SKILL.md", "references/super-manager.md", "references/manager-brief.md"):
+        skill = ROOT / "skills/manager"
+        texts = {name: (skill / name).read_text(encoding="utf-8")
+                 for name in ("SKILL.md", "references/super-manager.md",
+                              "references/manager-brief.md")}
+        router = " ".join(texts["SKILL.md"].split())
+        self.assertRegex(router, rf"A prompt that opens with `{marker}` came from a super manager",
+                         "SKILL.md no longer routes on the marker")
+        # Every fenced block that carries the marker is a launch form: the
+        # marker is its first line, alone.
+        launch_forms = 0
+        for name, text in texts.items():
+            for block in re.findall(r"(?ms)^[ \t]*```\n(.*?)^[ \t]*```", text):
+                if marker in block:
+                    launch_forms += 1
+                    self.assertEqual(block.splitlines()[0].strip(), marker,
+                                     f"{name}: a launch form does not open with the bare marker")
+        self.assertGreaterEqual(launch_forms, 2, "expected the brief header and the compact launch form")
+        # Nothing shares the marker's line when it is quoted inline as something to send.
+        for name, text in texts.items():
             with self.subTest(file=name):
-                text = (ROOT / "skills/manager" / name).read_text(encoding="utf-8")
                 self.assertIn(marker, text, f"{name} no longer names `{marker}`")
+                self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
+                                 f"{name} sends the marker with a suffix")
 
 
 if __name__ == "__main__":

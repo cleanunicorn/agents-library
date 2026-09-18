@@ -1,7 +1,8 @@
 # Manager brief
 
 The super manager fills this header and sends it, with everything below it,
-as your launch prompt. The first line is the marker that gives you your role.
+as your launch prompt. The first line is the marker that gives you your role:
+`role: manager`, alone on its line, with nothing before it.
 
 ```
 role: manager
@@ -46,11 +47,21 @@ answer:    the user's words, verbatim, as the super manager forwarded them
    else can proceed.
 3. The super manager forwards the answer with its id. Record it verbatim, set
    `status: answered`, **acknowledge the id** in your reply and in
-   `status.md`, update the acceptance criteria, and carry on.
+   `status.md`, update the acceptance criteria, and carry on. An answer that
+   reads `assume` means the user chose the defaults: take that record's
+   `default`, keep the user's words in `answer`, set `status: assumed`, and
+   acknowledge the id with the default you took. Across an ask-first boundary
+   `assume` settles nothing — the question stays `pending`.
 4. `attended: no` → take each record's `default`, set `status: assumed`, and
    list it under Follow-ups. An ask-first boundary still blocks.
 5. `attended: yes` and no answer yet → stay `blocked`. An attended run never
    assumes silently.
+6. A question already answered in `answers_so_far` is never asked again:
+   write its record with that answer verbatim and `status: answered`, and
+   acknowledge the id in your first `status.md`.
+7. The user typed into your pane anyway → record their words as the answer
+   to the pending id, report it through `status.md`, and carry on. Put no
+   question of your own to them there.
 
 ## Keep `status.md` current
 
@@ -60,7 +71,12 @@ as each phase ends and whenever your state changes — all nine fields, with
 file, so a status request never interrupts you.
 
 `done` must show: the final gate result with its number, the branch or PR and
-its head SHA, a clean worktree, and your team sub-space closed. Leave your
+its head SHA, a clean worktree, and every team sub-space closed. Leave your
 own workspace open — the super manager created it and closes it.
+
+**If you replace a manager that died**, its run directory is yours, and so is
+its ledger: every team sub-space id recorded there is yours to reuse and
+yours to close, by exact id. Reuse it, or close it before opening another;
+Phase 8 closes every recorded id, inherited or new.
 
 End every report with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

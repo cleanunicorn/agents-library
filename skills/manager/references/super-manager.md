@@ -6,9 +6,18 @@ contact — the single place of command and control. You start the managers,
 track them in a ledger, relay their questions, and report on all of them at
 once.
 
+**Check your role before anything else.** Only the user makes a super
+manager. If another agent started you — your prompt carries `role: manager`
+anywhere, opens with a launch header that assigns you a `manager_id`, or
+includes the manager brief — you are a **manager**, whatever its first line
+looks like: go back to
+`SKILL.md` and follow it. A super manager never starts a super manager, and a
+manager never starts a manager, so the chain is two levels deep and no deeper.
+
 You never plan, implement, review, or edit a worktree. You never prompt a
 member of a manager's team, never answer a question on the user's behalf, and
-never close anything you did not create.
+never close anything you did not create. The one exception is the collapse
+rule of S1, and it is a recorded degradation.
 
 ## Why this shape
 
@@ -24,17 +33,25 @@ never close anything you did not create.
 1. **Split the request into work items** without inventing splits: one
    feature or fix is one manager and one PR. Never divide one feature between
    managers. One work item still gets a manager under you.
-2. **Proportionality.** For a trivial item — a typo, a one-line change — say
-   the pipeline is disproportionate and handle it as an ordinary direct
-   change: no manager, no team. An explicit request for the manager run
-   overrides this.
+2. **Proportionality.** When this skill was picked for a trivial item — a
+   typo, a one-line change — and the user did not ask for a manager run, say
+   the pipeline is disproportionate and leave the skill: the item is an
+   ordinary direct change, outside any manager run, and nothing in this file
+   applies to it. You never make that change *as* super manager. An explicit
+   request — `/manager`, "manage this" — overrides this, and the item gets
+   its manager like any other.
 3. **Decide `attended: yes | no`** from the user's words. "Ask nothing" or
    "nobody is available" means `no`.
 4. **Ask the cross-cutting questions once, now**, before any manager starts:
    which items, an order or dependency between them, PR or branch. Number
    them `S-Q<n>` and show them in the Questions section of the status format
    below, with `manager —`. No work item named → that is `S-Q1`; unattended,
-   stop with a report instead of inventing one.
+   stop with a report instead of inventing one. **S1 waits for the answers:**
+   attended, emit the status and end the turn, and start no manager until
+   each `S-Q<n>` is answered. Unattended, take each question's labelled
+   default — parallel, in the order given; a branch unless the project's
+   workflow calls for a PR — and list it as `assumed`; an ask-first boundary
+   still blocks.
 5. **Say the cost:** N × (1 manager + 6 team agents), before the fan-outs
    inside the sibling skills.
 6. **Items that touch the same files:** say so and ask for an order. The
@@ -66,17 +83,35 @@ never close anything you did not create.
    `kind/model` → send the launch prompt.
 4. **The launch prompt** is the filled header of
    `references/manager-brief.md` followed by that brief **verbatim**. Its
-   first line is `role: manager` — the marker that tells the started agent
-   which role it has. A long prompt goes to `<run_dir>/launch.md` and the
-   line you send is `role: manager · read and follow <path>`.
+   first line is `role: manager` and nothing else — the marker that tells
+   the started agent which role it has. A long prompt goes to
+   `<run_dir>/launch.md`, and what you send keeps the marker alone on its
+   first line:
+
+   ```
+   role: manager
+   read and follow <run_dir>/launch.md
+   ```
+
+   Never put anything before the marker or on its line: an agent that misses
+   it takes your role and starts managers of its own.
 5. **Start all N before waiting on any.** A launch that fails sets that row
    to `blocked` with the exact error; the other managers continue.
 6. **Collapse rule.** Where a started manager could not start its own team —
    no delegation, or a host whose nesting limit is too low — play each
-   manager yourself: one ledger row per item with `manager: self`, following
-   `SKILL.md` Phases 0–8, the degradation recorded. Planners and reviewers
-   then stay independent agents, which is the property worth keeping. One
-   work item is never a reason to collapse.
+   manager yourself, and record the degradation. Planners and reviewers then
+   stay independent agents, which is the property worth keeping. One work
+   item is never a reason to collapse. Playing a manager is a bounded switch
+   of role, not a second invocation:
+   - one ledger row at a time, `manager: self`, `workspace: n/a`, its own
+     child run directory and worktree — never two items at once;
+   - follow `SKILL.md` Phases 0–8 for that item as they stand; do not load
+     the skill again, and start no manager;
+   - your questions as manager are still question records in that run
+     directory, shown in the same Questions section — you are the one
+     channel either way;
+   - when the item's team block is written to `status.md`, return to this
+     file, copy the block into `last_summary`, and take the next row.
 
 ## S2 — Watch and relay
 
@@ -101,16 +136,23 @@ The relay, end to end:
    without an id is asked about, never guessed.
 4. You forward the answer **verbatim, with its id, to that manager and no
    other**. You never answer for the user. Two labelled exceptions: you may
-   quote an instruction the user already gave this session, and "use the
-   defaults" is forwarded as `assume`.
+   quote an instruction the user already gave this session; and "use the
+   defaults" is forwarded, per pending id, as `assume` followed by the
+   user's own words — the manager then takes that record's `default`, and an
+   ask-first question stays pending.
 5. The manager records the answer, acknowledges the id, and returns to
    `in progress`.
 6. The question leaves the Questions section only after that acknowledgement.
    A late or duplicate answer is reported, never applied to another manager.
 
-The same question from two managers is asked once and forwarded to both. A
-manager the host reports as `blocked` on an approval prompt is read and
-listed as a question too.
+The same question from two managers is shown as **one entry that names every
+id** — `list-limit-Q2 + count-Q1`, each with its manager and workspace. The
+answer is forwarded to each manager under its own id, and each id clears on
+its own manager's acknowledgement.
+
+A manager the host reports as `blocked` on an approval prompt is read and
+listed as a question too, with the id `<slug>-approval`. The answer is the
+user's; `hosting-agents.md` says how each host delivers it.
 
 ## S3 — Status format
 
@@ -124,6 +166,8 @@ act on.
 ## Questions — answer here by id; I forward each answer to its manager
 - <slug>-Q1 · manager <manager-id> · workspace <workspace-id>
   <question> — options: <a | b> — if unattended: <default>
+- S-Q1 · manager — · workspace —
+  <your own intake question> — options: <a | b> — if unattended: <default>
 (or the single line: none)
 
 ## manager <manager-id> · workspace <workspace-id> · <kind/model> — done | blocked | in progress
@@ -134,6 +178,9 @@ act on.
 ```
 
 - Managers appear in the order the user named their work items.
+- A collapsed row prints `## manager self · workspace n/a · <your own
+  kind/model> — <state>`; a question of yours as that manager reads
+  `<slug>-Q1 · manager self · workspace n/a`.
 - Exactly one header line above each team block, and nothing else between
   blocks, so the blocks of several teams concatenate without reformatting.
 - The team block is the manager's, copied verbatim from `status.md`;
@@ -147,7 +194,8 @@ act on.
 ## S4 — Close
 
 A manager's `done` is a claim. Confirm the worktree is clean, the branch or
-the PR head matches the SHA in the block, and the team sub-space is closed.
+the PR head matches the SHA in the block, and every team sub-space its ledger
+records — inherited ones included — is closed.
 Then close **the recorded workspace id and nothing else** — never by label,
 never from a listing — and set `closed: yes`.
 
@@ -164,6 +212,10 @@ then you close the workspace; report anything that could not be cleaned.
   passes. Record the continuity exception.
 - **A manager is silent:** read its pane or output; the header becomes
   `blocked — manager unresponsive`.
+- **You replace a super manager that died** — the user points you at its
+  session run directory: its `ledger.md` is now yours. Every workspace id
+  recorded there as created is yours to close, by exact id, under S4; create
+  nothing again that a row already records.
 - **An ambiguous answer:** ask again. Never interpret it.
 - **An answer whose id matches no pending question:** report it; forward
   nothing.

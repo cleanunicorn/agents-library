@@ -11,7 +11,7 @@ description: >-
 
 # manager
 
-**Two roles — find yours first.** A prompt whose first line is
+**Two roles — find yours first.** A prompt that opens with
 `role: manager` came from a super manager: you are a **manager**, and the rest
 of this file is yours. Any other invocation makes you the **super manager**:
 read `references/super-manager.md` now and follow it — you start one manager
@@ -224,7 +224,7 @@ The coordinator runs `simplify-sweep` with the **branch diff** as its target,
 so the PR gains nothing unrelated — report only first. As its brief says, it
 then applies by id every finding it has checked to be behavior-preserving and
 in scope, whatever the severity. Uncertain findings and removal candidates go
-to the user, never into the diff. Record findings applied, net lines, and the
+in the hand-back, never into the diff. Record findings applied, net lines, and the
 gate result.
 
 ## Phase 7 — Final review
