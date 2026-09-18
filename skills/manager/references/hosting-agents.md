@@ -26,8 +26,8 @@ Rule 8 of `SKILL.md` holds on every rung, at both levels: nothing is started
 in the super manager's workspace or beside a manager's own pane, and each
 level closes only the ids it created and recorded — or inherited, recorded,
 from the dead agent it replaces — never by label, never from a listing. A
-manager never closes its own workspace. A host with no workspaces records
-`workspace: n/a` and what isolates the agents instead.
+host with no workspaces records `workspace: n/a` and what isolates the agents
+instead.
 
 ## Pick the highest rung available, and record which
 
@@ -137,14 +137,13 @@ Two levels need nesting. Count the layers below the super manager: the
 manager, its team member, and the fan-out inside that member's sibling skill.
 A host that allows that depth runs each manager as a subagent; check the
 host's limit rather than assuming it. A host that allows less applies the
-**collapse rule** of `super-manager.md` S1 — the super manager plays each
-manager itself — so the planners and reviewers keep their independence.
+**collapse rule** of `super-manager.md` S1.
 
 ## The question relay, per rung
 
 | Rung | The signal that a manager has a question | Where the super manager reads it | How it forwards the answer |
 |------|------------------------------------------|----------------------------------|----------------------------|
-| 1 | `agent wait` returns `blocked` or `idle`, and `status.md` reads `blocked` | `<run_dir>/questions.md`; the pane, for an approval prompt | `herdr agent prompt <manager> "<id>: <answer>"`; `herdr agent send-keys` for an approval prompt |
+| 1 | `agent wait` returns `blocked` or `idle`, and `status.md` reads `blocked` | `<run_dir>/questions.md`; the pane, for an approval prompt | `herdr agent prompt <manager> "<id>: <answer>"` — an approval prompt as 1a step 3 says |
 | 2 | the process ended with a `pending` record in `questions.md` | the same file | resume that run, or restart it with `answers_so_far` filled in |
 | 3 | the subagent returned a `blocked` team block | its return text and `questions.md` | a further message to the same subagent, else a new one with `answers_so_far` |
 
@@ -159,7 +158,7 @@ manager itself — so the planners and reviewers keep their independence.
   dead manager recorded is the replacement's to reuse and to close, by exact
   id. It re-runs the gate before trusting Progress, reuses the recorded
   sub-space or closes it before opening another, and at Phase 8 closes every
-  recorded id. The super manager checks all of them under S4.
+  recorded id.
 
 ## Giving an agent a skill it does not have
 

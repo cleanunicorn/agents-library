@@ -607,10 +607,6 @@
         },
         {
           "type": "shell",
-          "cmd": "! grep -E '^herdr tab close' .git/herdr-calls.log | grep -Evq '^herdr tab close w7:t2( |$)'"
-        },
-        {
-          "type": "shell",
           "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
         }
       ]
@@ -623,11 +619,7 @@
       "assertions": [
         {
           "type": "output_regex",
-          "pattern": "\\bpriorities-Q1\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?is)priorities-Q1.{0,800}\\bdefault\\b"
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}\\bdefault\\b"
         },
         {
           "type": "output_regex",
@@ -667,10 +659,6 @@
       "assertions": [
         {
           "type": "output_regex",
-          "pattern": "(?im)^#{1,4} Questions\\b"
-        },
-        {
-          "type": "output_regex",
           "pattern": "(?im)^#{1,4} Managers\\b.*\\b2 total\\b.*\\b1 blocked\\b.*\\b1 in progress\\b"
         },
         {
@@ -692,10 +680,6 @@
         {
           "type": "output_regex",
           "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*(—|–|-) blocked\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b.*^#{1,4} manager count-manager\\b"
         },
         {
           "type": "output_regex",

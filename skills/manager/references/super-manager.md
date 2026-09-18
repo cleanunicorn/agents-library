@@ -43,20 +43,18 @@ rule of S1, and it is a recorded degradation.
 3. **Decide `attended: yes | no`** from the user's words. "Ask nothing" or
    "nobody is available" means `no`.
 4. **Ask the cross-cutting questions once, now**, before any manager starts:
-   which items, an order or dependency between them, PR or branch. Number
+   which items; an order or dependency between them — always, when two items
+   touch the same files; PR or branch. Number
    them `S-Q<n>` and show them in the Questions section of the status format
    below, with `manager —`. No work item named → that is `S-Q1`; unattended,
    stop with a report instead of inventing one. **S1 waits for the answers:**
    attended, emit the status and end the turn, and start no manager until
    each `S-Q<n>` is answered. Unattended, take each question's labelled
-   default — parallel, in the order given; a branch unless the project's
-   workflow calls for a PR — and list it as `assumed`; an ask-first boundary
-   still blocks.
+   default — parallel, each item in its own worktree, any overlap listed as a
+   follow-up; a branch unless the project's workflow calls for a PR — and
+   list it as `assumed`; an ask-first boundary still blocks.
 5. **Say the cost:** N × (1 manager + 6 team agents), before the fan-outs
    inside the sibling skills.
-6. **Items that touch the same files:** say so and ask for an order. The
-   default is parallel, each in its own worktree, with the overlap listed as
-   a follow-up.
 
 ## S1 — Start the managers
 
@@ -122,14 +120,12 @@ long timeouts and re-read `status.md` only when a state changed, so polling
 does not flood your context.
 
 States move `in progress ⇄ blocked → done`. `done` is never inferred from
-silence or from a workspace that closed; a launch or runtime failure is
-`blocked` with its exact blocker.
+silence or from a workspace that closed.
 
 The relay, end to end:
 
-1. A manager appends a **question record** (defined in `manager-brief.md`)
-   to `questions.md`, rewrites `status.md` with the header
-   `blocked — waiting on <slug>-Q1`, and ends its turn.
+1. A manager writes a **question record** and a `blocked — waiting on
+   <slug>-Q1` header, as `manager-brief.md` tells it to, and ends its turn.
 2. You set the row to `blocked` and show the question in the Questions
    section, with the manager id and the workspace id.
 3. The user answers you, by id. With several questions pending, an answer
@@ -183,12 +179,10 @@ act on.
   `<slug>-Q1 · manager self · workspace n/a`.
 - Exactly one header line above each team block, and nothing else between
   blocks, so the blocks of several teams concatenate without reformatting.
-- The team block is the manager's, copied verbatim from `status.md`;
-  `last_summary` is always that complete block — fields not yet known read
-  `pending` or `none` — never a sentence of your own.
-- The header's state is the ledger's. It can differ from the block's: a dead
-  manager reads `blocked — manager unresponsive` above a block that still
-  says `in progress`.
+- The team block is the manager's, copied verbatim from `status.md` — never
+  a sentence of your own.
+- The header's state is the ledger's, so it can differ from the block's: an
+  unresponsive manager's block still says `in progress`.
 - End with the confidence indicator: the lowest of the managers'.
 
 ## S4 — Close
@@ -207,9 +201,8 @@ then you close the workspace; report anything that could not be cleaned.
 
 - **A workspace cannot be created:** fall to the next hosting rung. Never
   start a manager in your own workspace.
-- **A manager dies:** start a replacement in the same workspace with the same
-  run directory; its ticked Progress boxes are trusted only after the gate
-  passes. Record the continuity exception.
+- **A manager dies:** "When an agent dies" in `hosting-agents.md`. Record the
+  continuity exception.
 - **A manager is silent:** read its pane or output; the header becomes
   `blocked — manager unresponsive`.
 - **You replace a super manager that died** — the user points you at its

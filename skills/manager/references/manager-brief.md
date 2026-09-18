@@ -23,9 +23,8 @@ start no managers. Load the `manager` skill — by name, or from the path above
 
 ## The user is reached only through the super manager
 
-Neither you nor your team addresses the user, and you never ask in your own
-pane. A question becomes a **question record**, appended to
-`<run_dir>/questions.md`:
+Rule 7 of `SKILL.md`, in practice: you never ask in your own pane. A question
+is a **question record**, appended to `<run_dir>/questions.md`:
 
 ```
 id:        <slug>-Q<n>
@@ -39,44 +38,40 @@ status:    pending | answered | assumed
 answer:    the user's words, verbatim, as the super manager forwarded them
 ```
 
-1. Ask early: Phase 0 step 3 sends every question you can foresee as one
-   batch. Later questions arise only at a decision boundary.
-2. After writing a record, rewrite `status.md` with the header
+1. After writing a record, rewrite `status.md` with the header
    `blocked — waiting on <slug>-Q<n>` — or stay `in progress` while work that
    does not depend on the answer continues — and end your turn when nothing
    else can proceed.
-3. The super manager forwards the answer with its id. Record it verbatim, set
+2. The super manager forwards the answer with its id. Record it verbatim, set
    `status: answered`, **acknowledge the id** in your reply and in
-   `status.md`, update the acceptance criteria, and carry on. An answer that
-   reads `assume` means the user chose the defaults: take that record's
-   `default`, keep the user's words in `answer`, set `status: assumed`, and
-   acknowledge the id with the default you took. Across an ask-first boundary
-   `assume` settles nothing — the question stays `pending`.
-4. `attended: no` → take each record's `default`, set `status: assumed`, and
-   list it under Follow-ups. An ask-first boundary still blocks.
-5. `attended: yes` and no answer yet → stay `blocked`. An attended run never
+   `status.md`, update the acceptance criteria, and carry on.
+3. **Taking a default** — because `attended: no`, or because the forwarded
+   answer reads `assume` (the user chose the defaults): take the record's
+   `default`, keep any words of the user's in `answer`, set
+   `status: assumed`, list it under Follow-ups, and acknowledge the id with
+   the default you took. An ask-first boundary is never crossed this way —
+   that question stays `pending`.
+4. `attended: yes` and no answer yet → stay `blocked`. An attended run never
    assumes silently.
-6. A question already answered in `answers_so_far` is never asked again:
+5. A question already answered in `answers_so_far` is never asked again:
    write its record with that answer verbatim and `status: answered`, and
    acknowledge the id in your first `status.md`.
-7. The user typed into your pane anyway → record their words as the answer
+6. The user typed into your pane anyway → record their words as the answer
    to the pending id, report it through `status.md`, and carry on. Put no
    question of your own to them there.
 
 ## Keep `status.md` current
 
 Rewrite `<run_dir>/status.md` with the complete **team block** of `SKILL.md`
-as each phase ends and whenever your state changes — all nine fields, with
-`pending` or `none` where nothing is known yet. The super manager reads that
-file, so a status request never interrupts you.
+as each phase ends and whenever your state changes. The super manager reads
+that file, so a status request never interrupts you.
 
 `done` must show: the final gate result with its number, the branch or PR and
 its head SHA, a clean worktree, and every team sub-space closed. Leave your
 own workspace open — the super manager created it and closes it.
 
-**If you replace a manager that died**, its run directory is yours, and so is
-its ledger: every team sub-space id recorded there is yours to reuse and
-yours to close, by exact id. Reuse it, or close it before opening another;
-Phase 8 closes every recorded id, inherited or new.
+**If you replace a manager that died**, its run directory and ledger are
+yours: "When an agent dies" in `references/hosting-agents.md` says what you
+inherit and must close.
 
 End every report with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.
