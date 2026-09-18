@@ -5,23 +5,13 @@ team — two planners, one coordinator, two reviewers, one final reviewer — on
 whatever the host offers. The roles, the isolation between them, and the
 records they return are the same on every rung. Only the transport changes.
 
-## The rule that does not change: the manager's workspace stays clear
+## The rule that does not change
 
-The human runs one manager to watch several teams. Whatever the host is:
-
-- The whole team for one work item lives in **one new dedicated workspace**,
-  labelled after the work item.
-- Nothing is split, tabbed, or started in the manager's own pane or
-  workspace, and creating the team's workspace does not take the human's
-  focus.
-- The manager prompts, waits on, and reads from the team. It hosts nobody.
-- The manager records the id of the workspace it created — or `workspace:
-  n/a` plus what isolates the team, on a host that has no workspaces. When the
-  work item is `done` it closes **that id and nothing else** — never by
-  matching a label, never by picking from a listing, never a workspace it did
-  not create.
-- A run that ends blocked leaves its workspace open, and the hand-back names
-  the id and label so the human can look inside.
+Rule 8 of `SKILL.md` — the manager's workspace stays clear — holds on every
+rung: one new dedicated workspace per work item, nothing started beside the
+manager, and only the workspace the manager created is ever closed. The table
+says how each rung meets it; a host with no workspaces records `workspace:
+n/a` and what isolates the team instead.
 
 ## Pick the highest rung available, and record which
 
@@ -32,9 +22,7 @@ The human runs one manager to watch several teams. Whatever the host is:
 | 3 | Native subagents of one kind (the host's Agent/Task tool) | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
 | 4 | No delegation | The manager runs each pass in sequence and reports the loss of independence |
 
-Falling a rung is a recorded degradation, not a failure. If a team workspace
-cannot be created, fall to the next rung — never to the manager's own
-workspace.
+Falling a rung is a recorded degradation, not a failure.
 
 ### Rung 1 — a terminal multiplexer (Herdr as the example)
 
@@ -76,11 +64,7 @@ explicit request that overrides it.
    `--new-workspace --label "<work-item-slug>"` when no team workspace exists
    yet. The pane gets a new id after a move; continue with the agent name.
 6. **At done, close only what you created:**
-   `herdr workspace close <recorded workspace id>` — after the worktree is
-   clean and every artifact is in the run directory.
-
-The coordinator stays alive in its pane from the merge to the final fixes, so
-its context carries the reason behind every decision.
+   `herdr workspace close <recorded workspace id>`. Phase 8 says when.
 
 ### Rung 2 — headless CLIs
 
@@ -123,17 +107,7 @@ member then follows the copy.
 
 ## Independence, in practice
 
-- Planners and reviewers are told nothing about their counterpart and given
-  no path where its output lives. Give each its own file in the run directory.
-- The coordinator receives the plans labelled A and B with the authoring kind
-  removed; the manager keeps the mapping for the hand-back.
-- Reviewers get the acceptance criteria and the commit, never the
-  coordinator's implementation report.
-- The final reviewer is a new agent, not a reviewer from the earlier pair
-  with a fresh prompt.
-
-## Model choice
-
-Planners, reviewers, and the coordinator run at the session's tier: each
-makes judgement calls. The fan-outs inside the sibling skills keep their own
-lesser-tier default, which is where most of the agent count is.
+Rule 2 of `SKILL.md` says who may see what. In practice: give each planner
+and each reviewer its own file in the run directory and no path to its
+counterpart's, and give reviewers the acceptance criteria and the commit —
+never the coordinator's implementation report.

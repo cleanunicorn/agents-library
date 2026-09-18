@@ -226,10 +226,9 @@ the hand-back as open items.
    remote. If a push or PR step that was called for fails, keep the committed
    branch, report the exact failed command, leave the delivery box unticked,
    invent no URL — and the run is `blocked`, not `done`.
-3. **Close the team workspace only when the run is `done`** (or the user asks
-   for teardown): by its recorded id, after confirming the worktree is clean
-   and every artifact is in the run directory. `blocked` and `in progress`
-   leave it open and report its id and label.
+3. **Close the team workspace as rule 8 says** — only when the run is `done`
+   or the user asks for teardown, and only after confirming the worktree is
+   clean and every artifact is in the run directory.
 4. Report with the **team block** below.
 
 ### The team block
@@ -276,18 +275,13 @@ Reviewers return review-pr's finding schema unchanged, plus
 
 ## Hosting the team
 
-`references/hosting-agents.md` has the detail. Take the highest rung the host
+`references/hosting-agents.md` has the detail: how each host starts, prompts,
+and shuts down the team, and how a member without a sibling skill is handed
+the skill itself, never a rewritten copy. Take the highest rung the host
 offers and record which one: **live agents of different kinds** in a terminal
-multiplexer such as Herdr, in the team's own workspace (optional — never
-required) → **other CLIs run headless** from the worktree → **native
-subagents** of one kind, varying the model between paired roles → **no
-delegation**, where you run each pass in sequence and report the loss of
-independence. Keep the coordinator alive through the host's resume mechanism;
-if there is none, you play coordinator and say so.
-
-A team member whose host lacks a sibling skill is given that skill itself —
-its directory to read, or its whole bundle pasted verbatim (`SKILL.md` plus
-the sub-prompt files and scripts it names) — never a rewritten copy.
+multiplexer such as Herdr (optional — never required) → **other CLIs run
+headless** → **native subagents** of one kind → **no delegation**, where you
+follow the briefs yourself, in sequence, and report the loss of independence.
 
 **Model choice:** planners, reviewers, and the coordinator run at session
 tier; the fan-outs inside the sibling skills keep their lesser-tier default.
