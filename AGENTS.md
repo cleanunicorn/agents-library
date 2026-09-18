@@ -328,11 +328,12 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; `{planner, plan, decisions, assumptions}`
-  plan records, `{id, plan, quadrant, claim, evidence, affects, action}` SWOT
-  records, `{topic, plan_a, plan_b, chosen, rule, reason, swot_refs}` decision
-  records, and `{source_ids, raised_by, category, verdict, evidence, scope,
-  audited, action, sweep, status}` validation records for manager; the
+  …}` verdicts for triage-issues; `{planner, plan, decisions}` plan records,
+  `{id, quadrant, claim, evidence, affects, action}` SWOT records, `{topic,
+  plan_a, plan_b, chosen, rule, reason, swot_refs}` decision records, and
+  `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
+  action, sweep, status}` validation records for manager, defined in its
+  `references/` briefs; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create

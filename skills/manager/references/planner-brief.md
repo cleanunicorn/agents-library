@@ -37,7 +37,6 @@ decisions:    [{id: <A|B>-D<n>,
                 choice:   what you propose
                 evidence: path:line | "unknown: <what you searched>"
                 rejected: the alternatives you considered, and why not}]
-assumptions:  labelled defaults the plan depends on
 ```
 
 The `decisions` list is the part the merge depends on. Give every choice that

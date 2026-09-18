@@ -27,7 +27,6 @@ The phase numbers below are the manager's; you join at Phase 2.
 
    ```
    id:        A-W2             <plan>-<S|W|O|T><n>
-   plan:      A | B
    quadrant:  strength | weakness | opportunity | threat
    claim:     one line
    evidence:  path:line, a project rule, or the other plan's decision id
@@ -129,7 +128,6 @@ not a substitute for yours. Write one **validation record** per entry:
 source_ids:  [A:correctness-1, B:testing-2]   (final:docs-1 after the final review)
 raised_by:   any of A, B, final — e.g. [A], [A,B], [final]
 severity:    critical | important | nice-to-have — the higher one when merged
-category:    fix | improvement | correction | security | docs
 verdict:     confirmed | refuted | uncertain
 evidence:    what the code, a test, or the project rule shows — required for every verdict
 scope:       in-scope | out-of-scope | needs-user-decision

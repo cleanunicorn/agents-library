@@ -275,22 +275,19 @@ between them. `blocked` names the exact input that would unblock the run.
 
 ## Records
 
-Agents return these; the briefs in `references/` carry the same shapes.
+Each record's fields are defined once, in the brief of the agent that writes
+it. Read them there rather than from memory.
 
-```
-plan record:           {planner, plan, decisions[{id, topic, choice, evidence, rejected}], assumptions}
-SWOT record:           {id, plan, quadrant, claim, evidence, affects, action}
-decision record:       {topic, plan_a, plan_b, chosen, rule, reason, swot_refs}
-implementation report: {milestone, status, commits, gate, deviations, pr}
-validation record:     {source_ids, raised_by, severity, category, verdict,
-                        evidence, scope, audited, action, sweep, status}
-ledger row:            {role, kind, model, host, workspace, parallel, status}
-```
+| Record | Written by | Defined in |
+|--------|------------|------------|
+| plan record | each planner | `references/planner-brief.md` |
+| SWOT and decision records | coordinator | `references/coordinator-brief.md`, Phase 2 |
+| implementation report | coordinator | the same brief, Phase 3 |
+| validation record | coordinator; you fill in `audited` | the same brief, Phase 5a |
+| ledger row | you | `{role, kind, model, host, workspace, parallel, status}` |
 
-`plan` is plan-feature's output, unchanged. Reviewers return review-pr's
-finding schema unchanged, plus `reviewer: A | B | final`; a validation record
-keeps its finding's fields and the higher `severity`. simplify-sweep keeps its
-own schema. `verdict` uses review-pr's words: `confirmed | refuted | uncertain`.
+Reviewers return review-pr's finding schema unchanged, plus
+`reviewer: A | B | final`. simplify-sweep keeps its own schema.
 
 ## Hosting the team
 
