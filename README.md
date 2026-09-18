@@ -211,19 +211,32 @@ claude plugin install agents-library@agents-library --scope user
 
 ## The Manager Skill
 
-[`/manager`](skills/manager/SKILL.md) delivers one work item end to end by
-directing other coding agents. Two planners — different agent kinds where the
-host has them — each write an independent plan with `plan-feature`. A third
-agent, the coordinator, runs a SWOT analysis on each plan, merges the best
-decisions into one plan that opens with a Progress checklist, and implements
-it in a dedicated worktree as one PR. Two independent reviewers then run
-`review-pr`; every finding is confirmed, refuted, or kept open as uncertain —
-with evidence — before the confirmed ones are fixed, `simplify-sweep` tidies
-the branch diff, and a fresh final review closes the run. It works with native subagents alone; a terminal
-multiplexer such as Herdr can host the team as live agents, always in its own
-workspace so the manager's view stays clear. Each hand-back is one fixed
-status block per work item, so reports on several teams concatenate. It never
-merges the PR.
+[`/manager`](skills/manager/SKILL.md) delivers one or more work items end to
+end by directing other coding agents. The agent you invoke it on becomes the
+**super manager**: your single point of contact. It starts one **manager**
+per feature or fix, each in its own workspace, and tracks them in a ledger.
+
+Each manager runs the same pipeline for its work item. Two planners —
+different agent kinds where the host has them — each write an independent
+plan with `plan-feature`. A third agent, the coordinator, runs a SWOT
+analysis on each plan, merges the best decisions into one plan that opens
+with a Progress checklist, and implements it in a dedicated worktree as one
+PR. Two independent reviewers then run `review-pr`; every finding is
+confirmed, refuted, or kept open as uncertain — with evidence — before the
+confirmed ones are fixed, `simplify-sweep` tidies the branch diff, and a
+fresh final review closes the run.
+
+A manager asks its clarifying questions at the start, before any planner
+runs, and never talks to you directly: the super manager lists every pending
+question with the manager and workspace it came from, you answer there by
+id, and it forwards the answer. Its status is that questions section plus one
+header line and one fixed status block per manager, so reports on several
+teams concatenate.
+
+It works with native subagents alone; a terminal multiplexer such as Herdr
+can host the agents live — each manager's team in a sub-space of that
+manager's workspace, never in the super manager's. Each level closes only
+what it created. It never merges the PR.
 
 ## The Feature Planning Skill
 

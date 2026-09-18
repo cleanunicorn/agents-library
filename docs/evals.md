@@ -172,7 +172,7 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head` (one trivial PR, one conflicting) | batch branch exists with a `Merge PR #…` commit; conflict reported, never half-resolved; no-remote fixture exercises the Phase 0 guardrail |
-| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case alone, so live planners never see them; an implemented branch with a zero-limit bug, a variant whose required gate is absent, and a `herdr` shim logging calls to `.git/herdr-calls.log` | merged plan opens with Progress and carries all four SWOT quadrants; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the team runs in its own workspace and only that workspace is closed; hand-back carries the `done \| blocked \| in progress` team header; main never touched |
+| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case alone, so live planners never see them; an implemented branch with a zero-limit bug, a variant whose required gate is absent, a `herdr` shim logging calls to `.git/herdr-calls.log` that hands out one workspace id per create, and a copy whose caller is a started manager in `w7` and whose rules carry an ask-first line | merged plan opens with Progress and carries all four SWOT quadrants; planted plan defects are rejected; a false reviewer finding is refuted with evidence; two work items start two managers in two workspaces, and one item still reports through the super manager; a manager's team runs in a tab of its own workspace and each level closes only what it created; a question is raised before the team starts; the status lists each pending question with its manager and workspace above one header and one `done \| blocked \| in progress` team block per manager; an answer is forwarded to the one manager that asked; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 
 The manager suite is mostly slices of the pipeline, sized to the default
@@ -181,6 +181,15 @@ runs, three `review-pr` runs, and a `simplify-sweep`, so it carries its own
 `"timeout": 3600` and a full sweep gives it that without a flag. It is also
 the most expensive case in the repo — scope it in with `--case mg-h3` on
 purpose.
+
+The two-level slices are compositional: `mg-h7` covers the super manager
+starting one manager per work item, `mg-h8` a started manager hosting its
+team, and the relay is tested in halves — `mg-h10` surfaces a pending
+question, `mg-h11` forwards the answer — because a trial is one turn. The
+shim's log verifies launch counts, ids, and cleanup in those cases. Nothing
+here proves that a live answer arrives on a later turn and the manager
+resumes, and `mg-h9` is an outcome test: it cannot show that no planner
+started before the question.
 
 `mg-h3` is an **outcome** test, not an orchestration test. The runner keeps
 the agent's text and the names of the skills it invoked, and saves only the
