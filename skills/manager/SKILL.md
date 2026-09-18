@@ -130,21 +130,11 @@ the shared Phase 0 context, the work item and its acceptance criteria, and
 Start a third agent that wrote neither plan: the **coordinator**. Its prompt
 is the shared context, both plans labelled Plan A and Plan B **with the
 authoring kind removed** (no brand bias; you keep the mapping), and
-`references/coordinator-brief.md` verbatim. The brief has it:
-
-1. **Check the citations** behind every load-bearing decision.
-2. **Run a SWOT analysis on each plan**, with checkable quadrants and **no
-   entry without an action**.
-3. **Decide topic by topic** with an ordered rule list — no voting; two
-   planners agreeing is not evidence.
-4. **Run a coherence pass**, so the result is one plan and not a collage.
-5. **Write the merged plan** to the run directory. It **starts with
-   `## Progress`**: `- [x]` for planning steps done, `- [ ]` for
-   implementation milestones with dependency notes, `- [ ]` for review,
-   simplify, and final review, then deferred follow-ups. After it come
-   plan-feature's elements and a **merge log**: each plan's SWOT records, the
-   decision table, an acceptance-coverage matrix, and the counts. A split
-   into several PRs needs a one-line reason and a question to the user.
+`references/coordinator-brief.md` verbatim. The brief has it check every
+load-bearing citation, **run a SWOT analysis on each plan** with no entry
+left without an action, decide topic by topic, and write **one merged plan**
+to the run directory — opening with `## Progress` and closing with a merge
+log of the SWOT records, the decisions, and the counts.
 
 **Your gate on the merged plan, before any code:** Progress is the first
 section; every acceptance criterion has a step and a verification; every
@@ -159,13 +149,9 @@ requested, and the workspace you created is closed.
 
 The same coordinator implements, in the Phase 0 worktree.
 
-- Checklist order, smallest feedback loop first; for a bug, a failing test
-  first; a defect is fixed everywhere it occurs.
-- Gate after each milestone, commit in the project's format with its required
-  trailers, never commit red, and tick the Progress box as each milestone
-  lands.
-- **Deviation rule:** when the plan proves wrong, update the plan and log the
-  deviation with its reason. Never drift silently.
+- Its brief covers the work itself: checklist order, the gate after every
+  milestone, never a red commit, a ticked Progress box per milestone, and
+  every deviation from the plan logged with its reason.
 - When a PR is called for and a remote exists, say so in the coordinator's
   prompt: the coordinator pushes the branch and opens the PR as a **draft**,
   titled in the project's convention, with the Progress checklist as its
@@ -184,9 +170,7 @@ if the branch does move, give the reviewers a detached read-only checkout of
 that SHA rather than a moved branch. Start two agents of **different kinds**
 that neither planned nor implemented, together, in the team workspace.
 Each prompt is the shared context, the merged plan's acceptance criteria, and
-`references/reviewer-brief.md` verbatim: run `review-pr` on the branch diff,
-**report only** (its path d), check the diff against each criterion, edit
-nothing.
+`references/reviewer-brief.md` verbatim — `review-pr`, **report only**.
 
 One reviewer fails → retry once on another kind, else continue with one
 review, flagged, confidence 🟡 at best.
@@ -254,8 +238,9 @@ One manager watches several teams, so every work item is reported in the same
 fixed block — at hand-back *and* on any status request mid-run — and blocks
 for several teams concatenate into one report. The header is one line carrying
 exactly one of `done`, `blocked`, or `in progress`. Every field appears once,
-in this order; write `none` or `pending` rather than dropping one. A field that lists items — files,
-findings, simplifications — puts them on indented lines beneath it.
+in this order; write `none` or `pending` rather than dropping one. A field
+that lists items — files, findings, simplifications — puts them on indented
+lines beneath it.
 
 ```
 ### <work-item-slug> — done | blocked | in progress — <outcome, or the blocker, in one line>
