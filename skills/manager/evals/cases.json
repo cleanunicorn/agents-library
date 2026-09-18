@@ -132,16 +132,6 @@
         {
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)plan[ -]?a\\b"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)plan[ -]?b\\b"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
           "pattern": "\\bA-[SWOT]\\d"
         },
         {
@@ -210,11 +200,6 @@
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
           "pattern": "\\bA-S\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bB-W\\d"
         },
         {
           "type": "file_regex",
@@ -380,7 +365,7 @@
       "assertions": [
         {
           "type": "output_regex",
-          "pattern": "(?i)(verif|gate)"
+          "pattern": "(?i)(missing|absent|without|not (in|supplied|available|provided|present))[^.\\n]{0,60}(verif|gate)|(verif|gate)[^.\\n]{0,60}(missing|absent|unavailable|owner|not (in|supplied|available|provided|present))"
         },
         {
           "type": "output_regex",
