@@ -15,9 +15,35 @@
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
             "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with fixed ids: the manager lives in w1 (pane w1:p1), an unrelated\n# team in w2, and the first workspace this shim creates is w7.\nlog=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)/herdr-calls.log\"\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\nsplits=$(grep -c '^herdr pane split' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"w7\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"w7:t1\"},\"root_pane\":{\"pane_id\":\"w7:p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    [ \"$created\" -gt 0 ] && extra=',{\"workspace_id\":\"w7\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"w1:p1\",\"tab_id\":\"w1:t1\",\"workspace_id\":\"w1\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"w7:p'\"$((splits + 1))\"'\",\"workspace_id\":\"w7\"}}}' ;;\n  \"tab create\")\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"w7:t2\"},\"root_pane\":{\"pane_id\":\"w7:p9\",\"workspace_id\":\"w7\"}}}' ;;\n  \"pane move\")\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"w7:p8\",\"workspace_id\":\"w7\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\"|\"agent wait\")\n    echo '{\"id\":\"cli:agent:'\"$2\"'\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent read\")\n    echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}' ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    },
+    "task-service-with-plans": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
             "docs/plans/plan-a.md": "# Plan A — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
-            "docs/plans/plan-b.md": "# Plan B — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n",
-            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with fixed ids: the manager lives in w1 (pane w1:p1), an unrelated\n# team in w2, and the first workspace this shim creates is w7.\nlog=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)/herdr-calls.log\"\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\nsplits=$(grep -c '^herdr pane split' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"w7\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"w7:t1\"},\"root_pane\":{\"pane_id\":\"w7:p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    [ \"$created\" -gt 0 ] && extra=',{\"workspace_id\":\"w7\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"w1:p1\",\"tab_id\":\"w1:t1\",\"workspace_id\":\"w1\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"w7:p'\"$((splits + 1))\"'\",\"workspace_id\":\"w7\"}}}' ;;\n  \"tab create\")\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"w7:t2\"},\"root_pane\":{\"pane_id\":\"w7:p9\",\"workspace_id\":\"w7\"}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\"|\"agent wait\")\n    echo '{\"id\":\"cli:agent:'\"$2\"'\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent read\")\n    echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}' ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+            "docs/plans/plan-b.md": "# Plan B — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n"
           }
         },
         {
@@ -156,7 +182,7 @@
         },
         {
           "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- src tests"
+          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
         }
       ]
     },
@@ -164,7 +190,7 @@
       "id": "mg-h2",
       "prompt": "Two planners already wrote docs/plans/plan-a.md and docs/plans/plan-b.md for optional list limits. Do the manager's coordinator step only: check both plans against this repo, run a SWOT analysis on each, and merge the best decisions into one plan saved in this checkout at docs/plans/list-limit.md. Then stop; change no code and leave both input plans as they are.",
       "should_trigger": true,
-      "fixture": "task-service",
+      "fixture": "task-service-with-plans",
       "assertions": [
         {
           "type": "file_regex",
@@ -223,7 +249,7 @@
         },
         {
           "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- docs/plans/plan-a.md docs/plans/plan-b.md src tests"
+          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
         }
       ]
     },
@@ -236,7 +262,7 @@
       "assertions": [
         {
           "type": "shell",
-          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nPYTEST"
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && grep -qi 'limit' README.md && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nPYTEST"
         },
         {
           "type": "shell",
@@ -344,6 +370,10 @@
           "cmd": "git diff --exit-code eval-branch -- src/repository.py"
         },
         {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\" && test \"$(git rev-list --count eval-branch..HEAD)\" -ge 1"
+        },
+        {
           "type": "output_regex",
           "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
         },
@@ -386,6 +416,10 @@
         {
           "type": "shell",
           "cmd": "test -z \"$(git for-each-ref refs/heads --no-merged main)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r w; do test -z \"$(git -C \"$w\" status --porcelain)\" || exit 1; done"
         },
         {
           "type": "output_regex",
@@ -437,7 +471,7 @@
         },
         {
           "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- src tests docs"
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
         }
       ]
     },
