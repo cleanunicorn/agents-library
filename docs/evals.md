@@ -132,6 +132,9 @@ ablation.
                                        // (defaults: suite skill when
                                        // should_trigger, else null)
       "fixture": "<fixture-name>",
+      "timeout": 3600,                 // optional; seconds, for a case that
+                                       // cannot fit the 900 s default. An
+                                       // explicit --timeout overrides it
       "assertions": [
         { "type": "output_regex",     "pattern": "…" },
         { "type": "output_not_regex", "pattern": "…" },
@@ -148,7 +151,8 @@ ablation.
 
 Suite rules (enforced by `--dry-run`): ≥ 10 cases, ≥ 5 positive, ≥ 5 negative,
 unique ids, known assertion types, compilable regexes, fixtures resolvable,
-`expect_skill` naming a real repo skill. Negatives should include prompts that
+`expect_skill` naming a real repo skill, and any `timeout` a positive whole
+number of seconds. Negatives should include prompts that
 belong to *sibling* skills (tagged `expect_skill`) to catch cross-triggering.
 
 Assertions are deliberately cheap — regex/string/file/shell checks on the
@@ -173,9 +177,10 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 
 The manager suite is mostly slices of the pipeline, sized to the default
 900-second trial. Its one end-to-end case, `mg-h3`, nests two `plan-feature`
-runs, three `review-pr` runs, and a `simplify-sweep`; run it alone with
-`--case mg-h3 --timeout 3600`. The runner sees only final text, files, and
-shell state, so whether planners and reviewers really ran in parallel and in
+runs, three `review-pr` runs, and a `simplify-sweep`, so it carries its own
+`"timeout": 3600` and a full sweep gives it that without a flag. It is also
+the most expensive case in the repo — scope it in with `--case mg-h3` on
+purpose. The runner sees only final text, files, and shell state, so whether planners and reviewers really ran in parallel and in
 isolation is checked by reading the transcript, not by an assertion.
 
 ## Adding evals for a new skill
