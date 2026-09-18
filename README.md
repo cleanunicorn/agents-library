@@ -217,9 +217,9 @@ host has them — each write an independent plan with `plan-feature`. A third
 agent, the coordinator, runs a SWOT analysis on each plan, merges the best
 decisions into one plan that opens with a Progress checklist, and implements
 it in a dedicated worktree as one PR. Two independent reviewers then run
-`review-pr`; every finding is confirmed or refuted with evidence before the
-confirmed ones are fixed, `simplify-sweep` tidies the branch diff, and a fresh
-final review closes the run. It works with native subagents alone; a terminal
+`review-pr`; every finding is confirmed, refuted, or kept open as uncertain —
+with evidence — before the confirmed ones are fixed, `simplify-sweep` tidies
+the branch diff, and a fresh final review closes the run. It works with native subagents alone; a terminal
 multiplexer such as Herdr can host the team as live agents, always in its own
 workspace so the manager's view stays clear. Each hand-back is one fixed
 status block per work item, so reports on several teams concatenate. It never

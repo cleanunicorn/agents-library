@@ -15,7 +15,8 @@ return it as text.
 
 1. **Use the `plan-feature` skill** for this work item, planning only. If your
    host does not have it, the manager's prompt names where to read it or
-   includes it; follow it as written.
+   includes the whole skill — its `SKILL.md` and both lens prompts; follow it
+   as written.
 2. Work from the acceptance criteria you were given. Keep their ids. Add one
    only when the work item plainly needs it, and say why.
 3. Cite existing code as `path:line`. Label every new path as `proposed:`.
