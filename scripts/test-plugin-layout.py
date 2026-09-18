@@ -24,6 +24,7 @@ SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 1700,
     "describe-codebase": 1300,
     "install-agents": 1500,
+    "manager": 3000,
     "plan-feature": 1600,
     "review-design": 2500,
     "review-pr": 3100,
