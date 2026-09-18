@@ -102,14 +102,14 @@ manager that is replaced, never loses or re-asks an intake answer.
 6. **Collapse rule.** Decide it **before step 3 creates anything**: where a
    manager could not start its own team — no delegation, or a host whose
    nesting limit is too low — play each manager yourself, and record the
-   degradation. If a manager you already started reports that it cannot host
-   its team, that row is `blocked`: stop that manager, keep its artifacts in
-   the run directory, close its recorded workspace by exact id as S4 says,
-   and only then turn the row to `self` — never leave a child running the
-   item you are about to play. Planners and reviewers then
-   stay independent agents, which is the property worth keeping. One work
-   item is never a reason to collapse. Playing a manager is a bounded switch
-   of role, not a second invocation:
+   degradation. Planners and reviewers then stay independent agents, which is
+   the property worth keeping. One work item is never a reason to collapse.
+   If a manager you already started reports that it cannot host its team,
+   that row is `blocked`: stop that manager, keep its artifacts in the run
+   directory, close its recorded workspace by exact id as S4 says, and only
+   then turn the row to `self` — never leave a child running the item you are
+   about to play. Playing a manager is a bounded switch of role, not a second
+   invocation:
    - one ledger row at a time, `manager: self`, `workspace: n/a`, its own
      child run directory and worktree — never two items at once;
    - follow `SKILL.md` Phases 0–8 for that item as they stand; do not load
