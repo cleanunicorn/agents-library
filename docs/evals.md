@@ -184,16 +184,22 @@ purpose.
 
 The two-level slices are compositional: `mg-h7` covers the super manager
 starting one named manager per work item, each prompted once with the bare
-`role: manager` marker first; `mg-h8` a started manager hosting its team in
-one tab and closing it. The relay is tested in pieces, because a trial is one
-turn: `mg-h9` is a started manager that must raise `<slug>-Q1` with no team
-agent started, `mg-h10` surfaces a pending question in order, `mg-h11`
-forwards the verbatim answer to the one manager and clears the question once
-the shim's scripted manager acknowledges it, and `mg-h12` is the manager's
-side — an answer already given is recorded and never asked again. The shim's
-log verifies launch counts, names, ids, ordering, and cleanup in those cases,
-on the Herdr path only. Nothing here proves that a live answer arrives on a
-later turn and a real manager resumes: the acknowledgement in `mg-h11` is the
+`role: manager` marker first and a complete launch header — inline, or in the
+launch file the prompt names; `mg-h8` a started manager hosting its team in
+one tab and closing it; `mg-h13` a launch whose marker is displaced, which
+must start nobody; `mg-h14` a teardown that crosses both levels in order —
+the manager confirms first, then its workspace is closed, and the super
+manager never closes the tab itself. The relay is tested in pieces, because a
+trial is one turn: `mg-h9` is a started manager that must raise a complete,
+pending `<slug>-Q1` record and go `blocked` with no team agent started,
+`mg-h10` surfaces a pending question above the supplied blocks copied
+verbatim, `mg-h11` forwards the verbatim answer to the one manager and clears
+the question only after reading the scripted manager's acknowledgement, and
+`mg-h12` is the manager's side — an answer already given is recorded and
+never asked again. The shim's log verifies launch counts, names, ids,
+ordering, and cleanup in those cases, on the Herdr path only. Nothing here
+proves that a live answer arrives on a later turn and a real manager resumes,
+or that a real manager closes its tab on teardown: those replies are the
 shim's.
 
 `mg-h3` is an **outcome** test, not an orchestration test. The runner keeps

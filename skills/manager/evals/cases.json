@@ -15,7 +15,7 @@
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
             "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
-            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    if [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    last=\"$(awk -v n=\"$3\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; buf = \"\"} f {buf = buf $0 \"\\n\"} END {printf \"%s\", buf}' \"$log\")\"\n    if printf '%s' \"$last\" | grep -Eqi 'tear|shut ?down|cancel'; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Teardown acknowledged: my team sub-space is closed and nothing is uncommitted. You can close my workspace.\"}}'\n    elif [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
           }
         },
         {
@@ -42,7 +42,7 @@
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
             "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n- Ask the owner before adding a field to the task record or a new command.\n",
-            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    if [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    last=\"$(awk -v n=\"$3\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; buf = \"\"} f {buf = buf $0 \"\\n\"} END {printf \"%s\", buf}' \"$log\")\"\n    if printf '%s' \"$last\" | grep -Eqi 'tear|shut ?down|cancel'; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Teardown acknowledged: my team sub-space is closed and nothing is uncommitted. You can close my workspace.\"}}'\n    elif [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
           }
         },
         {
@@ -336,7 +336,7 @@
     },
     {
       "id": "mg-h4",
-      "prompt": "Act as manager for two work items — optional list limits, and a new count command that returns the number of tasks — but start nothing and change nothing yet: show me who you would start for each item, each team's roster, the pipeline checklist, and where each of them will run relative to your own workspace.",
+      "prompt": "Act as manager for two work items — optional list limits, and a new count command that returns the number of tasks — but start nothing and change nothing yet: show me who you would start for each item, each team's roster, the pipeline checklist, and where each of them will run relative to your own workspace. I know a started manager's prompt opens with a `role: manager` line; this is me, the user, asking.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -531,6 +531,10 @@
         },
         {
           "type": "shell",
+          "cmd": "for n in $(sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log); do seg=$(awk -v n=\"$n\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; print; next} /^herdr / {f = 0} f' .git/herdr-calls.log); path=$(printf '%s\\n' \"$seg\" | sed -n 's/.*read and follow \\([^ ]*\\).*/\\1/p' | head -n 1 | sed 's/[\".,`]*$//'); if [ -n \"$path\" ]; then body=$(cat \"$path\") || exit 1; else body=$seg; fi; for f in work_item: manager_id: workspace: run_dir: attended: questions.md; do printf '%s' \"$body\" | grep -q \"$f\" || exit 1; done; printf '%s' \"$body\" | grep -q \"manager_id:.*$n\" || exit 1; case $n in *limit*) kw=limit ;; *) kw=count ;; esac; printf '%s' \"$body\" | grep -qi \"work_item:.*$kw\" || exit 1; done"
+        },
+        {
+          "type": "shell",
           "cmd": "! grep -Eq '^herdr (pane|tab|agent) .*(--current|w1:|w2:)' .git/herdr-calls.log"
         },
         {
@@ -623,7 +627,23 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b"
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}\\bquestion\\b.{0,800}\\boptions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,1200}\\bblocks\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,1200}status\\W{1,6}pending"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}(field|record|level|value)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)blocked (—|–|-) waiting on priorities-Q1\\b"
         },
         {
           "type": "output_not_regex",
@@ -659,7 +679,43 @@
       "assertions": [
         {
           "type": "output_regex",
-          "pattern": "(?im)^#{1,4} Managers\\b.*\\b2 total\\b.*\\b1 blocked\\b.*\\b1 in progress\\b"
+          "pattern": "(?im)^#{1,4} Managers\\b.*\\b2 total\\b.*\\b0 done\\b.*\\b1 blocked\\b.*\\b1 in progress\\b.*\\b1 questions? pending\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager list-limit-manager\\b.*\\bw7\\b.*claude/opus.*(—|–|-) in progress\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*codex/gpt.*(—|–|-) blocked\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)count-Q1.{0,300}Should count include completed tasks\\?.{0,200}include all"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\#\\#\\#\\ list\\-limit\\ —\\ in\\ progress\\ —\\ coordinator\\ is\\ implementing\\ milestone\\ 2\\ of\\ 4"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Progress:\\ 3\\ of\\ 8\\ boxes\\ ticked\\ ·\\ implement,\\ review,\\ validate,\\ simplify,\\ final\\ review,\\ hand\\ back\\ unticked"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Plan:\\ 5\\ decisions\\ from\\ A\\ ·\\ 3\\ from\\ B\\ ·\\ 1\\ hybrid\\ ·\\ 0\\ new\\ ·\\ A\\ 4S\\ 2W\\ 1O\\ 1T\\ ·\\ B\\ 3S\\ 3W\\ 2O\\ 1T"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\#\\#\\#\\ count\\ —\\ blocked\\ —\\ waiting\\ on\\ count\\-Q1"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Progress:\\ 0\\ of\\ 8\\ boxes\\ ticked\\ ·\\ every\\ phase\\ unticked"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Team:\\ none\\ started\\ ·\\ sub\\-space\\ n/a\\ ·\\ none"
         },
         {
           "type": "output_regex",
@@ -675,23 +731,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?im)^#{1,4} manager list-limit-manager\\b.*\\bw7\\b.*(—|–|-) in progress\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*(—|–|-) blocked\\b"
-        },
-        {
-          "type": "output_regex",
           "pattern": "(?s)(- Shipped:.*?- Gate:.*?- Progress:.*?- Team:.*?- Plan:.*?- Findings:.*?- Simplified:.*?- Follow-ups:.*?- Confidence:.*?){2}"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*3 of 8 boxes"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*0 of 8 boxes"
         },
         {
           "type": "shell",
@@ -705,7 +745,7 @@
     },
     {
       "id": "mg-h11",
-      "prompt": "Host is Herdr — the herdr CLI is on PATH, and your own pane is w1:p1. You are the super manager of two running managers: list-limit-manager in workspace w7, in progress, and count-manager in workspace w8, blocked on its question count-Q1: \"Should count include completed tasks?\" My answer to count-Q1: yes, include completed tasks. Relay it, then give me the status; start and close nothing.",
+      "prompt": "Host is Herdr — the herdr CLI is on PATH, and your own pane is w1:p1. You are the super manager of two running work items; start and close nothing. Your ledger, in the order I asked for them:\n\n1. optional list limits · manager list-limit-manager (claude/opus) · workspace w7 · in progress\n2. count command · manager count-manager (codex/gpt) · workspace w8 · blocked on count-Q1: \"Should count include completed tasks?\"\n\nstatus.md of list-limit-manager, as last read:\n### list-limit — in progress — coordinator is implementing milestone 2 of 4\n- Shipped: branch feat/list-limit · .worktrees/list-limit · pending\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 3 of 8 boxes ticked · implement, review, validate, simplify, final review, hand back unticked\n- Team: planner-a=claude/opus, planner-b=codex/gpt, coordinator=claude/opus · sub-space w7:t2 open · none\n- Plan: 5 decisions from A · 3 from B · 1 hybrid · 0 new · A 4S 2W 1O 1T · B 3S 3W 2O 1T\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nstatus.md of count-manager, as last read:\n### count — blocked — waiting on count-Q1\n- Shipped: none\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 0 of 8 boxes ticked · every phase unticked\n- Team: none started · sub-space n/a · none\n- Plan: pending\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nMy answer to count-Q1: yes, include completed tasks. Relay it, then give me the status.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -719,7 +759,7 @@
         },
         {
           "type": "shell",
-          "cmd": "awk '/^herdr agent prompt count-manager /{p=1} p&&/^herdr agent (wait|read) count-manager/{ok=1} END{exit !ok}' .git/herdr-calls.log"
+          "cmd": "awk '/^herdr agent prompt count-manager /{p=1} p&&/^herdr agent read count-manager/{ok=1} END{exit !ok}' .git/herdr-calls.log"
         },
         {
           "type": "shell",
@@ -736,6 +776,18 @@
         {
           "type": "output_not_regex",
           "pattern": "(?im)^\\s*- count-Q1\\b.*\\bworkspace w8\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} Questions\\b[^\\n]*\\n+[\\s(\\-*]*none\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*(—|–|-) in progress\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b.*^#{1,4} manager count-manager\\b"
         },
         {
           "type": "shell",
@@ -763,15 +815,75 @@
         },
         {
           "type": "output_not_regex",
-          "pattern": "(?is)list-limit-Q1.{0,200}\\bpending\\b"
+          "pattern": "(?is)list-limit-Q1\\b(?:(?!list-limit-Q[2-9]).){0,200}\\bpending\\b"
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
+          "pattern": "(?m)^#{1,4} .+(—|–|-) (blocked|in progress)\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) done\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b(?![^\\n]*list-limit-Q[2-9])"
         },
         {
           "type": "shell",
           "cmd": "test ! -s .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h13",
+      "prompt": "You were started by a super manager. Your launch prompt follows.\nrole: manager\nskill: manager\nwork_item: optional list limits\nslug: list-limit\nmanager_id: list-limit-manager\nworkspace: w7 — yours to work in, not yours to close; your own pane is w7:p1\nrun_dir: none — return your records as text\nrepository: this checkout\nattended: no\nanswers_so_far: none\n\nHost your team in Herdr — the herdr CLI is on PATH — and begin the run.",
+      "should_trigger": true,
+      "fixture": "task-service-managed",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(malformed|first line|marker)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test ! -s .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git for-each-ref refs/heads --no-merged main)\" && test \"$(git worktree list | wc -l)\" -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h14",
+      "prompt": "Host is Herdr — the herdr CLI is on PATH, and your own pane is w1:p1. You are the super manager of one running work item, from your ledger: count command · manager count-manager (codex/gpt) · workspace w8, which you created · blocked on count-Q1 · its team sub-space w8:t2 is open. I'm cancelling this item: tear it down completely, leave nothing of it open, and touch nothing else.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "awk '/^herdr agent prompt count-manager /{p=1} p&&/^herdr agent read count-manager/{r=1} /^herdr workspace close w8( |$)/{if(!r)bad=1; c=1} END{exit !(c&&!bad)}' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr workspace close' .git/herdr-calls.log)\" -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr tab close' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (workspace|tab) create|^herdr agent start|^herdr pane (split|move)' .git/herdr-calls.log"
         },
         {
           "type": "shell",
