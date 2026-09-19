@@ -132,6 +132,9 @@ ablation.
                                        // (defaults: suite skill when
                                        // should_trigger, else null)
       "fixture": "<fixture-name>",
+      "timeout": 3600,                 // optional; seconds, for a case that
+                                       // cannot fit the 900 s default. An
+                                       // explicit --timeout overrides it
       "assertions": [
         { "type": "output_regex",     "pattern": "…" },
         { "type": "output_not_regex", "pattern": "…" },
@@ -148,7 +151,8 @@ ablation.
 
 Suite rules (enforced by `--dry-run`): ≥ 10 cases, ≥ 5 positive, ≥ 5 negative,
 unique ids, known assertion types, compilable regexes, fixtures resolvable,
-`expect_skill` naming a real repo skill. Negatives should include prompts that
+`expect_skill` naming a real repo skill, and any `timeout` a positive whole
+number of seconds. Negatives should include prompts that
 belong to *sibling* skills (tagged `expect_skill`) to catch cross-triggering.
 
 Assertions are deliberately cheap — regex/string/file/shell checks on the
@@ -168,7 +172,44 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head` (one trivial PR, one conflicting) | batch branch exists with a `Merge PR #…` commit; conflict reported, never half-resolved; no-remote fixture exercises the Phase 0 guardrail |
+| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case alone, so live planners never see them; an implemented branch with a zero-limit bug, a variant whose required gate is absent, a `herdr` shim logging calls to `.git/herdr-calls.log` that hands out one workspace id per create, and a copy whose caller is a started manager in `w7` and whose rules carry an ask-first line | merged plan opens with Progress and carries all four SWOT quadrants; planted plan defects are rejected; a false reviewer finding is refuted with evidence; two work items start two managers in two workspaces, and one item still reports through the super manager; a manager's team runs in a tab of its own workspace and each level closes only what it created; a started manager raises its question with no team agent started; the status lists each pending question with its manager and workspace above one header and one `done \| blocked \| in progress` team block per manager; an answer is forwarded to the one manager that asked; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
+
+The manager suite is mostly slices of the pipeline, sized to the default
+900-second trial. Its one end-to-end case, `mg-h3`, nests two `plan-feature`
+runs, three `review-pr` runs, and a `simplify-sweep`, so it carries its own
+`"timeout": 3600` and a full sweep gives it that without a flag. It is also
+the most expensive case in the repo — scope it in with `--case mg-h3` on
+purpose.
+
+The two-level slices are compositional: `mg-h7` covers the super manager
+starting one named manager per work item, each prompted once with the bare
+`role: manager` marker first and a complete launch header — inline, or in the
+launch file the prompt names; `mg-h8` a started manager hosting its team in
+one tab and closing it; `mg-h13` a launch whose marker is displaced, which
+must start nobody; `mg-h14` a teardown that crosses both levels in order —
+the manager confirms first, then its workspace is closed, and the super
+manager never closes the tab itself. The relay is tested in pieces, because a
+trial is one turn: `mg-h9` is a started manager that must raise a complete,
+pending `<slug>-Q1` record and go `blocked` with no team agent started,
+`mg-h10` surfaces a pending question above the supplied blocks copied
+verbatim, `mg-h11` forwards the verbatim answer to the one manager and clears
+the question only after reading the scripted manager's acknowledgement, and
+`mg-h12` is the manager's side — an answer already given is recorded and
+never asked again. The shim's log verifies launch counts, names, ids,
+ordering, and cleanup in those cases, on the Herdr path only. Nothing here
+proves that a live answer arrives on a later turn and a real manager resumes,
+or that a real manager closes its tab on teardown: those replies are the
+shim's.
+
+`mg-h3` is an **outcome** test, not an orchestration test. The runner keeps
+the agent's text and the names of the skills it invoked, and saves only the
+last 4,000 characters of that text; sub-agent launches, their order, and
+their prompts are discarded. So nothing in this suite verifies that planners
+and reviewers really ran in parallel and in isolation — a single agent that
+did the work itself and wrote the right summary would pass. Measuring that
+needs a persisted delegation trace per trial, which the runner does not have
+yet.
 
 ## Adding evals for a new skill
 

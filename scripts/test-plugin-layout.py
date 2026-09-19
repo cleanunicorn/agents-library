@@ -24,6 +24,7 @@ SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 1700,
     "describe-codebase": 1300,
     "install-agents": 1500,
+    "manager": 2900,
     "plan-feature": 1600,
     "review-design": 2500,
     "review-pr": 3100,
@@ -195,6 +196,49 @@ class PluginLayoutTests(unittest.TestCase):
                 ceiling = (AGENT_WORD_CEILING if path.parent.name == "agents"
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
+
+    def test_manager_role_marker_agrees(self):
+        """The manager skill's two roles are told apart by one literal line.
+
+        SKILL.md's opening paragraph is the only router: the exact first line
+        makes a manager, a launch header without it fails closed, anyone else
+        is the super manager. The super manager sends that line and the launch
+        brief opens with it. A second router in a reference, or a sender that
+        puts anything else on the line, is how a started manager ends up
+        starting managers of its own.
+        """
+        marker = "role: manager"
+        skill = ROOT / "skills/manager"
+        texts = {name: (skill / name).read_text(encoding="utf-8")
+                 for name in ("SKILL.md", "references/super-manager.md",
+                              "references/manager-brief.md")}
+        router = " ".join(texts["SKILL.md"].split())
+        self.assertRegex(router, rf"A prompt whose first line is exactly `{marker}` makes you a \*\*manager\*\*",
+                         "SKILL.md no longer routes on the exact first line")
+        self.assertRegex(router, r"without that first line is a malformed launch: start nobody",
+                         "SKILL.md no longer fails closed on a malformed launch")
+        self.assertRegex(router, r"Anyone else is the \*\*super manager\*\*",
+                         "SKILL.md no longer has a default role")
+        for name in ("references/super-manager.md", "references/manager-brief.md"):
+            self.assertNotRegex(" ".join(texts[name].split()),
+                                r"(?i)go back to `SKILL\.md`|makes you (a|the) \*\*",
+                                f"{name} decides a role; SKILL.md is the only router")
+        # Every fenced block that carries the marker is a launch form: the
+        # marker is its first line, alone.
+        launch_forms = 0
+        for name, text in texts.items():
+            for block in re.findall(r"(?ms)^[ \t]*```\n(.*?)^[ \t]*```", text):
+                if marker in block:
+                    launch_forms += 1
+                    self.assertEqual(block.splitlines()[0].strip(), marker,
+                                     f"{name}: a launch form does not open with the bare marker")
+        self.assertGreaterEqual(launch_forms, 2, "expected the brief header and the compact launch form")
+        # Nothing shares the marker's line when it is quoted inline as something to send.
+        for name, text in texts.items():
+            with self.subTest(file=name):
+                self.assertIn(marker, text, f"{name} no longer names `{marker}`")
+                self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
+                                 f"{name} sends the marker with a suffix")
 
 
 if __name__ == "__main__":

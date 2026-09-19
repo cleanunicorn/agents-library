@@ -22,7 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # explicit decision here rather than silently escaping the contract.
 AGENTS = {"architect", "deadwood", "docbot", "refactor", "sentinel", "testforge",
           "uidesigner", "uxpolish"}
-FIXING_SKILLS = {"review-design", "review-pr", "review-ux-psychology", "simplify-sweep"}
+FIXING_SKILLS = {"manager", "review-design", "review-pr", "review-ux-psychology",
+                 "simplify-sweep"}
 
 APPLIES_FIXES = re.compile(r"(?i)\*\*apply the (edit|change|fix)\*\*")
 # Both the rule and the process step must name the whole repository: narrowing
@@ -77,6 +78,12 @@ class FixEverywhereTests(unittest.TestCase):
         path = "skills/triage-issues/references/issue-fix.md"
         text = self.read(path)
         self.expect(path, text, FIXES_EVERY_INSTANCE, "the issue fixer does not sweep")
+        self.refute(path, text, CAP, "a per-area cap is back")
+
+    def test_manager_coordinator_fixes_every_instance(self):
+        path = "skills/manager/references/coordinator-brief.md"
+        text = self.read(path)
+        self.expect(path, text, FIXES_EVERY_INSTANCE, "the coordinator does not sweep")
         self.refute(path, text, CAP, "a per-area cap is back")
 
     def test_guides_teach_the_rule(self):

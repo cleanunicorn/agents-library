@@ -49,7 +49,8 @@ changes, see [Updating](#updating).
 This repo is a Claude Code plugin marketplace. Installing it gives you the
 `/review-pr`, `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`,
 `/triage-issues`, `/simplify-sweep`, `/describe-codebase`,
-`/plan-feature`, and `/install-agents` skills plus all eight agents as subagents.
+`/plan-feature`, `/install-agents`, and `/manager` skills plus all eight agents
+as subagents.
 
 ```
 /plugin marketplace add cleanunicorn/agents-library
@@ -59,7 +60,8 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 Then start a new session. The agents become subagents (e.g. `architect`,
 `refactor`, `testforge`) and the skills are available as `/review-pr`,
 `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
-`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, and `/install-agents`.
+`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`, and
+`/manager`.
 
 Outside a session, the same works from the CLI:
 
@@ -79,10 +81,10 @@ This repo is directly compatible with [opencode](https://opencode.ai).
   refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
   `mode: subagent` so opencode registers them as subagents (invokable via
   `@mention` or dispatched by the orchestrator skills).
-- `.opencode/skills/<name>/SKILL.md` → the nine orchestrator skills
+- `.opencode/skills/<name>/SKILL.md` → the ten orchestrator skills
   (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
   `triage-issues`, `simplify-sweep`, `describe-codebase`, `plan-feature`,
-  `install-agents`),
+  `install-agents`, `manager`),
   loaded on demand via opencode's `skill` tool.
 
 Both directories symlink to the canonical `agents/` and `skills/` at the repo
@@ -92,7 +94,7 @@ root, so there is a single source of truth.
 the repo root:
 
 ```
-# Global: symlink all 8 agents + 9 skills into ~/.config/opencode/
+# Global: symlink all 8 agents + 10 skills into ~/.config/opencode/
 ./scripts/install-opencode.sh
 
 # Project: copy into a specific project's .opencode/
@@ -206,6 +208,35 @@ scopes with `claude plugin list --json`. If the entry really is gone from
 ```
 claude plugin install agents-library@agents-library --scope user
 ```
+
+## The Manager Skill
+
+[`/manager`](skills/manager/SKILL.md) delivers one or more work items end to
+end by directing other coding agents. The agent you invoke it on becomes the
+**super manager**: your single point of contact. It starts one **manager**
+per feature or fix, each in its own workspace, and tracks them in a ledger.
+
+Each manager runs the same pipeline for its work item. Two planners —
+different agent kinds where the host has them — each write an independent
+plan with `plan-feature`. A third agent, the coordinator, runs a SWOT
+analysis on each plan, merges the best decisions into one plan that opens
+with a Progress checklist, and implements it in a dedicated worktree as one
+PR. Two independent reviewers then run `review-pr`; every finding is
+confirmed, refuted, or kept open as uncertain — with evidence — before the
+confirmed ones are fixed, `simplify-sweep` tidies the branch diff, and a
+fresh final review closes the run.
+
+A manager asks its clarifying questions at the start, before any planner
+runs, and never talks to you directly: the super manager lists every pending
+question with the manager and workspace it came from, you answer there by
+id, and it forwards the answer. Its status is that questions section plus one
+header line and one fixed status block per manager, so reports on several
+teams concatenate.
+
+It works with native subagents alone; a terminal multiplexer such as Herdr
+can host the agents live — each manager's team in a sub-space of that
+manager's workspace, never in the super manager's. Each level closes only
+what it created. It never merges the PR.
 
 ## The Feature Planning Skill
 

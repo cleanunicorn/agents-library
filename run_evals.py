@@ -32,6 +32,8 @@ Case file schema (skills/<name>/evals/cases.json):
     "cases": [ { "id", "prompt", "should_trigger", "fixture",
                  "expect_skill" (optional; defaults to the suite skill when
                                  should_trigger, else null),
+                 "timeout" (optional; seconds this case needs when it cannot
+                            fit the default; an explicit --timeout wins),
                  "assertions": [ {"type": "output_regex"|"output_not_regex",
                                   "pattern": ...},
                                  {"type": "file_exists"|"file_absent",
@@ -64,6 +66,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent
 SKILLS_DIR = REPO / "skills"
 RESULTS_DIR = REPO / "eval-results"
+
+DEFAULT_TIMEOUT = 900  # seconds per trial
 
 ASSERTION_TYPES = {
     "output_regex", "output_not_regex",
@@ -124,6 +128,10 @@ def validate_suite(skill, suite):
                     re.compile(a.get("pattern", ""))
                 except re.error as e:
                     problems.append(f"{cid}: bad regex {a.get('pattern')!r}: {e}")
+        timeout = c.get("timeout")
+        if timeout is not None and (isinstance(timeout, bool)
+                                    or not isinstance(timeout, int) or timeout <= 0):
+            problems.append(f"{cid}: timeout {timeout!r} is not a positive number of seconds")
         exp = c.get("expect_skill")
         if exp and exp not in all_skills():
             problems.append(f"{cid}: expect_skill {exp!r} is not a repo skill")
@@ -244,6 +252,11 @@ def check_assertion(a, output, ws):
     raise ValueError(f"unknown assertion type {t!r}")
 
 
+def trial_timeout(cli_timeout, case):
+    """An explicit --timeout wins, then the case's own, then the default."""
+    return cli_timeout or case.get("timeout") or DEFAULT_TIMEOUT
+
+
 def expected_skill(suite, case):
     if "expect_skill" in case:
         return case["expect_skill"]
@@ -259,7 +272,8 @@ def run_case(args, tmp_root, suite, case, loaded_skills, isolate_settings):
             trials.append({"workspace": str(ws), "built": True})
             continue
         output, skills_used, err = run_agent(
-            ws, case["prompt"], args.model, args.timeout, isolate_settings
+            ws, case["prompt"], args.model, trial_timeout(args.timeout, case),
+            isolate_settings
         )
         failures = []
         if err:
@@ -341,7 +355,9 @@ def main():
     ap.add_argument("--case", help="run a single case id")
     ap.add_argument("--trials", type=int, default=3)
     ap.add_argument("--model", help="model override passed to claude")
-    ap.add_argument("--timeout", type=int, default=900, help="seconds per trial")
+    ap.add_argument("--timeout", type=int, default=None,
+                    help=f"seconds per trial; overrides a case's own \"timeout\" "
+                         f"(default {DEFAULT_TIMEOUT})")
     ap.add_argument("--without-skill", metavar="SKILL",
                     help="load every repo skill except this one (single ablation arm)")
     ap.add_argument("--ablation", action="store_true",

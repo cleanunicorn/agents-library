@@ -1,0 +1,1010 @@
+{
+  "skill": "manager",
+  "fixtures": {
+    "task-service": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    last=\"$(awk -v n=\"$3\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; buf = \"\"} f {buf = buf $0 \"\\n\"} END {printf \"%s\", buf}' \"$log\")\"\n    if printf '%s' \"$last\" | grep -Eqi 'tear|shut ?down|cancel'; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Teardown acknowledged: my team sub-space is closed and nothing is uncommitted. You can close my workspace.\"}}'\n    elif [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    },
+    "task-service-managed": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n- Ask the owner before adding a field to the task record or a new command.\n",
+            "bin/herdr": "#!/usr/bin/env bash\n# Offline stand-in for the herdr CLI. Logs every call beside the common git\n# directory (so calls made from a linked worktree land in the same log) and\n# answers with predictable ids: the caller lives in the pane named by\n# .git/herdr-self (default w1:p1, the super manager), an unrelated team in w2,\n# and the workspaces this shim creates are w7, w8, … in order. A tab or a\n# split lands in the workspace its --workspace or --pane names.\ngitdir=\"$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)\"\nlog=\"$gitdir/herdr-calls.log\"\nself=\"$(cat \"$gitdir/herdr-self\" 2>/dev/null || echo w1:p1)\"\n# Value of \"--name VALUE\" or \"--name=VALUE\" among the arguments.\narg() {\n  local name=\"$1\"; shift\n  while [ $# -gt 0 ]; do\n    case \"$1\" in\n      \"$name\") echo \"$2\"; return ;;\n      \"$name\"=*) echo \"${1#*=}\"; return ;;\n    esac\n    shift\n  done\n}\n# Reject the two forms the real CLI rejects, and keep them out of the graded log.\nusage=\"\"\ncase \"$1 $2\" in\n  \"pane split\") case \" $* \" in *\" --direction \"*) ;; *)\n    usage=\"usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--cwd PATH] [--focus|--no-focus]\" ;; esac ;;\n  \"pane move\") case \" $* \" in *\" --new-tab \"*|*\" --new-workspace \"*|*\" --tab \"*) ;; *)\n    usage=\"usage: herdr pane move <pane_id> --tab <tab_id> --split right|down | --new-tab [--workspace ID] | --new-workspace [--label TEXT]\" ;; esac ;;\nesac\nif [ -n \"$usage\" ]; then echo \"rejected: herdr $*\" >> \"$log\"; echo \"$usage\" >&2; exit 2; fi\necho \"herdr $*\" >> \"$log\"\ncreated=$(grep -c '^herdr workspace create' \"$log\")\npanes=$(grep -Ec '^herdr (pane split|tab create)' \"$log\")\ntabs=$(grep -c '^herdr tab create' \"$log\")\ncase \"$1 $2\" in\n  \"workspace create\")\n    ws=\"w$((6 + created))\"\n    echo '{\"id\":\"cli:workspace:create\",\"result\":{\"workspace\":{\"workspace_id\":\"'\"$ws\"'\",\"label\":\"team\"},\"tab\":{\"tab_id\":\"'\"$ws\"':t1\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p1\"}}}' ;;\n  \"workspace list\")\n    extra=\"\"\n    n=1\n    while [ \"$n\" -le \"$created\" ]; do\n      extra=\"$extra\"',{\"workspace_id\":\"w'\"$((6 + n))\"'\",\"label\":\"team\",\"focused\":false,\"pane_count\":1}'\n      n=$((n + 1))\n    done\n    echo '{\"id\":\"cli:workspace:list\",\"result\":{\"type\":\"workspace_list\",\"workspaces\":[{\"workspace_id\":\"w1\",\"label\":\"manager\",\"focused\":true,\"pane_count\":1},{\"workspace_id\":\"w2\",\"label\":\"other team\",\"focused\":false,\"pane_count\":3}'\"$extra\"']}}' ;;\n  \"workspace close\")\n    echo '{\"id\":\"cli:workspace:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane current\")\n    echo '{\"id\":\"cli:pane:current\",\"result\":{\"pane\":{\"pane_id\":\"'\"$self\"'\",\"tab_id\":\"'\"${self%%:*}\"':t1\",\"workspace_id\":\"'\"${self%%:*}\"'\",\"agent\":\"claude\"}}}' ;;\n  \"pane split\")\n    from=\"$(arg --pane \"$@\")\"\n    case \"$3\" in w[0-9]*:*) from=\"${from:-$3}\" ;; esac\n    ws=\"${from:-$self}\"; ws=\"${ws%%:*}\"\n    echo '{\"id\":\"cli:pane:split\",\"result\":{\"pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab create\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-${self%%:*}}\"\n    echo '{\"id\":\"cli:tab:create\",\"result\":{\"type\":\"tab_created\",\"tab\":{\"tab_id\":\"'\"$ws\"':t'\"$((tabs + 1))\"'\"},\"root_pane\":{\"pane_id\":\"'\"$ws\"':p'\"$((panes + 1))\"'\",\"workspace_id\":\"'\"$ws\"'\"}}}' ;;\n  \"tab close\")\n    echo '{\"id\":\"cli:tab:close\",\"result\":{\"closed\":\"'\"$3\"'\"}}' ;;\n  \"pane move\")\n    ws=\"$(arg --workspace \"$@\")\"; ws=\"${ws:-w$((6 + (created > 0 ? created : 1)))}\"\n    echo '{\"id\":\"cli:pane:move\",\"result\":{\"move_result\":{\"previous_pane_id\":\"'\"$3\"'\",\"pane\":{\"pane_id\":\"'\"$ws\"':p8\",\"workspace_id\":\"'\"$ws\"'\"}}}}' ;;\n  \"pane list\")\n    echo '{\"id\":\"cli:pane:list\",\"result\":{\"panes\":[{\"pane_id\":\"w7:p1\",\"workspace_id\":\"w7\"}]}}' ;;\n  \"agent start\")\n    echo '{\"id\":\"cli:agent:start\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"idle\"}}}' ;;\n  \"agent prompt\")\n    echo '{\"id\":\"cli:agent:prompt\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"working\"}}}' ;;\n  \"agent wait\")\n    # An agent that was prompted has settled by the time it is waited on.\n    state=\"working\"; grep -q \"^herdr agent prompt $3 \" \"$log\" && state=\"idle\"\n    echo '{\"id\":\"cli:agent:wait\",\"result\":{\"agent\":{\"name\":\"'\"$3\"'\",\"agent_status\":\"'\"$state\"'\"}}}' ;;\n  \"agent read\")\n    # A prompted agent acknowledges the last question id it was sent, as a\n    # manager does when the super manager forwards an answer.\n    qid=\"$(grep -oE '[A-Za-z0-9-]+-Q[0-9]+' \"$log\" | tail -1)\"\n    last=\"$(awk -v n=\"$3\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; buf = \"\"} f {buf = buf $0 \"\\n\"} END {printf \"%s\", buf}' \"$log\")\"\n    if printf '%s' \"$last\" | grep -Eqi 'tear|shut ?down|cancel'; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Teardown acknowledged: my team sub-space is closed and nothing is uncommitted. You can close my workspace.\"}}'\n    elif [ -n \"$qid\" ] && grep -q \"^herdr agent prompt $3 \" \"$log\"; then\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"'\"$qid\"' acknowledged — answer recorded, status: answered. State: in progress.\"}}'\n    else\n      echo '{\"id\":\"cli:agent:read\",\"result\":{\"text\":\"Working on the plan; nothing to read yet.\"}}'\n    fi ;;\n  \"agent list\")\n    echo '{\"id\":\"cli:agent:list\",\"result\":{\"agents\":[]}}' ;;\n  *)\n    echo '{\"id\":\"cli\",\"result\":{}}' ;;\nesac\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline",
+            "echo w7:p1 > .git/herdr-self"
+          ]
+        }
+      ]
+    },
+    "task-service-with-plans": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
+            "docs/plans/plan-a.md": "# Plan A — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
+            "docs/plans/plan-b.md": "# Plan B — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    },
+    "task-service-implemented": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline",
+            "git checkout -qb feat/list-limit"
+          ]
+        },
+        {
+          "files": {
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(limit=None), titles(limit=None). Lists return\ntasks in insertion order. A limit returns the first N; omitting it returns\neverything. Zero, negative numbers, booleans, strings, and floats are rejected\nwith ValueError.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    if command == \"titles\":\n        return service.list_titles(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks(limit=None):\n    tasks = repository.list_tasks()\n    if limit:\n        if not isinstance(limit, int) or limit < 0:\n            raise ValueError(\"limit must be a positive integer\")\n        return tasks[:limit]\n    return tasks\n\n\ndef list_titles(limit=None):\n    titles = [task[\"title\"] for task in repository.list_tasks()]\n    if limit:\n        if not isinstance(limit, int) or limit < 0:\n            raise ValueError(\"limit must be a positive integer\")\n        return titles[:limit]\n    return titles\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n    def test_list_limit(self):\n        for title in (\"first\", \"second\", \"third\"):\n            execute(\"add\", title=title)\n        self.assertEqual(len(execute(\"list\", limit=2)), 2)\n        self.assertEqual(execute(\"titles\", limit=2), [\"first\", \"second\"])\n\n    def test_negative_limit(self):\n        with self.assertRaises(ValueError):\n            execute(\"list\", limit=-1)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add list limits and a titles command'",
+            "git tag eval-branch"
+          ]
+        }
+      ]
+    },
+    "task-service-no-gate": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n",
+            "README.md": "# greeter\n\nA one-module greeting helper: `src/greet.py`.\n",
+            "AGENTS.md": "# Agent guide — greeter\n\n- Verification is mandatory before every commit. The command is proprietary\n  and is **not in this repository**: the owner supplies it per task. Ask the\n  owner for it. There is no Makefile and no test suite here, and you may not\n  invent a substitute gate.\n- Never commit unverified work. Never commit to `main`.\n- Worktrees live under `.worktrees/` (gitignored).\n",
+            "src/greet.py": "def greet(name):\n    return f\"Hello, {name}.\"\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial greeter'",
+            "git tag eval-baseline"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "mg-h1",
+      "prompt": "Act as manager for optional list limits, but only as far as the merged plan, then stop: two independent planners, then a coordinator that runs a SWOT analysis on each plan and merges them. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the merged plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "file_exists",
+          "path": "docs/plans/list-limit.md"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\A\\s*(#[^\\n]*\\n\\s*)?##? Progress[^\\n]*\\n(?:[^\\n]*\\n){0,3}?\\s*- \\[[ xX]\\]"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)strength"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)weakness"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)opportunit"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)threat"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-[SWOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bB-[SWOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\b[AB]-[WT]\\d.{0,400}\\b(fix|mitigat|ask)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "make test"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h2",
+      "prompt": "Two planners already wrote docs/plans/plan-a.md and docs/plans/plan-b.md for optional list limits. Do the manager's coordinator step only: check both plans against this repo, run a SWOT analysis on each, and merge the best decisions into one plan saved in this checkout at docs/plans/list-limit.md. Then stop; change no code and leave both input plans as they are.",
+      "should_trigger": true,
+      "fixture": "task-service-with-plans",
+      "assertions": [
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\A\\s*(#[^\\n]*\\n\\s*)?##? Progress[^\\n]*\\n(?:[^\\n]*\\n){0,3}?\\s*- \\[[ xX]\\]"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)(one|single|same) (PR|pull request)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)(weakness|threat|layer|dispatch).{0,400}app\\.py|app\\.py.{0,400}(weakness|threat|layer|dispatch)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)empty"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)bool"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-S\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bA-[WOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "\\bB-[SOT]\\d"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\bB-W\\d.{0,400}\\b(fix|mitigat|declin|ask)"
+        },
+        {
+          "type": "file_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?is)\\b[AB]-O\\d.{0,400}\\b(adopt|declin)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h3",
+      "prompt": "Deliver optional list limits end to end as manager: planners, SWOT merge, implementation, two reviewers, validated fixes, a simplify pass, and a final review. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "timeout": 3600,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && grep -qi 'limit' README.md && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('list', limit=2) == []\nfor title in ('first', 'second', 'third'):\n    execute('add', title=title)\nall_tasks = execute('list')\nassert execute('list', limit=2) == all_tasks[:2]\nassert execute('list', limit=10) == all_tasks\nfor bad in (0, -1, True, '2', 1.5):\n    try:\n        execute('list', limit=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'invalid limit accepted: {bad!r}')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r w; do test -z \"$(git -C \"$w\" status --porcelain)\" || exit 1; done"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "- \\[[xX]\\]|\\d+ of \\d+"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(confirmed|refuted)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(🟢|🟡|🔴)"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} Questions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager\\b.+(—|–|-) (done|blocked|in progress)\\b"
+        }
+      ]
+    },
+    {
+      "id": "mg-h4",
+      "prompt": "Act as manager for two work items — optional list limits, and a new count command that returns the number of tasks — but start nothing and change nothing yet: show me who you would start for each item, each team's roster, the pipeline checklist, and where each of them will run relative to your own workspace. I know a started manager's prompt opens with a `role: manager` line; this is me, the user, asking.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)limit"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bcount\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)super.?manager"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "- \\[ \\]"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)planner"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)coordinator"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)reviewer"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)simplif"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)final review"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(new|dedicated|separate|own)\\b[^.\\n]{0,40}workspace"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(sub-?space|\\btab\\b)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test ! -s .git/herdr-calls.log"
+        }
+      ]
+    },
+    {
+      "id": "mg-h5",
+      "prompt": "You are the manager for list limits; implementation on this branch is done and the two reviewers have reported. Reviewer A: [correctness-1] critical, src/service.py list_tasks — `if limit:` lets limit=0 return every task, but the README says zero is rejected with ValueError. Reviewer B: [security-1] critical, src/repository.py add_task — the title is interpolated into a SQL query, allowing SQL injection. Validate each finding with evidence, fix what you confirm on this branch in this checkout (pre-approved), and hand back with your summary.",
+      "should_trigger": true,
+      "fixture": "task-service-implemented",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "python3 - <<'PYTEST'\nfrom src.app import execute\nfor command in ('list', 'titles'):\n    try:\n        execute(command, limit=0)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'{command} accepted limit=0')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "make test"
+        },
+        {
+          "type": "file_regex",
+          "path": "tests/test_tasks.py",
+          "pattern": "(?i)(zero|limit=0|\\(0|\\b0,)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)(refut|reject|not (a )?real|false positive).{0,300}(inject|sql|in.memory|no (sql|database))|(inject|sql).{0,300}(refut|reject|false positive|in.memory|no (sql|database))"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-branch -- src/repository.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\" && test \"$(git rev-list --count eval-branch..HEAD)\" -ge 1"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(🟢|🟡|🔴)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} Questions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager\\b.+(—|–|-) (done|blocked|in progress)\\b"
+        }
+      ]
+    },
+    {
+      "id": "mg-h6",
+      "prompt": "Manage this end to end, obeying AGENTS.md: add a shout(name) helper to src/greet.py that returns the greeting in upper case. Nobody is available to answer questions during this run.",
+      "should_trigger": true,
+      "fixture": "task-service-no-gate",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(missing|absent|without|not (in|supplied|available|provided|present))[^.\\n]{0,60}(verif|gate)|(verif|gate)[^.\\n]{0,60}(missing|absent|unavailable|owner|not (in|supplied|available|provided|present))"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Simplified:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(all (checks|tests) pass|gate (is )?green|(—|–|-) done\\b)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git for-each-ref refs/heads --no-merged main)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r w; do test -z \"$(git -C \"$w\" status --porcelain)\" || exit 1; done"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(🟢|🟡|🔴)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} Questions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager\\b.+(—|–|-) blocked\\b"
+        }
+      ]
+    },
+    {
+      "id": "mg-h7",
+      "prompt": "Host this in Herdr — the herdr CLI is on PATH, and your own pane is w1:p1 in workspace w1, which I use to watch everything. Two work items: optional list limits, and a new count command that returns the number of tasks. Start a live manager for each (kind claude) and send each one its launch prompt. Then the run is cancelled before any team starts: shut down what you created, and nothing else. Do not plan or edit anything yourself.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr workspace create' .git/herdr-calls.log)\" -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr workspace create' .git/herdr-calls.log | grep -Evq -e '--label' && ! grep -E '^herdr workspace create' .git/herdr-calls.log | grep -Evq -e '--cwd' && ! grep -E '^herdr workspace create' .git/herdr-calls.log | grep -Evq -e '--no-focus'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr agent start' .git/herdr-calls.log)\" -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -Eq '^herdr agent start.*--pane[ =]w7:' .git/herdr-calls.log && grep -Eq '^herdr agent start.*--pane[ =]w8:' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eiq '^herdr agent start.*(planner|coordinator|reviewer)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "n=$(sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log | sort -u); test \"$(echo \"$n\" | wc -l)\" -eq 2 && echo \"$n\" | grep -qi limit && echo \"$n\" | grep -qi count && ! echo \"$n\" | grep -Eivq -e '-manager$'"
+        },
+        {
+          "type": "shell",
+          "cmd": "for n in $(sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log); do test \"$(grep -c \"^herdr agent prompt $n role: manager\\$\" .git/herdr-calls.log)\" -eq 1 || exit 1; done; test \"$(grep -c '^herdr agent prompt ' .git/herdr-calls.log)\" -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "for n in $(sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log); do seg=$(awk -v n=\"$n\" 'index($0, \"herdr agent prompt \" n \" \") == 1 {f = 1; print; next} /^herdr / {f = 0} f' .git/herdr-calls.log); path=$(printf '%s\\n' \"$seg\" | sed -n 's/.*read and follow \\([^ ]*\\).*/\\1/p' | head -n 1 | sed 's/[\".,`]*$//'); if [ -n \"$path\" ]; then body=$(cat \"$path\") || exit 1; else body=$seg; fi; for f in work_item: manager_id: workspace: run_dir: attended: questions.md; do printf '%s' \"$body\" | grep -q \"$f\" || exit 1; done; printf '%s' \"$body\" | grep -q \"manager_id:.*$n\" || exit 1; case $n in *limit*) kw=limit ;; *) kw=count ;; esac; printf '%s' \"$body\" | grep -qi \"work_item:.*$kw\" || exit 1; done"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (pane|tab|agent) .*(--current|w1:|w2:)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -Eq '^herdr workspace close w7( |$)' .git/herdr-calls.log && grep -Eq '^herdr workspace close w8( |$)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr workspace close' .git/herdr-calls.log | grep -Evq '^herdr workspace close w[78]( |$)'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr tab close' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h8",
+      "prompt": "role: manager\nskill: manager\nwork_item: optional list limits — execute(\"list\", limit=2) returns the first two tasks in insertion order\nslug: list-limit\nmanager_id: list-limit-manager\nworkspace: w7 — yours to work in, not yours to close; your own pane is w7:p1\nrun_dir: none — return your records as text\nrepository: this checkout\nattended: no\nanswers_so_far: none\n\nHost your team in Herdr — the herdr CLI is on PATH. Open the space your team runs in and start the two planners there as live agents (kinds claude and codex). Then the run is cancelled: shut down what you created, and nothing else. Do not plan or edit anything yourself.",
+      "should_trigger": true,
+      "fixture": "task-service-managed",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -E '^herdr tab create' .git/herdr-calls.log | grep -E -e '--workspace[ =]w7' | grep -e '--cwd' | grep -q -e '--no-focus'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr workspace (create|close)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr tab create' .git/herdr-calls.log)\" -eq 1 && test \"$(grep -c '^herdr tab close' .git/herdr-calls.log)\" -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log | grep -ci planner)\" -eq 2 && ! sed -n 's/^herdr agent start \\([^ ]*\\).*/\\1/p' .git/herdr-calls.log | grep -iq manager"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -E '^herdr agent start' .git/herdr-calls.log | grep -oE -e '--pane[ =][^ ]+' | sort -u | wc -l)\" -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr agent start' .git/herdr-calls.log)\" -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -Eq '^herdr agent start.*--kind[ =]claude' .git/herdr-calls.log && grep -Eq '^herdr agent start.*--kind[ =]codex' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr agent start' .git/herdr-calls.log | grep -Evq -e '--pane[ =]w7:'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr agent start.*--pane[ =]w7:p1( |$)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -E '^herdr pane split' .git/herdr-calls.log | grep -Evq 'w7:' && ! grep -E '^herdr pane split' .git/herdr-calls.log | grep -Evq -e '--no-focus'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (pane|tab|agent) .*(--current|w1:|w2:)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -Eq '^herdr tab close w7:t2( |$)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h9",
+      "prompt": "role: manager\nskill: manager\nwork_item: add task priorities\nslug: priorities\nmanager_id: priorities-manager\nworkspace: w7 — yours to work in, not yours to close; your own pane is w7:p1\nrun_dir: none — return your records as text\nrepository: this checkout\nattended: yes\nanswers_so_far: none\n\nHost your team in Herdr — the herdr CLI is on PATH. Begin the run.",
+      "should_trigger": true,
+      "fixture": "task-service-managed",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}\\bdefault\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}\\bquestion\\b.{0,800}\\boptions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,1200}\\bblocks\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,1200}status\\W{1,6}pending"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)\\bpriorities-Q1\\b.{0,800}(field|record|level|value)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)blocked (—|–|-) waiting on priorities-Q1\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(—|–|-) done\\b"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr agent start' .git/herdr-calls.log 2>/dev/null"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr workspace (create|close)' .git/herdr-calls.log 2>/dev/null"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git for-each-ref refs/heads --no-merged main)\" && test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r w; do test -z \"$(git -C \"$w\" status --porcelain)\" || exit 1; done"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h10",
+      "prompt": "You are the super manager of two running work items in this repo; start nothing and change nothing. Your ledger, in the order I asked for them:\n\n1. optional list limits · manager list-limit-manager (claude/opus) · workspace w7 · in progress\n2. count command · manager count-manager (codex/gpt) · workspace w8 · blocked\n\nstatus.md of list-limit-manager:\n### list-limit — in progress — coordinator is implementing milestone 2 of 4\n- Shipped: branch feat/list-limit · .worktrees/list-limit · pending\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 3 of 8 boxes ticked · implement, review, validate, simplify, final review, hand back unticked\n- Team: planner-a=claude/opus, planner-b=codex/gpt, coordinator=claude/opus · sub-space w7:t2 open · none\n- Plan: 5 decisions from A · 3 from B · 1 hybrid · 0 new · A 4S 2W 1O 1T · B 3S 3W 2O 1T\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nstatus.md of count-manager:\n### count — blocked — waiting on count-Q1\n- Shipped: none\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 0 of 8 boxes ticked · every phase unticked\n- Team: none started · sub-space n/a · none\n- Plan: pending\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nquestions.md of count-manager:\nid: count-Q1\nphase: 0\nquestion: Should count include completed tasks?\nwhy: it decides whether count filters on the completed flag\noptions: include all | open tasks only\ndefault: include all\nblocks: everything\nstatus: pending\nanswer: —\n\nGive me the status.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} Managers\\b.*\\b2 total\\b.*\\b0 done\\b.*\\b1 blocked\\b.*\\b1 in progress\\b.*\\b1 questions? pending\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager list-limit-manager\\b.*\\bw7\\b.*claude/opus.*(—|–|-) in progress\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*codex/gpt.*(—|–|-) blocked\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)count-Q1.{0,300}Should count include completed tasks\\?.{0,200}include all"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\#\\#\\#\\ list\\-limit\\ —\\ in\\ progress\\ —\\ coordinator\\ is\\ implementing\\ milestone\\ 2\\ of\\ 4"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Progress:\\ 3\\ of\\ 8\\ boxes\\ ticked\\ ·\\ implement,\\ review,\\ validate,\\ simplify,\\ final\\ review,\\ hand\\ back\\ unticked"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Plan:\\ 5\\ decisions\\ from\\ A\\ ·\\ 3\\ from\\ B\\ ·\\ 1\\ hybrid\\ ·\\ 0\\ new\\ ·\\ A\\ 4S\\ 2W\\ 1O\\ 1T\\ ·\\ B\\ 3S\\ 3W\\ 2O\\ 1T"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\#\\#\\#\\ count\\ —\\ blocked\\ —\\ waiting\\ on\\ count\\-Q1"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Progress:\\ 0\\ of\\ 8\\ boxes\\ ticked\\ ·\\ every\\ phase\\ unticked"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager count-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Team:\\ none\\ started\\ ·\\ sub\\-space\\ n/a\\ ·\\ none"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} Managers\\b.*^#{1,4} Questions\\b.*count-Q1.*^#{1,4} manager list-limit-manager\\b.*^#{1,4} manager count-manager\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?ims)\\A(?:(?!^#{1,4} Questions\\b).)*^#{1,4} manager "
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)count-Q1(?=.{0,200}count-manager)(?=.{0,200}\\bw8\\b)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)(- Shipped:.*?- Gate:.*?- Progress:.*?- Team:.*?- Plan:.*?- Findings:.*?- Simplified:.*?- Follow-ups:.*?- Confidence:.*?){2}"
+        },
+        {
+          "type": "shell",
+          "cmd": "test ! -s .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h11",
+      "prompt": "Host is Herdr — the herdr CLI is on PATH, and your own pane is w1:p1. You are the super manager of two running work items; start and close nothing. Your ledger, in the order I asked for them:\n\n1. optional list limits · manager list-limit-manager (claude/opus) · workspace w7 · in progress\n2. count command · manager count-manager (codex/gpt) · workspace w8 · blocked on count-Q1: \"Should count include completed tasks?\"\n\nstatus.md of list-limit-manager, as last read:\n### list-limit — in progress — coordinator is implementing milestone 2 of 4\n- Shipped: branch feat/list-limit · .worktrees/list-limit · pending\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 3 of 8 boxes ticked · implement, review, validate, simplify, final review, hand back unticked\n- Team: planner-a=claude/opus, planner-b=codex/gpt, coordinator=claude/opus · sub-space w7:t2 open · none\n- Plan: 5 decisions from A · 3 from B · 1 hybrid · 0 new · A 4S 2W 1O 1T · B 3S 3W 2O 1T\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nstatus.md of count-manager, as last read:\n### count — blocked — waiting on count-Q1\n- Shipped: none\n- Gate: `make test` → 4 tests pass at the baseline\n- Progress: 0 of 8 boxes ticked · every phase unticked\n- Team: none started · sub-space n/a · none\n- Plan: pending\n- Findings: pending\n- Simplified: pending\n- Follow-ups: none\n- Confidence: 🟡 Medium\n\nMy answer to count-Q1: yes, include completed tasks. Relay it, then give me the status.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr agent prompt ' .git/herdr-calls.log)\" -eq 1 && grep -Eq '^herdr agent prompt count-manager ' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "awk '/^herdr agent prompt count-manager /{f=1;print;next} /^herdr /{f=0} f' .git/herdr-calls.log | tr '\\n' ' ' | grep -i 'count-Q1' | grep -qi 'yes, include completed tasks'"
+        },
+        {
+          "type": "shell",
+          "cmd": "awk '/^herdr agent prompt count-manager /{p=1} p&&/^herdr agent read count-manager/{ok=1} END{exit !ok}' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (workspace|tab) (create|close)|^herdr agent start|^herdr pane (split|move)' .git/herdr-calls.log"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} Questions\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)count-Q1.{0,300}(acknowledg|answered)"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?im)^\\s*- count-Q1\\b.*\\bworkspace w8\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} Questions\\b[^\\n]*\\n+[\\s(\\-*]*none\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{1,4} manager count-manager\\b.*\\bw8\\b.*(—|–|-) in progress\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b.*^#{1,4} manager count-manager\\b"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h12",
+      "prompt": "role: manager\nskill: manager\nwork_item: optional list limits — execute(\"list\", limit=N) returns the first N tasks in insertion order\nslug: list-limit\nmanager_id: list-limit-manager\nworkspace: w7 — yours to work in, not yours to close; your own pane is w7:p1\nrun_dir: none — return your records as text\nrepository: this checkout\nattended: yes\nanswers_so_far: list-limit-Q1 (Should limit=0 raise ValueError or return an empty list?): raise ValueError\n\nThe run is paused before any team starts: start nothing and change nothing. Show me your question records and your status block.",
+      "should_trigger": true,
+      "fixture": "task-service-managed",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?is)list-limit-Q1.{0,400}\\banswered\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)raise ValueError"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)waiting on list-limit-Q1\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?is)list-limit-Q1\\b(?:(?!list-limit-Q[2-9]).){0,200}\\bpending\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) (blocked|in progress)\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) done\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b(?![^\\n]*list-limit-Q[2-9])"
+        },
+        {
+          "type": "shell",
+          "cmd": "test ! -s .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h13",
+      "prompt": "You were started by a super manager. Your launch prompt follows.\nrole: manager\nskill: manager\nwork_item: optional list limits\nslug: list-limit\nmanager_id: list-limit-manager\nworkspace: w7 — yours to work in, not yours to close; your own pane is w7:p1\nrun_dir: none — return your records as text\nrepository: this checkout\nattended: no\nanswers_so_far: none\n\nHost your team in Herdr — the herdr CLI is on PATH — and begin the run.",
+      "should_trigger": true,
+      "fixture": "task-service-managed",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(malformed|first line|marker)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test ! -s .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git for-each-ref refs/heads --no-merged main)\" && test \"$(git worktree list | wc -l)\" -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h14",
+      "prompt": "Host is Herdr — the herdr CLI is on PATH, and your own pane is w1:p1. You are the super manager of one running work item, from your ledger: count command · manager count-manager (codex/gpt) · workspace w8, which you created · blocked on count-Q1 · its team sub-space w8:t2 is open. I'm cancelling this item: tear it down completely, leave nothing of it open, and touch nothing else.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "awk '/^herdr agent prompt count-manager /{p=1} p&&/^herdr agent read count-manager/{r=1} /^herdr workspace close w8( |$)/{if(!r)bad=1; c=1} END{exit !(c&&!bad)}' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(grep -c '^herdr workspace close' .git/herdr-calls.log)\" -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr tab close' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -Eq '^herdr (workspace|tab) create|^herdr agent start|^herdr pane (split|move)' .git/herdr-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-n1",
+      "prompt": "Plan optional list limits for this repo: scope, acceptance checks, implementation order. Plan only; don't implement and don't change any file.",
+      "should_trigger": false,
+      "expect_skill": "plan-feature",
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\bAC\\s?-?\\d"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-n2",
+      "prompt": "Review this branch before I merge it. Report only; don't change anything.",
+      "should_trigger": false,
+      "expect_skill": "review-pr",
+      "fixture": "task-service-implemented",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(zero|limit\\s*=?=?\\s*0|falsy|`if limit:?`|bool|True)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-branch -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-n3",
+      "prompt": "Find duplication and dead code in this repo. Report only; don't change anything.",
+      "should_trigger": false,
+      "expect_skill": "simplify-sweep",
+      "fixture": "task-service-implemented",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)duplic"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)list_titles|list_tasks"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-branch -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-n4",
+      "prompt": "Explain how the add and list commands flow through this codebase. No edits.",
+      "should_trigger": false,
+      "expect_skill": "describe-codebase",
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "app\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "service\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "repository\\.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\""
+        }
+      ]
+    },
+    {
+      "id": "mg-n5",
+      "prompt": "Implement optional list limits now — minimal, no ceremony, no planning document. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Implementation is already authorized.",
+      "should_trigger": false,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "n=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l); test \"$n\" -le 1 || exit 1; b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main); if [ -n \"$b\" ] && [ \"$b\" != \"$(git branch --show-current)\" ]; then d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\"; fi; make test && grep -q limit tests/test_tasks.py"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(planner [ab]\\b|\\bSWOT\\b|reviewer [ab]\\b)"
+        }
+      ]
+    },
+    {
+      "id": "mg-n6",
+      "prompt": "What is 17 × 3? Reply with the number only.",
+      "should_trigger": false,
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "\\b51\\b"
+        }
+      ]
+    }
+  ]
+}
