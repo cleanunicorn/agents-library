@@ -270,7 +270,7 @@ on indented lines beneath it.
 - Shipped: PR URL or branch · worktree path · measured results · N files changed, each by path
 - Gate: `<exact command>` → <result with a number, e.g. 269 tests pass>
 - Progress: N of M boxes ticked · the unticked ones, by name
-- Team: roster <N per type · final …> — <reason> · <role>=<kind/model>, … · sub-space <id> closed|open · degradations or none
+- Team: roster <N per type · final …> · cost <agents · fan-outs> — <reason> · <role>=<kind/model>, … · sub-space <id> closed|open · degradations or none
 - Plan: N decisions from each plan, by label · N hybrid · N new · SWOT counts per plan
 - Findings: N raised · N confirmed · N refuted · N uncertain · N fixed · each finding by id with its verdict and the evidence-backed reason
 - Simplified: N applied · net lines ±N · what each one simplified · removal candidates left for the user
