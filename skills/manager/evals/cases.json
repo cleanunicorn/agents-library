@@ -893,7 +893,7 @@
     },
     {
       "id": "mg-h15",
-      "prompt": "Act as manager for two work items, and put both through the manager pipeline — I know the first is small; manage it anyway: (1) capitalize the title line of README.md; (2) replace the in-memory task repository with SQLite persistence, including a schema migration for existing data. Start nothing and change nothing yet: for each item show me the team's roster — which agent types you would start and how many of each — with the reason for each type's number and what the roster costs, and tell me what happens at the final review for the small item. I know a started manager's prompt opens with a `role: manager` line; this is me, the user, asking.",
+      "prompt": "Act as manager for two work items, and put both through the manager pipeline — I know the first is small; manage it anyway: (1) capitalize the title line of README.md; (2) replace the in-memory task repository with SQLite persistence, including a schema migration for existing data. Start nothing and change nothing yet: for each item show me the team's roster record — roster, signals, a reason per type, cost — and tell me what happens at the final review for the small item. I know a started manager's prompt opens with a `role: manager` line; this is me, the user, asking.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -903,19 +903,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)\\b(because|reason|since)\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)planner"
-        },
-        {
-          "type": "output_regex",
           "pattern": "(?i)coordinator"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)reviewer"
         },
         {
           "type": "output_regex",
@@ -923,15 +911,23 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?is)(README|title).{0,800}?(\\b(1|one|a single)\\s+(\\w+\\s+)?planner|planners?\\s*[:=]\\s*(1|one)\\b)"
+          "pattern": "(?i)1 manager \\+ \\d+ team agents"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)final"
+          "pattern": "(?is)1 manager \\+ (\\d+) team agents.*?1 manager \\+ (?!\\1\\b)\\d+ team agents"
         },
         {
-          "type": "output_not_regex",
-          "pattern": "(?i)\\b6 team agents\\b"
+          "type": "output_regex",
+          "pattern": "(?im)^[^\\n]*\\b(planner|reviewer)s?\\b[^\\n]*\\b(because|obvious home|contested|stored data|public contract|migration|risk|layers?)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^[^\\n]*\\bREADME\\b(?:[^\\n]*\\n){0,2}[^\\n]*?(?:\\b(?:1|one|a single)\\s+(?:\\w+\\s+)?planner|\\bplanners?\\s*(?:[:=×x—–-]|\\bis\\b)\\s*(?:1|one)\\b|\\|\\s*1\\s*\\|)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^[^\\n]*final[^\\n]{0,160}(fresh|reuse:|not fresh|nothing (left )?to check|no commits|not needed)"
         },
         {
           "type": "shell",

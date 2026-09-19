@@ -184,9 +184,10 @@ is also the most expensive case in the repo — scope it in with `--case mg-h3`
 on purpose.
 
 The roster slices never assert a count the manager chose for itself. `mg-h15`
-asks for the roster of a small and a risky work item, starts nothing, and
-checks that each type's number carries a reason and that the small item gets
-one planner. `mg-h16` is the coordinator step on the one plan a roster called
+asks for the roster record of a small and a risky work item, starts nothing,
+and checks that a type's number has its reason on the same line, that each
+record states its cost and the two costs differ, that the small item gets one
+planner, and that its final review is given a named outcome. `mg-h16` is the coordinator step on the one plan a roster called
 for — a *single-plan run* with no invented second side — and `mg-h17` is the
 same step on three plans, the third given inline in the prompt. `mg-h8` still
 asserts exactly two planner starts, because its prompt names that roster.
