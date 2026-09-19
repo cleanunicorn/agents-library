@@ -356,8 +356,8 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertNotRegex(root_text, r"(?<!fresh )final reviewer has done nothing else",
                             "rule 2 forbids the reuse route Phase 7 allows")
         # SKILL.md still lets a manager run every pass itself on a host with no
-        # delegation, where no floor can be met; the rule that makes falling
-        # below a floor `blocked` has to name that exception.
+        # delegation, where the independence floors cannot be met; the rule that
+        # makes falling below a floor `blocked` has to name that exception.
         if re.search(r"unless the host has no delegation", root_text):
             self.assertRegex(root_text, r"\*\*A member that fails\.\*\*.{0,400}?below a floor"
                                         r".{0,200}?no delegation",
