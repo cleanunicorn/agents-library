@@ -284,7 +284,13 @@ class PluginLayoutTests(unittest.TestCase):
         types = header[1:]
         self.assertLessEqual(set(MANAGER_AGENT_TYPES), set(types),
                              "a type the pipeline starts has no card")
-        cards = {row[0]: dict(zip(types, row[1:])) for row in rows if row[0] in MANAGER_CARD_LABELS}
+        cards = {}
+        for row in rows:
+            if row[0] in MANAGER_CARD_LABELS:
+                # zip would silently drop a cell that a stray pipe split off.
+                self.assertEqual(len(row), len(types) + 1, f"`{row[0]}` row has {len(row) - 1} cells")
+                self.assertNotIn(row[0], cards, f"`{row[0]}` appears on the cards twice")
+                cards[row[0]] = dict(zip(types, row[1:]))
         for label in MANAGER_CARD_LABELS:
             with self.subTest(label=label):
                 self.assertIn(label, cards, f"no `{label}` row on the cards")
