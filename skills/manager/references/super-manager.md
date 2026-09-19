@@ -81,10 +81,12 @@ manager that is replaced, never loses or re-asks an intake answer.
    closed:        no | yes
    ```
 
-3. Read `references/hosting-agents.md` and take the highest rung the host
-   offers. Per work item: create the manager's **own new workspace** and
-   record its id → start the manager there, at session tier, and record its
-   id and `kind/model` → send the launch prompt.
+3. Read `references/hosting-agents.md` and choose the host in its required
+   order: use Herdr when it is available; otherwise use native subagents.
+   Record how availability was checked. Per work item, Herdr creates the
+   manager's **own new workspace**, whose id you record; native subagents use
+   `workspace: n/a`. Start the manager at the chosen session tier and record
+   its id and `kind/model` → send the launch prompt.
 4. **The launch prompt** is the filled header of
    `references/manager-brief.md` followed by that brief **verbatim**. Its
    first line is `role: manager` and nothing else — the marker that tells
@@ -216,8 +218,8 @@ then you close the workspace; report anything that could not be cleaned.
 
 ## Error handling
 
-- **A workspace cannot be created:** fall to the next hosting rung. Never
-  start a manager in your own workspace.
+- **Herdr is unavailable or a workspace cannot be created:** use native
+  subagents. Never start a manager in your own workspace.
 - **A manager dies:** "When an agent dies" in `hosting-agents.md`. Record the
   continuity exception.
 - **A manager is silent:** read its pane or output; the header becomes

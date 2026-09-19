@@ -123,9 +123,9 @@ The cost per work item is the roster you pick, before the nested fan-outs: a
    also saved where they said.
 7. **Open the team sub-space** (rule 8) as `references/hosting-agents.md`
    describes, rooted at the worktree, without taking the user's focus. Record
-   the id you created in the ledger. On a host with none — headless CLIs,
-   native subagents — record `workspace: n/a` and what isolates the team
-   instead; there is then nothing to close.
+   the id you created in the ledger. With native subagents, record
+   `workspace: n/a` and what isolates the team instead; there is then nothing
+   to close.
 8. **Pick the roster.** Following `references/agent-types.md`, decide which
    types this item needs and how many of each, then write and state the
    **roster record**, with a reason per type. Open a ledger row per agent —
@@ -296,12 +296,12 @@ Reviewers return review-pr's finding schema unchanged, plus
 
 ## Hosting the team
 
-`references/hosting-agents.md` has the detail: the two levels, the four
-hosting rungs — a terminal multiplexer such as Herdr is optional, never
-required — and how a member without a sibling skill is handed the skill
-itself, never a rewritten copy. Take the highest rung the host offers and
-record which one; with no delegation you follow the briefs yourself, in
-sequence, and report the lost independence.
+`references/hosting-agents.md` has the detail: the two levels and the hosting
+order. The super manager uses Herdr whenever it is available; otherwise it
+uses native subagents. Record which one was used and how it was detected. With
+no delegation, follow the briefs yourself, in sequence, and report the lost
+independence. A member without a sibling skill receives the skill itself,
+never a rewritten copy.
 
 ## Error handling
 
@@ -311,8 +311,8 @@ sequence, and report the lost independence.
   list; it adds none, and nobody claims green.
 - **The main branch moved:** rebase or merge as the project allows, then
   re-check the citations the change touches.
-- **The team sub-space cannot be created:** fall to the next hosting rung.
-  Never fall back to your own pane.
+- **The team sub-space cannot be created:** use native subagents. Never fall
+  back to your own pane.
 - **The worktree already exists:** fetch and rebase as the project says.
 
 End every response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

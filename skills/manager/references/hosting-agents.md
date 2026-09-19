@@ -28,25 +28,25 @@ from the dead agent it replaces — never by label, never from a listing. A
 host with no workspaces records `workspace: n/a` and what isolates the agents
 instead.
 
-## Pick the highest rung available, and record which
+## Prefer Herdr; otherwise use native subagents
 
 | Rung | Host | Super manager → managers | Manager → team |
 |------|------|--------------------------|----------------|
-| 1 | Live agents of different kinds in a terminal multiplexer such as Herdr | A new workspace per work item — 1a below | A new tab in the manager's workspace — 1b below |
-| 2 | Other agent CLIs run headless | Background processes, one per manager, writing to its run directory | Background processes from the worktree; nothing attaches to a terminal |
-| 3 | Native subagents of one kind (the host's Agent/Task tool) | Each manager is a subagent, if the nesting limit allows — see Rung 3 | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
-| 4 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence: the independence floors of `agent-types.md` cannot be met — one holder of the worktree still holds — and the hand-back names the unmet ones |
+| 1 | Live agents in Herdr | A new workspace per work item — 1a below | A new tab in the manager's workspace — 1b below |
+| 2 | Native subagents (the host's Agent/Task tool) | Each manager is a subagent, if the nesting limit allows — see Rung 2 | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
+| 3 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence: the independence floors of `agent-types.md` cannot be met — one holder of the worktree still holds — and the hand-back names the unmet ones |
 
 Falling a rung is a recorded degradation, not a failure.
 
 ### Rung 1 — a terminal multiplexer (Herdr as the example)
 
-Optional. Use it when the user asks for it or the session is already running
-inside it; for Herdr that is `test "${HERDR_ENV:-}" = 1`. If the host has a
-Herdr skill, load it and let it overrule this summary — the installed binary
-is the authority on syntax (`herdr <group> --help`). Note that Herdr's own
-default is a sibling pane beside the caller; this skill's topology rule is the
-explicit request that overrides it.
+Use Herdr whenever it is available. For Herdr, check both that
+`test "${HERDR_ENV:-}" = 1` and `command -v herdr` succeed. If either check
+fails, use native subagents. If the host has a Herdr skill, load it and let it
+overrule this summary — the installed binary is the authority on syntax
+(`herdr <group> --help`). Note that Herdr's own default is a sibling pane
+beside the caller; this skill's topology rule is the explicit request that
+overrides it.
 
 #### 1a — the super manager hosts a manager
 
@@ -113,19 +113,7 @@ explicit request that overrides it.
    `herdr tab close <recorded tab id>`. Phase 8 says when. Never
    `workspace close`.
 
-### Rung 2 — headless CLIs
-
-Different kinds without a multiplexer: for example `claude -p`, `codex exec`,
-`opencode run`. Check each tool's `--help` before use; do not assume flags.
-Run each as a background process — a manager from the repository, a team
-member from the worktree — with its output going to a file in the run
-directory. A headless run has no later turn, so continuity — the
-coordinator's across phases, a manager's across a question — comes from that
-tool's resume mechanism, or from handing the next run what it needs: the
-merged plan, the Progress list, and `git log` for a coordinator; the launch
-prompt with `answers_so_far` filled in for a manager.
-
-### Rung 3 — native subagents
+### Rung 2 — native subagents
 
 Start same-type agents in a single message so they run concurrently. One kind
 is all this rung has, so vary the model between them and record that they are
@@ -144,8 +132,7 @@ host's limit rather than assuming it. A host that allows less applies the
 | Rung | The signal that a manager has a question | Where the super manager reads it | How it forwards the answer |
 |------|------------------------------------------|----------------------------------|----------------------------|
 | 1 | `agent wait` returns `blocked` or `idle`, and `status.md` reads `blocked` | `<run_dir>/questions.md`; the pane, for an approval prompt | `herdr agent prompt <manager> "<id>: <answer>"` — an approval prompt as 1a step 3 says |
-| 2 | the process ended with a `pending` record in `questions.md` | the same file | resume that run, or restart it with `answers_so_far` filled in |
-| 3 | the subagent returned a `blocked` team block | its return text and `questions.md` | a further message to the same subagent, else a new one with `answers_so_far` |
+| 2 | the subagent returned a `blocked` team block | its return text and `questions.md` | a further message to the same subagent, else a new one with `answers_so_far` |
 
 ## When an agent dies
 

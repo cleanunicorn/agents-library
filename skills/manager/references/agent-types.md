@@ -42,7 +42,7 @@ A floor is a responsibility that needs an eligible owner. It follows from a
 rule of `SKILL.md`; it is not a count to aim for.
 
 The floors bind a roster of delegated agents. A host with no delegation at
-all has no roster to pick: rung 4 of `hosting-agents.md` applies, and the
+all has no roster to pick: rung 3 of `hosting-agents.md` applies, and the
 manager runs every pass itself, in sequence. One holder of the worktree still
 holds; the three independence floors — the plan, the review, the final check
 — cannot be met. That is the one exception to rule 10 — a recorded
