@@ -37,23 +37,38 @@ SKILL_ROOT_WORD_CEILINGS = {
 MANAGER_AGENT_TYPES = ("planner", "coordinator", "reviewer", "final reviewer")
 MANAGER_CARD_LABELS = ("Does", "Writes", "Skill", "Brief", "Sees", "Never sees",
                        "Returns", "Runs", "Floor")
-# Phrases that prescribe the team instead of letting the manager pick it:
-# counts ("two planners") and two-agent arity ("the other plan", "neither
-# plan"). They are anchored to roster nouns: "two levels" and "both roles" are
-# the topology, and README's "counterpart to `review-pr`" is a sibling skill.
-MANAGER_FIXED_ROSTER = re.compile(
-    r"(?i)\b(two|2|both|a pair of)\s+(\w+\s+){0,2}(planners|reviewers|plans)\b"
-    r"|\b\d+ team agents\b|\bone of two\b|\b(planner|reviewer) A, B\b"
-    r"|\bplan_a\b|\bplan_b\b|\bthird agent\b|\btwo agents\b|\bpaired roles\b"
-    r"|\ba pair runs\b|\bsame-kind pair\b|\bof a pair\b"
-    r"|\b(two|three) `(plan-feature|review-pr)`|\b(planner|reviewer):\s+A \| B"
-    r"|\b(the other|either|neither) (plan|planner|reviewer|review)s?\b"
-    r"|\bplan a and plan b\b|\bboth get\b|\btwo after the\b|\bcounterpart's\b"
-    # Any other prescribed count. "one" is left out on purpose: the contract
-    # itself says "one obvious home → one planner".
-    r"|\b(\d+|three|four|five|six|seven|eight|nine|ten)\s+(\w+\s+){0,2}"
-    r"(planners|reviewers|reviews|team agents)\b|\b(two|both) reviews\b"
-    r"|\ba second (planner|reviewer)\b|\b(planner|reviewer) A and B\b")
+# Phrases that prescribe the team instead of letting the manager pick it. One
+# alternative per line. "two levels" and "both roles" are the topology, not
+# the roster, and README's "counterpart to `review-pr`" is a sibling skill.
+MANAGER_FIXED_ROSTER = re.compile("(?i)" + "|".join((
+    # A count in front of a roster noun. "one" is left out on purpose: the
+    # contract itself says "one obvious home → one planner".
+    r"\b(two|2|both|a pair of)\s+(\w+\s+){0,2}(planners|reviewers|plans)\b",
+    r"\b(\d+|three|four|five|six|seven|eight|nine|ten)\s+(\w+\s+){0,2}"
+    r"(planners|reviewers|reviews|team agents)\b",
+    r"\b(two|both) reviews\b",
+    r"\b(two|three) `(plan-feature|review-pr)`",
+    r"\btwo agents\b",
+    r"\ba second (planner|reviewer)\b",
+    # Exactly two of something: arity, pairs, and closed A | B labels.
+    r"\b(the other|either|neither) (plan|planner|reviewer|review)s?\b",
+    r"\bone of two\b",
+    r"\bthird agent\b",
+    r"\bpaired roles\b",
+    r"\ba pair runs\b",
+    r"\bsame-kind pair\b",
+    r"\bof a pair\b",
+    r"\bcounterpart's\b",
+    r"\b(planner|reviewer) A, B\b",
+    r"\b(planner|reviewer) A and B\b",
+    r"\b(planner|reviewer):\s+A \| B",
+    r"\bplan a and plan b\b",
+    r"\bplan_a\b",
+    r"\bplan_b\b",
+    # Fragments of main's sentences that survive no rewording of them.
+    r"\bboth get\b",
+    r"\btwo after the\b",
+)))
 
 
 class PluginLayoutTests(unittest.TestCase):
