@@ -72,7 +72,7 @@ type up or down; none of them is a number.
 | Signal | What it moves, and why |
 |--------|------------------------|
 | Layers and files the change likely crosses | Further planners and reviewers: more places for a plan to go wrong and for a defect to hide |
-| Real design alternatives, or one obvious home | Contested design → further planners, because planners who cannot see each other produce real alternatives. One obvious home → one planner |
+| Real design alternatives, or one obvious home | Contested design → further planners. One obvious home → one planner |
 | Separable questions | A planner each, with a scoped assignment on top of the shared acceptance criteria |
 | Security, stored data, a public contract, an ask-first boundary | Further reviewers and a fresh final reviewer: the cost of a missed finding is high |
 | Gate strength | A syntax-only gate proves little, so review has to carry more |
