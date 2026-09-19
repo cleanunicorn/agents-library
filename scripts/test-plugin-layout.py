@@ -328,8 +328,8 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertNotRegex(root, r"(?<!fresh )final reviewer has done nothing else",
                             "rule 2 forbids the reuse route Phase 7 allows")
 
-        guides = [ROOT / "README.md", ROOT / "AGENTS.md", skill / "SKILL.md",
-                  *sorted((skill / "references").glob("*.md"))]
+        guides = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "docs/evals.md",
+                  skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))]
         for path in guides:
             with self.subTest(path=str(path.relative_to(ROOT))):
                 text = path.read_text(encoding="utf-8")
@@ -339,6 +339,11 @@ class PluginLayoutTests(unittest.TestCase):
                     section = re.search(r"(?ms)^## The Manager Skill\n.*?(?=^## |\Z)", text)
                     self.assertIsNotNone(section, "README.md lost its manager section")
                     text = section.group(0)
+                if path.name == "evals.md":
+                    # Its table rows describe fixtures ("two planted plans"),
+                    # not the team; the prose below them describes the pipeline.
+                    text = "\n".join(line for line in text.splitlines()
+                                     if not line.lstrip().startswith("|"))
                 found = MANAGER_FIXED_ROSTER.search(" ".join(text.split()))
                 self.assertIsNone(found, f"a fixed roster is back — found {found and found.group(0)!r}")
 
