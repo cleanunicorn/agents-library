@@ -290,6 +290,18 @@ class PluginLayoutTests(unittest.TestCase):
         for name in types:
             self.assertNotRegex(cards["Never sees"][name], r"(?i)\b(anything|everything|nothing)\b",
                                 f"{name}: `Never sees` must list artifacts, not forbid the whole run")
+        # The floors are who may own a responsibility. These are their
+        # load-bearing words, not the sentences around them.
+        floors = {"planner": r"coordinator did not write",
+                  "reviewer": r"neither planned nor implemented",
+                  "final reviewer": r"did not write"}
+        for name, owner in floors.items():
+            self.assertRegex(cards["Floor"][name], owner, f"{name}: the floor lost its eligible owner")
+        catalogue_text = " ".join(catalogue.read_text(encoding="utf-8").split())
+        for clause, why in ((r"never writes the plan it would then merge", "a failed sole planner"),
+                            (r"`reuse:<label>`", "a Phase 4 reviewer reused for the final pass"),
+                            (r"nothing left to check", "a final review with no new commits")):
+            self.assertRegex(catalogue_text, clause, f"the Floors section no longer covers {why}")
         writers = [name for name in types if re.match(r"\W*yes\b", cards["Writes"][name], re.I)]
         self.assertEqual(writers, ["coordinator"], "exactly one type writes to the worktree")
         for name in types:
