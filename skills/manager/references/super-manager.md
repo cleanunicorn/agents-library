@@ -57,9 +57,9 @@ manager that is replaced, never loses or re-asks an intake answer.
    follow-up; a branch unless the project's workflow calls for a PR — and
    list it as `assumed`; an ask-first boundary still blocks.
 5. **Say the cost:** N managers, each with a team it sizes to its item —
-   never fewer than a planner, a coordinator, and a reviewer — before the
-   fan-outs inside the sibling skills. Each manager's first status carries
-   its roster and cost.
+   never fewer than a planner and a coordinator, plus a reviewer whenever
+   code is delivered — before the fan-outs inside the sibling skills. Each
+   manager's first status carries its roster and cost.
 
 ## S1 — Start the managers
 
