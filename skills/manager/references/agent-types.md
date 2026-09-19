@@ -125,6 +125,7 @@ degradation is reported.
 ## Adding a type
 
 A new type — a design reviewer, say — needs a card in the table above, a
-brief in this directory that it is handed verbatim, the skill-bundle line in
+brief in this directory that it is handed verbatim, a row in `SKILL.md`'s type
+table and a mention in its description, the skill-bundle line in
 `hosting-agents.md`, and a sentence in `README.md` and `AGENTS.md`. Until all
 of those exist, the type does not.
