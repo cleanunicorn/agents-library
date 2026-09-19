@@ -82,8 +82,8 @@ manager that is replaced, never loses or re-asks an intake answer.
 
 3. Read `references/hosting-agents.md` and take the highest rung the host
    offers. Per work item: create the manager's **own new workspace** and
-   record its id → start the manager there and record its id and
-   `kind/model` → send the launch prompt.
+   record its id → start the manager there, at session tier, and record its
+   id and `kind/model` → send the launch prompt.
 4. **The launch prompt** is the filled header of
    `references/manager-brief.md` followed by that brief **verbatim**. Its
    first line is `role: manager` and nothing else — the marker that tells
