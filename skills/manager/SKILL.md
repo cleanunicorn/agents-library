@@ -93,7 +93,8 @@ The cost per work item is the roster you pick, before the nested fan-outs: a
    delivery complete.
 10. **A member that fails.** Retry once on another kind; else continue below
     the roster, flagged in the hand-back, confidence 🟡 at best. Falling
-    below a floor (`references/agent-types.md`) is `blocked`.
+    below a floor (`references/agent-types.md`) is `blocked`. The one
+    exception is a host with no delegation at all (Hosting the team).
 
 ## Phase 0 — Orient, ask early, open the worktree and the team sub-space, pick the roster
 

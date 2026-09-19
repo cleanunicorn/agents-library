@@ -322,7 +322,8 @@ class PluginLayoutTests(unittest.TestCase):
         catalogue_text = " ".join(" ".join(catalogue_lines).split())
         for clause, why in ((r"never writes the plan it would then merge", "a failed sole planner"),
                             (r"`reuse:<label>`", "a Phase 4 reviewer reused for the final pass"),
-                            (r"nothing left to check", "a final review with no new commits")):
+                            (r"nothing left to check", "a final review with no new commits"),
+                            (r"no delegation at all", "a host that cannot delegate")):
             self.assertRegex(catalogue_text, clause, f"the Floors section no longer covers {why}")
         writers = [name for name in types if re.match(r"\W*yes\b", cards["Writes"][name], re.I)]
         self.assertEqual(writers, ["coordinator"], "exactly one type writes to the worktree")
@@ -354,6 +355,13 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertIn("`reuse:<label>`", root_text, "Phase 7 lost the reuse route")
         self.assertNotRegex(root_text, r"(?<!fresh )final reviewer has done nothing else",
                             "rule 2 forbids the reuse route Phase 7 allows")
+        # SKILL.md still lets a manager run every pass itself on a host with no
+        # delegation, where no floor can be met; the rule that makes falling
+        # below a floor `blocked` has to name that exception.
+        if re.search(r"unless the host has no delegation", root_text):
+            self.assertRegex(root_text, r"\*\*A member that fails\.\*\*.{0,400}?below a floor"
+                                        r".{0,200}?no delegation",
+                             "rule 10 blocks the no-delegation fallback SKILL.md still offers")
 
         guides = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "docs/evals.md",
                   skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))]

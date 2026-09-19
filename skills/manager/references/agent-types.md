@@ -41,6 +41,14 @@ default.
 A floor is a responsibility that needs an eligible owner. It follows from a
 rule of `SKILL.md`; it is not a count to aim for.
 
+The floors bind a roster of delegated agents. A host with no delegation at
+all has no roster to pick: rung 4 of `hosting-agents.md` applies, the manager
+runs every pass itself, in sequence, and no floor can be met. That is the one
+exception to rule 10 — a recorded degradation, not `blocked` — and its
+hand-back names each floor that went unmet, reports the lost independence,
+and claims confidence 🟡 at best. It is never taken where the host can
+delegate.
+
 - **A plan the coordinator did not write.** The merge exists so nobody
   defends their own draft, so a planner writes the plan and the coordinator
   judges it. A sole planner that fails, and whose retry on another kind fails

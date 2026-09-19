@@ -35,7 +35,7 @@ instead.
 | 1 | Live agents of different kinds in a terminal multiplexer such as Herdr | A new workspace per work item — 1a below | A new tab in the manager's workspace — 1b below |
 | 2 | Other agent CLIs run headless | Background processes, one per manager, writing to its run directory | Background processes from the worktree; nothing attaches to a terminal |
 | 3 | Native subagents of one kind (the host's Agent/Task tool) | Each manager is a subagent, if the nesting limit allows — see Rung 3 | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
-| 4 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence |
+| 4 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence: no floor of `agent-types.md` can be met, and the hand-back names each one |
 
 Falling a rung is a recorded degradation, not a failure.
 
