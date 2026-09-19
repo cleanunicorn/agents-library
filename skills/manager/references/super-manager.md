@@ -56,8 +56,10 @@ manager that is replaced, never loses or re-asks an intake answer.
    default — parallel, each item in its own worktree, any overlap listed as a
    follow-up; a branch unless the project's workflow calls for a PR — and
    list it as `assumed`; an ask-first boundary still blocks.
-5. **Say the cost:** N × (1 manager + 6 team agents), before the fan-outs
-   inside the sibling skills.
+5. **Say the cost:** N managers, each with a team it sizes to its item —
+   never fewer than a planner, a coordinator, and a reviewer — before the
+   fan-outs inside the sibling skills. Each manager's first status carries
+   its roster and cost.
 
 ## S1 — Start the managers
 
