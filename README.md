@@ -6,6 +6,32 @@ These are general-purpose definitions: they reference *roles* (linter, test suit
 
 See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)).
 
+<!-- toc:start -->
+**Contents**
+
+- [Install (Codex plugin)](#install-codex-plugin)
+- [Install (Claude Code plugin)](#install-claude-code-plugin)
+- [Install (opencode)](#install-opencode)
+- [Updating](#updating)
+- [The Manager Skill](#the-manager-skill)
+- [The Feature Planning Skill](#the-feature-planning-skill)
+- [The PR Review Skill](#the-pr-review-skill)
+- [The Review Design Skill](#the-review-design-skill)
+- [The UX Psychology Review Skill](#the-ux-psychology-review-skill)
+- [The Batch PR Merge Skill](#the-batch-pr-merge-skill)
+- [The Issue Triage Skill](#the-issue-triage-skill)
+- [The Simplify Sweep Skill](#the-simplify-sweep-skill)
+- [The Describe Codebase Skill](#the-describe-codebase-skill)
+- [The Install Agents Skill](#the-install-agents-skill)
+- [Local checks](#local-checks)
+- [Skill Evals](#skill-evals)
+- [Releasing](#releasing)
+- [The Agents](#the-agents)
+- [Shared Conventions](#shared-conventions)
+- [Adapting to a Project](#adapting-to-a-project)
+- [Journals](#journals)
+<!-- toc:end -->
+
 ## Install (Codex plugin)
 
 Two steps — register the marketplace, then install the plugin from it:
@@ -340,8 +366,9 @@ The same command covers all three supported platforms:
 It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
 word ceilings on agent and skill roots), the fix-everywhere contract
-(`scripts/test-fix-everywhere.py`), and eval cases with
-`run_evals.py --dry-run`.
+(`scripts/test-fix-everywhere.py`), this README's table of contents and the
+in-page links in README.md, AGENTS.md, and templates/AGENTS.md
+(`scripts/test-readme-toc.py`), and eval cases with `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.

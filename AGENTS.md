@@ -349,11 +349,13 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
-  the file(s) and add a README entry. No manifest edit needed.
+  the file(s) and add a README entry plus its line in the README's table of
+  contents (the gate fails without it). No manifest edit needed.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
-  (`scripts/test-fix-everywhere.py`), opencode link validation and regression tests,
+  (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
+  links (`scripts/test-readme-toc.py`), opencode link validation and regression tests,
   installer smoke tests, and eval case validation (`--dry-run`). Requires
   Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs —
   safe to run as often as needed.
