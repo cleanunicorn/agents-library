@@ -18,7 +18,7 @@ One card per type, the same labels on every card.
 | Skill | `plan-feature`, planning only | `simplify-sweep` in Phase 6 | `review-pr`, report only | `review-pr`, report only |
 | Brief | `planner-brief.md`, verbatim | `coordinator-brief.md`, verbatim | `reviewer-brief.md`, verbatim | `reviewer-brief.md`, verbatim |
 | Sees | The Phase 0 context, the work item, the acceptance criteria | Every plan, labelled, with the authoring kind removed; later every review list | The context, the merged plan's acceptance criteria, the commit SHA | The same as a reviewer |
-| Never sees | Any other plan, or a path to one | Which kind or model wrote which plan | Another review; the implementation report; the planning artifacts | Anything from earlier in this run |
+| Never sees | Any other plan, or a path to one | Which kind or model wrote which plan | Another review; the implementation report; the planning artifacts | Any earlier review, validation record, or implementation report; the planning artifacts |
 | Returns | A plan record | The merged plan, the implementation report, the validation records | review-pr's findings plus its `reviewer:` label | The same, labelled `reviewer: final` |
 | Runs | With every other planner, all started together | Alone, alive from Phase 2 to Phase 7 | With every other reviewer, all started together | Alone, after Phase 6 |
 | Floor | A plan the coordinator did not write exists before any edit | One agent holds the worktree at a time | Delivered code is reviewed by someone who neither planned nor implemented it | Commits added after the last review are checked by someone who did not write them |

@@ -281,6 +281,11 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIn(label, cards, f"no `{label}` row on the cards")
                 for name in types:
                     self.assertTrue(cards[label].get(name), f"{name}: `{label}` is empty")
+        # A blanket prohibition contradicts the card's own `Sees` cell: what an
+        # agent may see was produced earlier in the run too.
+        for name in types:
+            self.assertNotRegex(cards["Never sees"][name], r"(?i)\b(anything|everything|nothing)\b",
+                                f"{name}: `Never sees` must list artifacts, not forbid the whole run")
         writers = [name for name in types if re.match(r"\W*yes\b", cards["Writes"][name], re.I)]
         self.assertEqual(writers, ["coordinator"], "exactly one type writes to the worktree")
         for name in types:
