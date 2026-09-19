@@ -80,7 +80,7 @@ type up or down; none of them is a number.
 | Agent kinds the host offers | Independence comes from a different kind. A further agent of a kind already on the roster adds cost and little independence; say so rather than adding it |
 | The requested terminal state | "Stop after the plan" needs no reviewer; a PR needs the review floors |
 | Attended or not | Nobody to answer a late question → lean toward the plan that exposes open decisions early |
-| The user's own words | "Quick" and "be thorough" are signals. A roster the user names is a constraint: take it as given and record the reason as `user-specified` |
+| The user's own words | "Quick" and "be thorough" are signals. A roster the user names is a constraint above the floors: take it as given where it meets them and record the reason as `user-specified`. One that would fall below a floor is `blocked` (see Floors), raised as a question record that names the floor |
 
 There is no upper bound and no size-to-count table. The check on a large
 roster is its stated cost and its reasons, which the user sees in the team
