@@ -63,9 +63,10 @@ The cost per work item is the roster you pick, before the nested fan-outs: a
 5. **No verdict without evidence; no quality adjective without a number.**
    Cite the code at `path:line`, a test output, or the project rule.
 6. **One work item, one PR.** Milestones are checkboxes inside that PR. Never
-   merge it, never commit to the main branch, never force-push. Push or open a
-   PR only when the project's workflow or the request calls for one; otherwise
-   the terminal state is a committed branch.
+   merge it, never commit to the main branch, never force-push. A manager run
+   always opens a PR when a remote is available; do not ask the user whether a
+   branch-only delivery is preferred. Without a usable remote, the committed
+   branch is the documented fallback.
 7. **One channel to the user.** Neither you nor your team addresses the
    user. A question becomes a **question record** in the run directory; you
    report it and are `blocked` until it is answered — its `blocks` field says
@@ -172,11 +173,11 @@ The same coordinator implements, in the Phase 0 worktree.
 
 - Its brief covers the work itself: checklist order, a gate per milestone,
   never a red commit, and every deviation logged.
-- When a PR is called for and a remote exists, say so in the coordinator's
-  prompt: the coordinator pushes the branch and opens the PR as a **draft**,
-  titled in the project's convention, with the Progress checklist as its
-  body, and reports the URL. Otherwise nothing is pushed and the terminal
-  state is a committed branch.
+- When a remote exists, tell the coordinator to push the branch and open the
+  PR as a **draft**, titled in the project's convention, with the Progress
+  checklist as its body, and report the URL. Without a usable remote, nothing
+  is pushed and the terminal state is the documented committed-branch
+  fallback.
 
 The coordinator returns an **implementation report**. Run the gate yourself
 and confirm a non-empty diff with every implementation box ticked. No diff →

@@ -47,15 +47,16 @@ manager that is replaced, never loses or re-asks an intake answer.
    "nobody is available" means `no`.
 4. **Ask the cross-cutting questions once, now**, before any manager starts:
    which items; an order or dependency between them — always, when two items
-   touch the same files; PR or branch. Number
+   touch the same files. Every implementation work item delivers through a PR;
+   do not ask the user to choose a branch instead. Number
    them `S-Q<n>` and show them in the Questions section of the status format
    below, with `manager —`. No work item named → that is `S-Q1`; unattended,
    stop with a report instead of inventing one. **S1 waits for the answers:**
    attended, emit the status and end the turn, and start no manager until
    each `S-Q<n>` is answered. Unattended, take each question's labelled
-   default — parallel, each item in its own worktree, any overlap listed as a
-   follow-up; a branch unless the project's workflow calls for a PR — and
-   list it as `assumed`; an ask-first boundary still blocks.
+   default — parallel, each item in its own worktree, and any overlap listed
+   as a follow-up — and list it as `assumed`; an ask-first boundary still
+   blocks.
 5. **Say the cost:** N managers, each with a team it sizes to its item —
    never fewer than a planner and a coordinator, plus a reviewer whenever
    code is delivered — before the fan-outs inside the sibling skills. Each
