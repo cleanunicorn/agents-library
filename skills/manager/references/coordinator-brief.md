@@ -112,12 +112,13 @@ Work in the worktree the manager gave you, following the project's guidance.
   milestone lands, and keep the PR body in step with it when a PR exists.
 - When the plan proves wrong, change the plan and log the deviation with its
   reason. Never drift silently.
-- **Push nothing unless the manager's prompt says a PR is called for.** When
-  it does and a remote exists, push the branch and open the PR as a **draft**,
-  titled in the project's convention, with the Progress checklist as its body.
-  You are the only one who opens it; the manager marks it ready. Never merge.
-  Once a draft exists, push again after every later phase that adds commits,
-  so the PR never lags the branch the manager is about to call ready.
+- **A manager run targets a PR.** When a usable remote exists, push the branch
+  and open the PR as a **draft**, titled in the project's convention, with the
+  Progress checklist as its body. You are the only one who opens it; the
+  manager marks it ready. Never merge. Once a draft exists, push again after
+  every later phase that adds commits, so the PR never lags the branch the
+  manager is about to call ready. Without a usable remote, report the
+  committed branch as the fallback.
 
 Return an **implementation report**, one row per milestone:
 
