@@ -228,7 +228,7 @@ with a Progress checklist, and implements it in a dedicated worktree as one
 PR. Independent reviewers then run `review-pr`; every finding is confirmed,
 refuted, or kept open as uncertain — with evidence — before the confirmed
 ones are fixed, `simplify-sweep` tidies the branch diff, and a final review
-checks whatever was committed after the last one.
+checks whatever was committed after the last review.
 
 A manager asks its clarifying questions at the start, before any planner
 runs, and never talks to you directly: the super manager lists every pending

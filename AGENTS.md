@@ -287,12 +287,12 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   from the agent-type catalogue (`references/agent-types.md` — no count is
   prescribed) → parallel planners (plan-feature) → a coordinator's SWOT merge
   → implement → parallel reviewers (review-pr) → validate and fix → simplify
-  (simplify-sweep) → final review of what was committed since → hand back in
-  the fixed per-team status block. A manager's questions are records the super
-  manager relays and answers by id. Planners and reviewers only read; one
-  agent writes at a time; the team runs in a sub-space of its manager's
-  workspace, never the super manager's, and each level closes only what it
-  created.
+  (simplify-sweep) → final review of what was committed since the last review
+  → hand back in the fixed per-team status block. A manager's questions are
+  records the super manager relays and answers by id. Planners and reviewers
+  only read; one agent writes at a time; the team runs in a sub-space of its
+  manager's workspace, never the super manager's, and each level closes only
+  what it created.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
