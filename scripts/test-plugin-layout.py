@@ -297,8 +297,8 @@ class PluginLayoutTests(unittest.TestCase):
         header = next((row for row in rows if row and row[0] == "Label"), None)
         self.assertIsNotNone(header, "agent-types.md has no `| Label | <type> | …` card table")
         types = header[1:]
-        self.assertLessEqual(set(MANAGER_AGENT_TYPES), set(types),
-                             "a type the pipeline starts has no card")
+        for name in MANAGER_AGENT_TYPES:
+            self.assertIn(name, types, f"{name}: a type the pipeline starts has no card")
         cards = {}
         for row in rows:
             if row[0] in MANAGER_CARD_LABELS:
