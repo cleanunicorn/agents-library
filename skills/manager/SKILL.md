@@ -44,8 +44,8 @@ decides who runs them, on what, and what happens to their output.
   decision; a fresh agent would not.
 - Reviewers over-report, so each finding is checked against the real code
   before anything is fixed.
-- Simplify runs after the fixes, so it tidies the final shape once; a fresh
-  final reviewer checks the fixes introduced nothing new.
+- Simplify runs after the fixes, so it tidies the final shape once; a final
+  review checks the fixes introduced nothing new.
 - A question asked in Phase 0 costs one wait; found in Phase 5, a re-plan.
 
 The cost per work item is the roster you pick, before the nested fan-outs: a
@@ -234,8 +234,8 @@ gate result.
 
 No commit since the reviewed SHA → tick this box `not needed — no commits
 since <SHA>`. Otherwise start an agent with no earlier role in this run, of a
-kind different from the coordinator's when one exists — or the roster
-record's `reuse:<label>` reviewer, reported as not fresh. It runs `review-pr`, report
+kind different from the coordinator's when one exists — or the roster record's
+`reuse:<label>` reviewer, reported as not fresh. It runs `review-pr`, report
 only, over the full branch diff. Validate and fix exactly as in Phase 5. If
 fixes landed, the same reviewer re-checks them. The round cap is 2; whatever
 remains goes to the hand-back as open items.
