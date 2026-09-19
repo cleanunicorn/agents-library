@@ -183,16 +183,15 @@ its own `"timeout": 3600` and a full sweep gives it that without a flag. It
 is also the most expensive case in the repo — scope it in with `--case mg-h3`
 on purpose.
 
-The roster slices assert a count only where the prompt names the roster
-(`mg-h8`) or the catalogue's signals settle it (one obvious home → one
-planner). `mg-h15` asks for the roster record of a small and a risky work
-item, starts nothing, and checks that a type's number has its reason on the
-same line, that each record states its cost and the two costs differ, that the
-small item gets one planner, and that its final review is given a named
-outcome. `mg-h16` is the coordinator step on the one plan a roster called for
-— a *single-plan run* with no invented second side — and `mg-h17` is the same
-step on three plans, the third given inline in the prompt. `mg-h8` still
-asserts exactly two planner starts, because its prompt names that roster.
+The roster slices assert a count only where the prompt names the roster or the
+catalogue's signals settle it (one obvious home → one planner). `mg-h15` asks
+for the roster record of a small and a risky work item, starts nothing, and
+checks what the table above lists, plus that the two costs differ and the
+small item gets one planner. `mg-h16` is the coordinator step on the one plan
+a roster called for — a *single-plan run* with no invented second side — and
+`mg-h17` is the same step on three plans, the third given inline in the
+prompt. `mg-h8` still asserts exactly two planner starts, because its prompt
+names that roster.
 
 The two-level slices are compositional: `mg-h7` covers the super manager
 starting one named manager per work item, each prompted once with the bare
