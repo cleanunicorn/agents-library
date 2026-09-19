@@ -283,8 +283,8 @@ question by its id.
 
 ## Records
 
-Each record's fields are defined once, in the brief of the agent that writes
-it. Read them there rather than from memory.
+Each record's fields are defined once, in the file its writer reads for that
+phase. Read them there rather than from memory.
 
 | Record | Defined in |
 |--------|------------|
