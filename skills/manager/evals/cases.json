@@ -331,6 +331,10 @@
         {
           "type": "output_regex",
           "pattern": "(?im)^#{1,4} manager\\b.+(—|–|-) (done|blocked|in progress)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- Team: roster [^\\n]*(—|–|-)[^\\n]*·"
         }
       ]
     },
@@ -700,6 +704,10 @@
         {
           "type": "output_regex",
           "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Progress:\\ 3\\ of\\ 8\\ boxes\\ ticked\\ ·\\ implement,\\ review,\\ validate,\\ simplify,\\ final\\ review,\\ hand\\ back\\ unticked"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?ims)^#{1,4} manager list-limit-manager\\b(?:(?!^#{1,4} manager ).)*\\-\\ Team:\\ roster\\ 2\\ planners\\ ·\\ 1\\ coordinator\\ ·\\ 2\\ reviewers\\ ·\\ final\\ fresh\\ ·\\ cost\\ 1\\ manager\\ \\+\\ 6\\ team\\ agents\\ ·\\ 2\\ plan\\-feature\\ \\+\\ 3\\ review\\-pr\\ \\+\\ 1\\ simplify\\-sweep\\ —\\ contested\\ validation\\ layer,\\ public\\ contract\\ ·\\ planner\\-a=claude/opus,\\ planner\\-b=codex/gpt,\\ coordinator=claude/opus\\ ·\\ sub\\-space\\ w7:t2\\ open\\ ·\\ none"
         },
         {
           "type": "output_regex",
