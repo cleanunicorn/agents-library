@@ -277,23 +277,19 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
                                  f"{name} sends the marker with a suffix")
 
-    def test_manager_roster_is_chosen_per_item(self):
-        """The manager sizes its team to the work item; no count is prescribed.
+    def test_manager_agent_type_cards(self):
+        """The manager's catalogue defines every type it can start, the same way.
 
-        `references/agent-types.md` is the catalogue: one card per type, the
-        same labels on every card, and exactly one type that writes. SKILL.md
-        points at it and keeps the rules that never depended on a count. A
-        phrase that fixes the old roster — "two planners", "a third agent",
-        `plan_a` — is how the prescribed team comes back, one copy-edit at a
-        time. To say how many agents a run had, name the roster ("the roster's
-        planners", "every plan"), not a number.
+        `references/agent-types.md` carries one card per type with the same
+        labels on every card, exactly one type that writes, a brief that
+        exists, and floors that still say who may own each responsibility.
         """
         skill = ROOT / "skills/manager"
         catalogue = skill / "references/agent-types.md"
         self.assertTrue(catalogue.is_file(), "the agent-type catalogue is missing")
+        catalogue_lines = catalogue.read_text(encoding="utf-8").splitlines()
         rows = [[cell.strip() for cell in line.strip().strip("|").split("|")]
-                for line in catalogue.read_text(encoding="utf-8").splitlines()
-                if line.lstrip().startswith("|")]
+                for line in catalogue_lines if line.lstrip().startswith("|")]
         header = next((row for row in rows if row and row[0] == "Label"), None)
         self.assertIsNotNone(header, "agent-types.md has no `| Label | <type> | …` card table")
         types = header[1:]
@@ -323,7 +319,7 @@ class PluginLayoutTests(unittest.TestCase):
                   "final reviewer": r"did not write"}
         for name, owner in floors.items():
             self.assertRegex(cards["Floor"][name], owner, f"{name}: the floor lost its eligible owner")
-        catalogue_text = " ".join(catalogue.read_text(encoding="utf-8").split())
+        catalogue_text = " ".join(" ".join(catalogue_lines).split())
         for clause, why in ((r"never writes the plan it would then merge", "a failed sole planner"),
                             (r"`reuse:<label>`", "a Phase 4 reviewer reused for the final pass"),
                             (r"nothing left to check", "a final review with no new commits")):
@@ -336,6 +332,16 @@ class PluginLayoutTests(unittest.TestCase):
             self.assertTrue((skill / "references" / brief.group(1)).is_file(),
                             f"{name}: brief {brief.group(1)} does not exist")
 
+    def test_manager_roster_is_chosen_per_item(self):
+        """The manager sizes its team to the work item; no count is prescribed.
+
+        SKILL.md points at the catalogue and keeps the rules that never
+        depended on a count. A phrase that fixes the old roster — "two
+        planners", "a third agent", `plan_a` — is how the prescribed team comes
+        back, one copy-edit at a time. To say how many agents a run had, name
+        the roster ("the roster's planners", "every plan"), not a number.
+        """
+        skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         self.assertIn("references/agent-types.md", root_text, "SKILL.md does not point at the catalogue")
         for rule in ("Single writer.", "Independence.", "Re-run the gate yourself.", "Honest ledger."):
