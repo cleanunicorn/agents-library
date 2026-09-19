@@ -48,7 +48,12 @@ MANAGER_FIXED_ROSTER = re.compile(
     r"|\ba pair runs\b|\bsame-kind pair\b|\bof a pair\b"
     r"|\b(two|three) `(plan-feature|review-pr)`|\b(planner|reviewer):\s+A \| B"
     r"|\b(the other|either|neither) (plan|planner|reviewer|review)s?\b"
-    r"|\bplan a and plan b\b|\bboth get\b|\btwo after the\b|\bcounterpart's\b")
+    r"|\bplan a and plan b\b|\bboth get\b|\btwo after the\b|\bcounterpart's\b"
+    # Any other prescribed count. "one" is left out on purpose: the contract
+    # itself says "one obvious home → one planner".
+    r"|\b(\d+|three|four|five|six|seven|eight|nine|ten)\s+(\w+\s+){0,2}"
+    r"(planners|reviewers|reviews|team agents)\b|\b(two|both) reviews\b"
+    r"|\ba second (planner|reviewer)\b|\b(planner|reviewer) A and B\b")
 
 
 class PluginLayoutTests(unittest.TestCase):
@@ -327,7 +332,14 @@ class PluginLayoutTests(unittest.TestCase):
                   *sorted((skill / "references").glob("*.md"))]
         for path in guides:
             with self.subTest(path=str(path.relative_to(ROOT))):
-                found = MANAGER_FIXED_ROSTER.search(" ".join(path.read_text(encoding="utf-8").split()))
+                text = path.read_text(encoding="utf-8")
+                if path.name == "README.md":
+                    # README also describes the sibling skills ("Ten specialized
+                    # reviewers" is review-pr); only its manager section is a copy.
+                    section = re.search(r"(?ms)^## The Manager Skill\n.*?(?=^## |\Z)", text)
+                    self.assertIsNotNone(section, "README.md lost its manager section")
+                    text = section.group(0)
+                found = MANAGER_FIXED_ROSTER.search(" ".join(text.split()))
                 self.assertIsNone(found, f"a fixed roster is back — found {found and found.group(0)!r}")
 
 
