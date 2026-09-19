@@ -95,13 +95,13 @@ explicit request that overrides it.
    without `--wait`, then wait on each and read each — and record
    `parallel: true` only when that is what happened. `prompt --wait` is fine
    for an agent that works alone: the coordinator, the final reviewer, a sole
-   planner or reviewer. Names are unique among
-   live agents, so prefix them with the work item (`limits-planner-a`). A
-   member reported `blocked` is waiting on an approval or a question: read
-   it. Its question travels up the chain — member → you → your question
-   record → the super manager → the user — and the answer comes back down the
-   same way, delivered to a `blocked` member with `herdr agent send-keys`.
-   Never answer it for the user.
+   planner or reviewer. Names are unique among live agents, so prefix them
+   with the work item (`limits-planner-a`). A member reported `blocked` is
+   waiting on an approval or a question: read it. Its question travels up the
+   chain — member → you → your question record → the super manager → the
+   user — and the answer comes back down the same way, delivered to a
+   `blocked` member with `herdr agent send-keys`. Never answer it for the
+   user.
 4. **Long deliverables go to a file** in the run directory, not to scrollback.
    Tell each member the path to write, then read the file.
 5. **A pane that did start beside you is moved out:**
@@ -129,9 +129,9 @@ prompt with `answers_so_far` filled in for a manager.
 
 Start same-type agents in a single message so they run concurrently. One kind
 is all this rung has, so vary the model between them and record that they are
-not different kinds. Continue the coordinator through the
-host's resume mechanism (sending a further message to the same subagent). If
-the host has none, the manager plays coordinator and says so in the hand-back.
+not different kinds. Continue the coordinator through the host's resume
+mechanism (sending a further message to the same subagent). If the host has
+none, the manager plays coordinator and says so in the hand-back.
 
 Two levels need nesting. Count the layers below the super manager: the
 manager, its team member, and the fan-out inside that member's sibling skill.
@@ -186,8 +186,8 @@ then follows the copy.
 
 ## Independence, in practice
 
-Rule 2 of `SKILL.md` says who may see what. In practice: give each planner
-and each reviewer its own file in the run directory and no path to anyone
-else's, and give reviewers the acceptance criteria and the commit —
-never the coordinator's implementation report. A manager sees no other
-manager's run directory.
+Rule 2 of `SKILL.md` says who may see what. In practice: give each planner and
+each reviewer its own file in the run directory and no path to anyone else's,
+and give reviewers the acceptance criteria and the commit — never the
+coordinator's implementation report. A manager sees no other manager's run
+directory.

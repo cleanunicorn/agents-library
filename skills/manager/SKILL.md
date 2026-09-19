@@ -142,9 +142,8 @@ boundary with nobody to ask.
 ## Phase 1 — Plan in parallel
 
 Start the roster's planners at the same moment, in the team sub-space. Each
-prompt is
-the shared Phase 0 context, the work item and its acceptance criteria, and
-`references/planner-brief.md` included **verbatim**.
+prompt is the shared Phase 0 context, the work item and its acceptance
+criteria, and `references/planner-brief.md` included **verbatim**.
 
 - Each returns a **plan record**; its `decisions` list makes the
   topic-by-topic merge possible.
