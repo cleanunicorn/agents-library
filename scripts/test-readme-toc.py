@@ -44,7 +44,7 @@ def slug(title):
 
 
 def prose_lines(text):
-    """Yield (line number, line) outside fenced code, where `#` is a comment."""
+    """Yield (line number, line) outside fenced code, so a shell `# comment` is not a heading."""
     fence = None
     for number, line in enumerate(text.splitlines(), start=1):
         if fence is None:
