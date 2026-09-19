@@ -55,7 +55,10 @@ rule of `SKILL.md`; it is not a count to aim for.
 - **Commits added after the last review are checked by someone who did not
   write them.** A fresh final reviewer is the default. A Phase 4 reviewer may
   re-check them instead — it did not write the fixes — and is then recorded
-  as `reuse:<label>` and reported as not fresh. When Phases 5 and 6 added no
+  as `reuse:<label>` and reported as not fresh. `reuse` starts no final
+  reviewer: that reviewer runs the final pass and stays a reviewer, so rule
+  2's "has done nothing else in this run" describes the fresh one only. Its
+  findings from that pass are labelled `final`. When Phases 5 and 6 added no
   commit, the reviewed SHA is still `HEAD` and there is nothing left to check.
 
 Falling below the **roster** — a member failed, and so did its retry on

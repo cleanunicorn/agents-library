@@ -296,6 +296,11 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertRegex(root, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
                          "Phase 0 no longer records the roster and its reason")
         self.assertRegex(root, r"- Team: roster\b", "the team block no longer reports the roster")
+        # Phase 7 may hand the final pass to a Phase 4 reviewer, so a rule that
+        # holds in every phase cannot say every final reviewer is new to the run.
+        self.assertIn("`reuse:<label>`", root, "Phase 7 lost the reuse route")
+        self.assertNotRegex(root, r"(?<!fresh )final reviewer has done nothing else",
+                            "rule 2 forbids the reuse route Phase 7 allows")
 
         guides = [ROOT / "README.md", ROOT / "AGENTS.md", skill / "SKILL.md",
                   *sorted((skill / "references").glob("*.md"))]
