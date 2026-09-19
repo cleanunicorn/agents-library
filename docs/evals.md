@@ -176,11 +176,12 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 
 The manager suite is mostly slices of the pipeline, sized to the default
-900-second trial. Its one end-to-end case, `mg-h3`, nests two `plan-feature`
-runs, three `review-pr` runs, and a `simplify-sweep`, so it carries its own
-`"timeout": 3600` and a full sweep gives it that without a flag. It is also
-the most expensive case in the repo — scope it in with `--case mg-h3` on
-purpose.
+900-second trial. Its one end-to-end case, `mg-h3`, nests a `plan-feature`
+run per planner, a `review-pr` run per reviewer and for the final review, and
+a `simplify-sweep` — how many is the roster the manager picks — so it carries
+its own `"timeout": 3600` and a full sweep gives it that without a flag. It
+is also the most expensive case in the repo — scope it in with `--case mg-h3`
+on purpose.
 
 The two-level slices are compositional: `mg-h7` covers the super manager
 starting one named manager per work item, each prompted once with the bare

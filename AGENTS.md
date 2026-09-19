@@ -283,10 +283,12 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   agent is the super manager: it starts one manager per work item, each in
   its own workspace, is the user's only contact, and reports a questions
   section plus one header and one fixed status block per manager. Each
-  manager runs: orient and ask early → two parallel planners (plan-feature)
-  → a coordinator's SWOT merge → implement → two parallel reviewers
-  (review-pr) → validate and fix → simplify (simplify-sweep) → fresh final
-  review → hand back in the fixed per-team status block. A manager's
+  manager runs: orient, ask early, and pick a roster sized to the work item
+  from the agent-type catalogue (`references/agent-types.md` — no count is
+  prescribed) → parallel planners (plan-feature) → a coordinator's SWOT merge
+  → implement → parallel reviewers (review-pr) → validate and fix → simplify
+  (simplify-sweep) → final review of what was committed since → hand back in
+  the fixed per-team status block. A manager's
   questions are records the super manager relays and answers by id. Planners
   and reviewers only read; one agent writes at a time; the team runs in a
   sub-space of its manager's workspace, never the super manager's, and each
@@ -336,7 +338,8 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
   …}` verdicts for triage-issues; `{planner, plan, decisions}` plan records,
   `{id, quadrant, claim, evidence, affects, action}` SWOT records, `{topic,
-  plan_a, plan_b, chosen, rule, reason, swot_refs}` decision records, and
+  plan_<label> per plan, chosen, rule, reason, swot_refs}` decision records,
+  `{roster, signals, reason, cost, changes}` roster records, and
   `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
   action, sweep, status}` validation records, `{id, phase, question, why,
   options, default, blocks, status, answer}` question records, and
