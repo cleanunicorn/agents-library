@@ -23,14 +23,10 @@ coding agents: you start them, hand them briefs, check what they return, and
 hold the gates. You do not plan, implement, or review yourself unless the host
 has no delegation at all — and then you say so in the hand-back.
 
-| Type | Writes code? | Skill it runs |
-|------|--------------|---------------|
-| Planner | no | `plan-feature` |
-| Coordinator, alive from Phase 2 to hand-back | **yes — the single writer** | `simplify-sweep` in Phase 6 |
-| Reviewer | no | `review-pr`, report only |
-| Final reviewer, fresh | no | `review-pr`, report only |
-
-How many of each: your call, per work item, in Phase 0 step 8.
+The types you can start — planner, coordinator, reviewer, final reviewer —
+each have a card in `references/agent-types.md`: what it does, the skill it
+runs, what it may see. Which types and how many of each: your call, per work
+item, in Phase 0 step 8.
 
 The sibling skills do the planning, reviewing, and simplifying; this skill
 decides who runs them, on what, and what happens to their output.
