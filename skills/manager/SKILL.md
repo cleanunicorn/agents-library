@@ -26,7 +26,7 @@ has no delegation at all — and then you say so in the hand-back.
 | Type | Writes code? | Skill it runs |
 |------|--------------|---------------|
 | Planner | no | `plan-feature` |
-| Coordinator, alive from Phase 2 to Phase 7 | **yes — the single writer** | `simplify-sweep` in Phase 6 |
+| Coordinator, alive from Phase 2 to hand-back | **yes — the single writer** | `simplify-sweep` in Phase 6 |
 | Reviewer | no | `review-pr`, report only |
 | Final reviewer, fresh | no | `review-pr`, report only |
 
