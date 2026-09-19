@@ -32,6 +32,19 @@ SKILL_ROOT_WORD_CEILINGS = {
     "simplify-sweep": 2200,
     "triage-issues": 3300,
 }
+# The manager's agent-type catalogue — see test_manager_roster_is_chosen_per_item.
+# Further types are allowed; these are the ones the pipeline starts.
+MANAGER_AGENT_TYPES = ("planner", "coordinator", "reviewer", "final reviewer")
+MANAGER_CARD_LABELS = ("Does", "Writes", "Skill", "Brief", "Sees", "Never sees",
+                       "Returns", "Runs", "Floor")
+# Phrases that prescribe the team instead of letting the manager pick it. They
+# are anchored to roster nouns: "two levels" and "both roles" are the topology.
+MANAGER_FIXED_ROSTER = re.compile(
+    r"(?i)\b(two|2|both|a pair of)\s+(\w+\s+){0,2}(planners|reviewers|plans)\b"
+    r"|\b\d+ team agents\b|\bone of two\b|\b(planner|reviewer) A, B\b"
+    r"|\bplan_a\b|\bplan_b\b|\bthird agent\b|\btwo agents\b|\bpaired roles\b"
+    r"|\ba pair runs\b|\bsame-kind pair\b|\bof a pair\b"
+    r"|\b(two|three) `(plan-feature|review-pr)`|\b(planner|reviewer):\s+A \| B")
 
 
 class PluginLayoutTests(unittest.TestCase):
@@ -239,6 +252,57 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIn(marker, text, f"{name} no longer names `{marker}`")
                 self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
                                  f"{name} sends the marker with a suffix")
+
+    def test_manager_roster_is_chosen_per_item(self):
+        """The manager sizes its team to the work item; no count is prescribed.
+
+        `references/agent-types.md` is the catalogue: one card per type, the
+        same labels on every card, and exactly one type that writes. SKILL.md
+        points at it and keeps the rules that never depended on a count. A
+        phrase that fixes the old roster — "two planners", "a third agent",
+        `plan_a` — is how the prescribed team comes back, one copy-edit at a
+        time. To say how many agents a run had, name the roster ("the roster's
+        planners", "every plan"), not a number.
+        """
+        skill = ROOT / "skills/manager"
+        catalogue = skill / "references/agent-types.md"
+        self.assertTrue(catalogue.is_file(), "the agent-type catalogue is missing")
+        rows = [[cell.strip() for cell in line.strip().strip("|").split("|")]
+                for line in catalogue.read_text(encoding="utf-8").splitlines()
+                if line.lstrip().startswith("|")]
+        header = next((row for row in rows if row and row[0] == "Label"), None)
+        self.assertIsNotNone(header, "agent-types.md has no `| Label | <type> | …` card table")
+        types = header[1:]
+        self.assertLessEqual(set(MANAGER_AGENT_TYPES), set(types),
+                             "a type the pipeline starts has no card")
+        cards = {row[0]: dict(zip(types, row[1:])) for row in rows if row[0] in MANAGER_CARD_LABELS}
+        for label in MANAGER_CARD_LABELS:
+            with self.subTest(label=label):
+                self.assertIn(label, cards, f"no `{label}` row on the cards")
+                for name in types:
+                    self.assertTrue(cards[label].get(name), f"{name}: `{label}` is empty")
+        writers = [name for name in types if re.match(r"\W*yes\b", cards["Writes"][name], re.I)]
+        self.assertEqual(writers, ["coordinator"], "exactly one type writes to the worktree")
+        for name in types:
+            brief = re.search(r"`([\w-]+\.md)`", cards["Brief"][name])
+            self.assertIsNotNone(brief, f"{name}: `Brief` names no file")
+            self.assertTrue((skill / "references" / brief.group(1)).is_file(),
+                            f"{name}: brief {brief.group(1)} does not exist")
+
+        root = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("references/agent-types.md", root, "SKILL.md does not point at the catalogue")
+        for rule in ("Single writer.", "Independence.", "Re-run the gate yourself.", "Honest ledger."):
+            self.assertIn(f"**{rule}**", root, f"SKILL.md lost the rule `{rule}`")
+        self.assertRegex(root, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
+                         "Phase 0 no longer records the roster and its reason")
+        self.assertRegex(root, r"- Team: roster\b", "the team block no longer reports the roster")
+
+        guides = [ROOT / "README.md", ROOT / "AGENTS.md", skill / "SKILL.md",
+                  *sorted((skill / "references").glob("*.md"))]
+        for path in guides:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                found = MANAGER_FIXED_ROSTER.search(" ".join(path.read_text(encoding="utf-8").split()))
+                self.assertIsNone(found, f"a fixed roster is back — found {found and found.group(0)!r}")
 
 
 if __name__ == "__main__":
