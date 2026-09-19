@@ -2,10 +2,9 @@
 
 This file tells both roles how to start, address, and shut down what they
 direct, on whatever the host offers: the **super manager** hosting one manager
-per work item, and a **manager** hosting its team — two planners, one
-coordinator, two reviewers, one final reviewer. The roles, the isolation
-between them, and the records they return are the same on every rung. Only
-the transport changes.
+per work item, and a **manager** hosting its team — the roster it picked from
+`agent-types.md`. The roles, the isolation between them, and the records they
+return are the same on every rung. Only the transport changes.
 
 ## Two levels
 
@@ -36,7 +35,7 @@ instead.
 | 1 | Live agents of different kinds in a terminal multiplexer such as Herdr | A new workspace per work item — 1a below | A new tab in the manager's workspace — 1b below |
 | 2 | Other agent CLIs run headless | Background processes, one per manager, writing to its run directory | Background processes from the worktree; nothing attaches to a terminal |
 | 3 | Native subagents of one kind (the host's Agent/Task tool) | Each manager is a subagent, if the nesting limit allows — see Rung 3 | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
-| 4 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence |
+| 4 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence and reports the loss of independence: the independence floors of `agent-types.md` cannot be met — one holder of the worktree still holds — and the hand-back names the unmet ones |
 
 Falling a rung is a recorded degradation, not a failure.
 
@@ -89,19 +88,20 @@ explicit request that overrides it.
 3. **Start and drive each member through the agent commands:**
    `herdr agent start <role-name> --kind <kind> --pane <pane id>`, then
    `herdr agent prompt <role-name> "<brief>"`, then `herdr agent wait
-   <role-name>`, then `herdr agent read <role-name>`. **A pair runs in
-   parallel only if both are prompted before either is waited on:**
+   <role-name>`, then `herdr agent read <role-name>`. **Agents of one type
+   run in parallel only if all are prompted before any is waited on:**
    `prompt --wait` blocks until that member settles, so using it on planner A
-   first finishes A before B has started. Start both, prompt both without
-   `--wait`, then wait on each and read each — and record `parallel: true`
-   only when that is what happened. `prompt --wait` is fine for the
-   coordinator and the final reviewer, who work alone. Names are unique among
-   live agents, so prefix them with the work item (`limits-planner-a`). A
-   member reported `blocked` is waiting on an approval or a question: read
-   it. Its question travels up the chain — member → you → your question
-   record → the super manager → the user — and the answer comes back down the
-   same way, delivered to a `blocked` member with `herdr agent send-keys`.
-   Never answer it for the user.
+   first finishes A before B has started. Start them all, prompt them all
+   without `--wait`, then wait on each and read each — and record
+   `parallel: true` only when that is what happened. `prompt --wait` is fine
+   for an agent that works alone: the coordinator, the final reviewer, a sole
+   planner or reviewer. Names are unique among live agents, so prefix them
+   with the work item (`limits-planner-a`). A member reported `blocked` is
+   waiting on an approval or a question: read it. Its question travels up the
+   chain — member → you → your question record → the super manager → the
+   user — and the answer comes back down the same way, delivered to a
+   `blocked` member with `herdr agent send-keys`. Never answer it for the
+   user.
 4. **Long deliverables go to a file** in the run directory, not to scrollback.
    Tell each member the path to write, then read the file.
 5. **A pane that did start beside you is moved out:**
@@ -127,11 +127,11 @@ prompt with `answers_so_far` filled in for a manager.
 
 ### Rung 3 — native subagents
 
-Start paired roles in a single message so they run concurrently. One kind is
-all this rung has, so vary the model between the members of a pair and record
-that they are not different kinds. Continue the coordinator through the
-host's resume mechanism (sending a further message to the same subagent). If
-the host has none, the manager plays coordinator and says so in the hand-back.
+Start same-type agents in a single message so they run concurrently. One kind
+is all this rung has, so vary the model between them and record that they are
+not different kinds. Continue the coordinator through the host's resume
+mechanism (sending a further message to the same subagent). If the host has
+none, the manager plays coordinator and says so in the hand-back.
 
 Two levels need nesting. Count the layers below the super manager: the
 manager, its team member, and the fan-out inside that member's sibling skill.
@@ -186,8 +186,8 @@ then follows the copy.
 
 ## Independence, in practice
 
-Rule 2 of `SKILL.md` says who may see what. In practice: give each planner
-and each reviewer its own file in the run directory and no path to its
-counterpart's, and give reviewers the acceptance criteria and the commit —
-never the coordinator's implementation report. A manager sees no other
-manager's run directory.
+Rule 2 of `SKILL.md` says who may see what. In practice: give each planner and
+each reviewer its own file in the run directory and no path to anyone else's,
+and give reviewers the acceptance criteria and the commit — never the
+coordinator's implementation report. A manager sees no other manager's run
+directory.

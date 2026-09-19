@@ -56,8 +56,10 @@ manager that is replaced, never loses or re-asks an intake answer.
    default — parallel, each item in its own worktree, any overlap listed as a
    follow-up; a branch unless the project's workflow calls for a PR — and
    list it as `assumed`; an ask-first boundary still blocks.
-5. **Say the cost:** N × (1 manager + 6 team agents), before the fan-outs
-   inside the sibling skills.
+5. **Say the cost:** N managers, each with a team it sizes to its item —
+   never fewer than a planner and a coordinator, plus a reviewer whenever
+   code is delivered — before the fan-outs inside the sibling skills. Each
+   manager's first status carries its roster and cost.
 
 ## S1 — Start the managers
 
@@ -80,8 +82,8 @@ manager that is replaced, never loses or re-asks an intake answer.
 
 3. Read `references/hosting-agents.md` and take the highest rung the host
    offers. Per work item: create the manager's **own new workspace** and
-   record its id → start the manager there and record its id and
-   `kind/model` → send the launch prompt.
+   record its id → start the manager there, at session tier, and record its
+   id and `kind/model` → send the launch prompt.
 4. **The launch prompt** is the filled header of
    `references/manager-brief.md` followed by that brief **verbatim**. Its
    first line is `role: manager` and nothing else — the marker that tells

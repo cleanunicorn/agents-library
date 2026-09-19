@@ -216,15 +216,19 @@ end by directing other coding agents. The agent you invoke it on becomes the
 **super manager**: your single point of contact. It starts one **manager**
 per feature or fix, each in its own workspace, and tracks them in a ledger.
 
-Each manager runs the same pipeline for its work item. Two planners —
-different agent kinds where the host has them — each write an independent
-plan with `plan-feature`. A third agent, the coordinator, runs a SWOT
+Each manager runs the same pipeline for its work item, with a team it sizes
+to that item. The [agent-type catalogue](skills/manager/references/agent-types.md)
+defines the types it can start — planner, coordinator, reviewer, final
+reviewer — and how each behaves; the manager picks which types and how many
+of each, and records the roster with its reason. Planners — different agent
+kinds where the host has them — each write an independent plan with
+`plan-feature`. The coordinator, which wrote none of them, runs a SWOT
 analysis on each plan, merges the best decisions into one plan that opens
 with a Progress checklist, and implements it in a dedicated worktree as one
-PR. Two independent reviewers then run `review-pr`; every finding is
-confirmed, refuted, or kept open as uncertain — with evidence — before the
-confirmed ones are fixed, `simplify-sweep` tidies the branch diff, and a
-fresh final review closes the run.
+PR. Independent reviewers then run `review-pr`; every finding is confirmed,
+refuted, or kept open as uncertain — with evidence — before the confirmed
+ones are fixed, `simplify-sweep` tidies the branch diff, and a final review
+checks whatever was committed after the last review.
 
 A manager asks its clarifying questions at the start, before any planner
 runs, and never talks to you directly: the super manager lists every pending
