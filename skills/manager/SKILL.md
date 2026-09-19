@@ -91,6 +91,9 @@ The cost per work item is the roster you pick, before the nested fan-outs: a
    agents meant to run together did. Never call serial work parallel,
    same-kind agents different, a shrunken roster chosen, or an incomplete
    delivery complete.
+10. **A member that fails.** Retry once on another kind; else continue below
+    the roster, flagged in the hand-back, confidence 🟡 at best. Falling
+    below a floor (`references/agent-types.md`) is `blocked`.
 
 ## Phase 0 — Orient, ask early, open the worktree and the team sub-space, pick the roster
 
@@ -145,9 +148,7 @@ the shared Phase 0 context, the work item and its acceptance criteria, and
 
 - Each returns a **plan record**; its `decisions` list makes the
   topic-by-topic merge possible.
-- A planner fails → retry once on another kind, else continue below the
-  roster, flagged in the hand-back, confidence 🟡 at best; no plan left →
-  `blocked`. One plan, however it came about, is a *single-plan run*: the
+- One plan, however it came about, is a *single-plan run*: the
   coordinator's SWOT still runs.
 
 ## Phase 2 — Debate and merge
@@ -194,9 +195,6 @@ roster's reviewers together — **different kinds** where the host has them,
 none a planner or the implementer — in the team sub-space. Each prompt is
 the shared context, the merged plan's acceptance criteria, and
 `references/reviewer-brief.md` verbatim — `review-pr`, **report only**.
-
-A reviewer fails → retry once on another kind, else continue below the
-roster, flagged, confidence 🟡 at best; no review → `blocked`.
 
 ## Phase 5 — Validate and fix
 
