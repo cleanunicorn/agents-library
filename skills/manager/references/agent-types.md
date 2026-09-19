@@ -61,9 +61,8 @@ rule of `SKILL.md`; it is not a count to aim for.
   findings from that pass are labelled `final`. When Phases 5 and 6 added no
   commit, the reviewed SHA is still `HEAD` and there is nothing left to check.
 
-Falling below the **roster** — a member failed, and so did its retry on
-another kind — is a recorded degradation, confidence 🟡 at best. Falling below
-a **floor** is `blocked`.
+What happens when a member fails — below the roster, or below a floor — is
+rule 10 of `SKILL.md`.
 
 ## Picking the roster
 
