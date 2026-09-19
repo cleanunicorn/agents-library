@@ -336,17 +336,17 @@ class PluginLayoutTests(unittest.TestCase):
             self.assertTrue((skill / "references" / brief.group(1)).is_file(),
                             f"{name}: brief {brief.group(1)} does not exist")
 
-        root = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
-        self.assertIn("references/agent-types.md", root, "SKILL.md does not point at the catalogue")
+        root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("references/agent-types.md", root_text, "SKILL.md does not point at the catalogue")
         for rule in ("Single writer.", "Independence.", "Re-run the gate yourself.", "Honest ledger."):
-            self.assertIn(f"**{rule}**", root, f"SKILL.md lost the rule `{rule}`")
-        self.assertRegex(root, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
+            self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
+        self.assertRegex(root_text, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
                          "Phase 0 no longer records the roster and its reason")
-        self.assertRegex(root, r"- Team: roster\b", "the team block no longer reports the roster")
+        self.assertRegex(root_text, r"- Team: roster\b", "the team block no longer reports the roster")
         # Phase 7 may hand the final pass to a Phase 4 reviewer, so a rule that
         # holds in every phase cannot say every final reviewer is new to the run.
-        self.assertIn("`reuse:<label>`", root, "Phase 7 lost the reuse route")
-        self.assertNotRegex(root, r"(?<!fresh )final reviewer has done nothing else",
+        self.assertIn("`reuse:<label>`", root_text, "Phase 7 lost the reuse route")
+        self.assertNotRegex(root_text, r"(?<!fresh )final reviewer has done nothing else",
                             "rule 2 forbids the reuse route Phase 7 allows")
 
         guides = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "docs/evals.md",
