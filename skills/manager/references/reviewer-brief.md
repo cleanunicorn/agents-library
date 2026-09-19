@@ -33,7 +33,7 @@ Return review-pr's findings **in its own schema, unchanged** — including
 `measured`, `gap`, `verdict`, and `confidence` — with one field added to each:
 
 ```
-reviewer:  A | B | final         (the label the manager gave you)
+reviewer:  <label> | final       (the label the manager gave you — A, B, …)
 ```
 
 Then, as review-pr does: the count at each severity, the domains that were

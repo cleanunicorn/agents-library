@@ -74,7 +74,8 @@ own workspace open — the super manager created it and closes it.
 **If you replace a manager that died**, its run directory and ledger are
 yours. Before Phase 0, read its `questions.md`, `status.md`, and ledger: keep
 every question id with its status and verbatim answer, and ask none of them
-again. "When an agent dies" in `references/hosting-agents.md` says what you
+again. A ledger without a roster record gets one from you before you carry
+on. "When an agent dies" in `references/hosting-agents.md` says what you
 inherit and must close.
 
 A git lock while creating your worktree — other managers are doing the same —

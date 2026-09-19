@@ -1,10 +1,10 @@
 # Planner brief
 
-You are one of two planners working on the same work item. You cannot see the
-other planner and must not look for another plan — not in the repository, not
-in scratch directories, not in chat history. A third agent will compare the
-two plans decision by decision, and the comparison is only worth something if
-each plan was reached alone.
+You are one planner on this work item; others may be planning it at the same
+moment. You cannot see them and must not look for another plan — not in the
+repository, not in scratch directories, not in chat history. An agent that
+wrote no plan will compare whatever plans exist decision by decision, and the
+comparison is only worth something if each plan was reached alone.
 
 Planning is **read-only**. Do not edit, create, or delete any file in the
 repository; do not switch branches, fetch, install, or run test suites. If you
@@ -33,9 +33,9 @@ return it as text.
 Return a **plan record**:
 
 ```
-planner:      A | B                (the label the manager gave you)
+planner:      <label>              (the letter the manager gave you — A, B, …)
 plan:         the plan-feature output, unchanged
-decisions:    [{id: <A|B>-D<n>,
+decisions:    [{id: <label>-D<n>,
                 topic:    short label, e.g. "where limit is validated"
                 choice:   what you propose
                 evidence: path:line | "unknown: <what you searched>"
