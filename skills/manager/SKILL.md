@@ -139,7 +139,7 @@ The cost per work item is the roster you pick, before the nested fan-outs: a
 Wait here for step 3's answers. Stop only for no work item, or an ask-first
 boundary with nobody to ask.
 
-## Phase 1 — Plan in parallel
+## Phase 1 — Plan
 
 Start the roster's planners at the same moment, in the team sub-space. Each
 prompt is the shared Phase 0 context, the work item and its acceptance
@@ -185,7 +185,7 @@ The coordinator returns an **implementation report**. Run the gate yourself
 and confirm a non-empty diff with every implementation box ticked. No diff →
 start no reviews; report whether the work already existed or failed.
 
-## Phase 4 — Review in parallel
+## Phase 4 — Review
 
 Freeze the review target at one commit SHA; the coordinator edits nothing
 while reviews run. `review-pr` always reviews `HEAD`, so if the branch does
