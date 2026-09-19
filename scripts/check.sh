@@ -22,6 +22,9 @@ python3 scripts/test-plugin-layout.py
 echo "Checking every fix sweeps the whole repository..."
 python3 scripts/test-fix-everywhere.py
 
+echo "Checking the README table of contents and in-page links..."
+python3 scripts/test-readme-toc.py
+
 bash scripts/check-opencode-sync.sh
 python3 scripts/test-check-opencode-sync.py
 bash scripts/test-install-opencode.sh

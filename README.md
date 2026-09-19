@@ -6,6 +6,32 @@ These are general-purpose definitions: they reference *roles* (linter, test suit
 
 See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)).
 
+<!-- toc:start -->
+**Contents**
+
+- [Install (Codex plugin)](#install-codex-plugin)
+- [Install (Claude Code plugin)](#install-claude-code-plugin)
+- [Install (opencode)](#install-opencode)
+- [Updating](#updating)
+- [The Manager Skill](#the-manager-skill)
+- [The Feature Planning Skill](#the-feature-planning-skill)
+- [The PR Review Skill](#the-pr-review-skill)
+- [The Review Design Skill](#the-review-design-skill)
+- [The UX Psychology Review Skill](#the-ux-psychology-review-skill)
+- [The Batch PR Merge Skill](#the-batch-pr-merge-skill)
+- [The Issue Triage Skill](#the-issue-triage-skill)
+- [The Simplify Sweep Skill](#the-simplify-sweep-skill)
+- [The Describe Codebase Skill](#the-describe-codebase-skill)
+- [The Install Agents Skill](#the-install-agents-skill)
+- [Local checks](#local-checks)
+- [Skill Evals](#skill-evals)
+- [Releasing](#releasing)
+- [The Agents](#the-agents)
+- [Shared Conventions](#shared-conventions)
+- [Adapting to a Project](#adapting-to-a-project)
+- [Journals](#journals)
+<!-- toc:end -->
+
 ## Install (Codex plugin)
 
 Two steps — register the marketplace, then install the plugin from it:
