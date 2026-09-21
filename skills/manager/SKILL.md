@@ -31,23 +31,6 @@ item, in Phase 0 step 8.
 The sibling skills do the planning, reviewing, and simplifying; this skill
 decides who runs them, on what, and what happens to their output.
 
-## Why this shape
-
-- An agent that wrote none of the plans merges them, so nobody defends their
-  own draft. A SWOT analysis of each plan forces a topic-by-topic merge with
-  evidence, not a pick of the longer plan.
-- The coordinator implements because it holds the reason behind every merged
-  decision; a fresh agent would not.
-- Reviewers over-report, so each finding is checked against the real code
-  before anything is fixed.
-- Simplify runs after the fixes, so it tidies the final shape once; a final
-  review checks the fixes introduced nothing new.
-- A question asked in Phase 0 costs one wait; found in Phase 5, a re-plan.
-
-The cost per work item is the roster you pick, before the nested fan-outs: a
-`plan-feature` run per planner, a `review-pr` run per review, one
-`simplify-sweep`.
-
 ## Rules that hold in every phase
 
 1. **Single writer.** One agent edits the worktree at a time. Planners and

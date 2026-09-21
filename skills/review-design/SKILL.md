@@ -33,16 +33,7 @@ Two properties frame everything below:
 - **You never push or touch the remote.** All work is local: edits on the current
   branch, gated on the project's lint and build. No `gh`, no remote required.
 
-## Why this shape
-
-"Is the hierarchy clear?", "is spacing on a scale?", "does the color pass
-contrast?", and "do states feel right?" are different mental modes — one lens
-per sub-agent, all sharing the same design-system context, finds more than one
-generalist pass, and you merge the results into one ranked list. The sub-agents
-**only analyze**; edits happen later, under your control, behind the lint/build
-gate.
-
-## Phase 0 — Orient (do this once, yourself)
+## Phase 0 — Orient
 
 Before dispatching anything, build an accurate map of the project's design
 system and the review target. You gather this **once** and bundle it into every
@@ -85,17 +76,14 @@ nothing to design-review and stop.
 
 ## Phase 1 — Fan out the review
 
-Dispatch all five lens sub-agents **in parallel** — issue all the Agent/Task
-calls in a single message so they run concurrently. (This is the
-`superpowers:dispatching-parallel-agents` pattern.) If the target is large, give
-each sub-agent the file list and let it read what its lens needs.
+Dispatch all five independent lens sub-agents concurrently, batching to the
+host's limits. If the target is large, give each sub-agent the file list and let
+it read what its lens needs.
 
-**Model choice:** unless the user specified a model, run the fan-out
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each lens prompt is narrow and single-purpose,
-so the cheaper tier is normally enough. If a lens comes back clearly
-degraded, re-run that one lens on the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only review, or inherit the session
+model. Retry at the session tier only when required fields or assigned coverage
+are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -185,7 +173,8 @@ For each accepted finding, in order:
    finding touches contrast or a theme, re-verify the ratio in **every** theme it
    affects (light-mode ratios don't carry to dark).
 4. **Hold the gate hard.** If lint or the build goes red, fix it or revert that
-   one finding. Never commit red.
+   one finding. Mark a revert `attempted, reverted — needs manual work`, then
+   continue with the remaining findings. Never commit red.
 5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `fix(ui): …`,
    `style(banner): …`), scoped to the finding's lens. One commit per finding
@@ -222,59 +211,13 @@ spacing/type, a clear inconsistency, or a missing state; 🟢 for refinement.
 
 ## Autonomous loop rules (paths b and c)
 
-Both loop paths repeat the same cycle — apply findings, re-run the full review
-fan-out (Phases 1–2) on the now-updated target, then apply again — until they
-converge. They differ only in **which findings they apply** and **when they
-stop**.
+| Path | Apply | Stop when | Cap |
+| --- | --- | --- | --- |
+| b — significant | 🔴 and 🟡 | no significant findings remain | 3 rounds |
+| c — everything | 🔴, 🟡, and 🟢 | no new findings remain | 6 rounds |
 
-### Path b — significant only
-
-1. Apply every **significant** finding — severity 🔴 or 🟡. 🟢 findings are
-   reported but not auto-applied (refinements the user should opt into). Each fix
-   follows the Phase 5 apply-and-gate steps.
-2. Re-run the full review fan-out on the now-updated target.
-3. Repeat. **Stop** when either a review round produces no 🔴/🟡 findings
-   (convergence) or three apply-then-re-review rounds have completed (cost
-   bound), whichever comes first.
-
-### Path c — everything, including refinements
-
-1. Apply **every** finding the round produced — 🔴, 🟡, *and* 🟢. Each fix follows
-   the Phase 5 apply-and-gate steps.
-2. Re-run the full review fan-out on the now-updated target.
-3. Track findings already addressed across rounds (by location + fix) so you can
-   tell genuinely **new** findings from ones that keep resurfacing. Repeat.
-   **Stop** when either a round produces **no new findings** at any severity (full
-   convergence) or **six** apply-then-re-review rounds have completed (a safety
-   bound — design refinements can beget more refinements), whichever comes first.
-4. If a 🟢 finding is purely cosmetic taste with no clear improvement, or two
-   rounds in a row keep re-proposing the same change you already applied, treat it
-   as addressed and don't churn on it — convergence, not perfection, is the target.
-
-### Common to both paths
-
-- Each round reports: findings applied, the gate result, and what remains. On
-  stop, summarize total commits made and (for path b) any 🟢 findings left for
-  the user.
-- The loop is **stateless across invocations**: hitting the round cap is not the
-  end of the road. Because each run re-orients and re-reviews from the current
-  state, the user can re-invoke this skill to run another set of rounds on the
-  updated UI — a fresh run naturally continues where the last one stopped. Mention
-  this in the stop summary.
-
-## Error handling
-
-- **No visual surface** (target is pure backend/library, or empty after
-  resolving): report nothing to design-review and stop.
-- **Ambiguous target** (nothing specified): ask which UI to review before
-  scanning — don't default to the whole repo.
-- **Lint/build command not found:** warn and ask whether to proceed without the
-  gate or supply the command. Never silently skip verification.
-- **A sub-agent fails or returns nothing:** note it, continue with the others.
-- **A fix breaks the gate and can't be repaired quickly:** revert that finding,
-  mark it "attempted, reverted — needs manual work," and continue with the rest.
-- **A fix would need a token/pattern that doesn't exist:** don't invent a new
-  design language to satisfy it — report it as a finding the user must decide on,
-  and move on.
-- **Two findings' edits conflict:** one-commit-per-finding already serializes
-  them; apply sequentially and re-run the gate after each.
+For either row: apply each finding through Phase 5, re-run Phases 1–2, and
+repeat. Track addressed findings by location + fix; retire pure-taste or
+repeated proposals instead of churning. Report each round's fixes, gate, and
+remainder, then the total commits and deferred findings. The cap is per
+invocation; a later invocation starts from the updated target.

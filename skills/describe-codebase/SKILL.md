@@ -2,10 +2,10 @@
 name: describe-codebase
 description: >-
   Explain how a codebase is shaped — the whole repository, one subsystem, or
-  one feature traced end to end — as an orientation brief with file:line
+  one feature traced — as an orientation brief with file:line
   references. Use to understand an unfamiliar codebase, map the architecture,
-  or trace how a feature flows. Read-only unless asked to write
-  ARCHITECTURE.md; never edits code. Not for reviewing or improving code
+  or trace how a feature flows. Read-only unless asked to update ARCHITECTURE.md
+  or AGENTS.md; never edits code. Not for reviewing or improving code
   (review-pr, simplify-sweep).
 ---
 
@@ -21,15 +21,7 @@ This is the inverse of `review-pr`: where that skill reads a diff to *critique*
 it, you read a codebase to *explain* it. You produce orientation, not findings to
 fix.
 
-## Why this shape
-
-"Where does execution flow?", "how is data stored?", and "what are the
-conventions and commands?" are different mental modes — one lens per explorer
-maps each more sharply, and you merge the results into a single brief. The
-explorers **only read**; the only thing ever written is the optional doc the
-user opts into in Phase 3, which is what makes this safe to point at any repo.
-
-## Phase 0 — Orient & resolve scope (do this once, yourself)
+## Phase 0 — Orient & resolve scope
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and architecture notes. Capture what's already documented so
@@ -49,16 +41,12 @@ nothing to map and stop.
 
 ## Phase 1 — Fan out (shape depends on scope)
 
-Dispatch all sub-agents **in parallel** — issue every Agent/Task call in a single
-message so they run concurrently (the
-`superpowers:dispatching-parallel-agents` pattern).
+Dispatch independent explorers concurrently, batching to the host's limits.
 
-**Model choice:** unless the user specified a model, run the explorer/tracer
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each lens is a bounded read-and-report task, so
-the cheaper tier is normally enough. If a lens comes back clearly degraded,
-re-run that one lens on the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only exploration, or inherit the
+session model. Retry at the session tier only when required fields or assigned
+coverage are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -122,18 +110,12 @@ and back, with the meaningful branch points called out.
 
 Keep it skimmable — an orientation, not an essay.
 
-## Phase 3 — Offer to persist
+## Phase 3 — Persist only when requested
 
-Ask the user whether to write the brief to disk:
-
-- **(a)** a new `ARCHITECTURE.md` at the repo root,
-- **(b)** appended to the `AGENTS.md` project-specific section, or
-- **(c)** chat only — write nothing (the default).
-
-Only write on an explicit pick. If the chosen target already **exists**, show
-what would change (the file's proposed content, or the exact append) and confirm
-before writing — never overwrite a hand-written doc silently. You write **no
-code** under any path; the only artifact you ever create is this one doc.
+Chat is the default: do not ask a persistence question after delivering the
+brief. If the original request asks to save it, write a new `ARCHITECTURE.md` or
+append it to the `AGENTS.md` project-specific section, as requested. Preview
+changes to an existing target and confirm before writing. Never edit code.
 
 ## Finding schema
 

@@ -27,15 +27,7 @@ Two guardrails frame everything below:
   do not merge or close PRs on GitHub. The user inspects the resulting branch and
   decides what to do with it.
 
-## Why this shape
-
-Titles lie — "fix typo" can hide a behavior change — so every PR gets a real
-diff-read from its own sub-agent, all in parallel, each judging through the
-same four lenses. The sub-agents **only assess**; merging happens later, under
-your control, locally. Keeping assessment separate from action is what makes
-the verdicts trustworthy and the merge step safe to reason about.
-
-## Phase 0 — Orient (do this once, yourself)
+## Phase 0 — Orient
 
 Before dispatching anything, build the picture you'll bundle into every
 sub-agent so the agents don't each re-derive it.
@@ -60,22 +52,19 @@ so and stop — there's nothing to triage.
 
 ## Phase 1 — Fan out the triage
 
-Dispatch **one sub-agent per open PR, all in parallel** — issue every Agent/Task
-call in a single message so they run concurrently (the
-`superpowers:dispatching-parallel-agents` pattern). For a large queue (say >15
-open PRs), tell the user the count and confirm before fanning out that wide.
+Dispatch one sub-agent per open PR concurrently, batching to the host's limits.
+For a large queue (say >15 open PRs), tell the user the count and confirm before
+fanning out that wide.
 
-**Model choice:** unless the user specified a model, run the per-PR review
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each assessment is a narrow diff-read against
-four fixed lenses, so the cheaper tier is normally enough. If a verdict comes
-back clearly degraded or incomplete, re-run that one PR on the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only assessments, or inherit the
+session model. Retry at the session tier only when required verdict fields or
+assigned coverage are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
 1. **The shared context** from Phase 0: the project guidance summary, the
-   detected conventions, `<main>`, and the target branch name.
+   detected conventions, and `<main>`.
 2. **The assessment lens** — read `references/pr-assessment.md` and include it
    verbatim. That file is the sub-agent's entire instruction set for how to judge
    a PR. Also give it the one PR's number and its row from the `gh pr list` JSON.
@@ -103,13 +92,13 @@ on a compact line:
        — README typo fixes, no code paths touched
 [#137] ⚠️ review · borderline · deps · +1/-1, 1 file · clean, CI green
        — bumps lodash minor; low risk but touches a runtime dep
-[#131] ❌ skip · not-trivial · core · +210/-44, 9 files · CONFLICTS with target
+[#131] ❌ skip · not-trivial · core · +210/-44, 9 files · CONFLICTS with base
        — refactors the auth flow; needs a real review, not a batch merge
 ```
 
 Then summarize: how many PRs are include candidates, how many borderline, how
-many to skip, and call out anything that **conflicts with the target branch** or
-has **red/pending CI** — those are the ones most likely to bite during the merge.
+many to skip, and call out anything that conflicts with its base or has
+**red/pending CI** — those are the ones most likely to bite during the merge.
 
 Keep it skimmable. The user is making a pick from a table, not reading reviews.
 
@@ -179,7 +168,7 @@ recommendation: include | review | skip      (✅ | ⚠️ | ❌)
 triviality:     trivial | borderline | not-trivial
 change_type:    docs | deps | config | test | refactor | core | mixed
 size:           +<additions>/-<deletions>, <n> files
-mergeable:      clean | conflicts | unknown   (vs the target branch)
+mergeable:      clean | conflicts | unknown   (vs the PR base)
 ci:             green | red | pending | none
 summary:        one line on what the PR does
 reason:         one line on why include / review / skip

@@ -16,15 +16,6 @@ member of a manager's team, never answer a question on the user's behalf, and
 never close anything you did not create. The one exception is the collapse
 rule of S1, and it is a recorded degradation.
 
-## Why this shape
-
-- One contact instead of N panes: the user reads one status and answers in
-  one place, whatever the number of work items.
-- One manager per work item keeps each item's context, worktree, team, and
-  cleanup apart from the others.
-- Questions are relayed, so the user never hunts through workspaces for the
-  agent that is waiting on them.
-
 ## S0 — Intake
 
 Before anything else, create the **session run directory outside the
@@ -33,9 +24,10 @@ question record in its `questions.md` — the format is `manager-brief.md`'s —
 kept `pending`, `answered`, or `assumed`, so a turn that ends, or a super
 manager that is replaced, never loses or re-asks an intake answer.
 
-1. **Split the request into work items** without inventing splits: one
-   feature or fix is one manager and one PR. Never divide one feature between
-   managers. One work item still gets a manager under you.
+1. **Split the request into work items** without inventing splits: one feature
+   or fix is one manager and, with a usable remote, one PR; otherwise the
+   documented fallback is one committed branch. Never divide one feature
+   between managers. One work item still gets a manager under you.
 2. **Proportionality.** When this skill was picked for a trivial item — a
    typo, a one-line change — and the user did not ask for a manager run, say
    the pipeline is disproportionate and leave the skill: the item is an
@@ -47,8 +39,9 @@ manager that is replaced, never loses or re-asks an intake answer.
    "nobody is available" means `no`.
 4. **Ask the cross-cutting questions once, now**, before any manager starts:
    which items; an order or dependency between them — always, when two items
-   touch the same files. Every implementation work item delivers through a PR;
-   do not ask the user to choose a branch instead. Number
+   touch the same files. Every implementation work item targets a PR when a
+   usable remote exists; otherwise it delivers the committed-branch fallback.
+   Do not ask the user to choose between them. Number
    them `S-Q<n>` and show them in the Questions section of the status format
    below, with `manager —`. No work item named → that is `S-Q1`; unattended,
    stop with a report instead of inventing one. **S1 waits for the answers:**

@@ -26,15 +26,7 @@ Two properties frame everything below:
 - **You never push or touch the remote.** All work is local: edits on the current
   branch, gated on lint and tests. No `gh`, no remote required.
 
-## Why this shape
-
-"Is this duplicated?", "too nested?", "is this name clear?", and "is this doc
-stale?" are different mental modes — one lens per sub-agent over a bounded
-shard of files finds more than one generalist skim, and you merge the results
-into one ranked list. The sub-agents **only analyze**; edits happen later,
-under your control, behind the lint/test gate.
-
-## Phase 0 — Orient (do this once, yourself)
+## Phase 0 — Orient
 
 Build an accurate map of the project, gathered once and bundled into every
 sub-agent so they don't each re-derive it.
@@ -79,18 +71,13 @@ If the target is empty after filtering, say there's nothing to scan and stop.
 
 ## Phase 2 — Fan out the survey
 
-Dispatch one sub-agent per `(lens, shard)` pair, **all in parallel** — issue the
-Agent/Task calls in a single message so they run concurrently (the
-`superpowers:dispatching-parallel-agents` pattern). If the pair count is large,
-dispatch in batches to respect the concurrency limit.
+Dispatch one sub-agent per `(lens, shard)` pair concurrently, batching to the
+host's concurrency limit.
 
-**Model choice:** unless the user specified a model, run the fan-out
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each (lens, shard) prompt is narrow and
-bounded, so the cheaper tier is normally enough — and at up to ~24 agents the
-session tier is an expensive default. If a pair comes back clearly degraded,
-re-run that one pair on the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only analysis, or inherit the session
+model. Retry at the session tier only when required fields or assigned coverage
+are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -124,8 +111,8 @@ a single implementation, a format nothing reads back. Raise it. A finding whose
 highest-value one in the sweep, and it is the one a sub-agent told to "simplify"
 will otherwise talk itself out of. Its `measured` field is the line count it
 takes with it. Removing behaviour is out of this skill's remit to *apply* —
-report it, size it, and let the user decide; never delete a live capability
-under path (b).
+report it, size it, and mark it `kind: removal-candidate`. Only
+`kind: simplification` records enter implementation.
 
 ## Phase 3 — Consolidate
 
@@ -158,15 +145,14 @@ skimmable; the user is choosing what to act on, not reading four reports.
 
 List any **removal candidates** (whole capabilities that look unused or
 over-built) in their own short block below the findings, each with what it costs
-to keep and what it would take with it. They are for the user to decide on, not
-for path (b) to apply.
+to keep and what it would take with it.
 
 ## Phase 5 — Decide
 
 If the original request already chose a path — "report only", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
-  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
+  identical instances elsewhere; Phase 6 sweeps for them, reports the count,
   and asks before editing anything outside the target you chose.
 - **(b) Autonomous loop** — apply all significant findings, re-scan, repeat until
   convergence or the round cap (see loop rules). On a whole-repo target this can
@@ -193,8 +179,8 @@ For each accepted finding, in order:
    at one site while identical ones remain is not fixed.
 3. **Run the gate** — the project's lint and test commands from Phase 0.
 4. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
-   finding. Never commit red. A simplification that breaks the build is worse
-   than no simplification.
+   finding. Mark a revert `attempted, reverted — needs manual work`, then
+   continue with the remaining findings. Never commit red.
 5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `refactor(auth): …`,
    `docs(readme): …`), scoped to the finding's lens.
@@ -210,6 +196,7 @@ Each sub-agent emits findings as records with these fields:
 
 ```
 id:        <lens>-<n>            e.g. redundancy-1
+kind:      simplification | removal-candidate
 severity:  critical | important | nice-to-have   (🔴 | 🟡 | 🟢)
 lens:      redundancy | complexity | clarity | docs
 location:  path:line
@@ -237,16 +224,3 @@ end of the road. Because each run re-orients and re-surveys from the current
 state, the user can re-invoke this skill to run another set of rounds — a fresh
 run naturally continues where the last one stopped. Mention this in the stop
 summary.
-
-## Error handling
-
-- **Empty target** (no files after filtering): report nothing to scan and stop.
-- **Lint/test command not found:** warn and ask whether to proceed without the
-  gate or supply the command. Never silently skip verification.
-- **A sub-agent fails or returns nothing:** note it, continue with the others.
-- **A fix breaks the gate and can't be repaired quickly:** revert that finding,
-  mark it "attempted, reverted — needs manual work," and continue with the rest.
-- **Surface exceeds the agent cap:** cap it and disclose what was left out, so a
-  partial survey never reads as a complete one.
-- **Two findings' edits conflict:** one-commit-per-finding serializes them; apply
-  sequentially and re-run the gate after each.

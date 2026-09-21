@@ -45,24 +45,7 @@ Three properties frame everything below:
 - **You never push or touch the remote.** All work is local: edits on the current
   branch, gated on the project's lint and build. No `gh`, no remote required.
 
-## Why this shape
-
-"Too many decisions?", "starts at zero?", "value before the ask?", "anything to
-lose by leaving?", "is inaction framed as free?", and "is this price anchored?"
-are six different mental modes — one principle per sub-agent, all sharing the
-same product context, finds more than one generalist pass, and you merge the
-results into one ranked list. The sub-agents **only analyze**; edits happen
-later, under your control, behind the lint/build gate.
-
-The finders are not infallible: each is primed to see its principle everywhere,
-so the raw pile contains false positives — a "blank form" that's prefilled a
-component deeper, an "isolated price" next to an anchor the finder didn't
-scroll to. So between finding and presenting sits a dedicated **verification**
-stage: a fresh, skeptical agent re-checks every finding against the real
-code/flow, and only survivors reach the user — or, in the autonomous loop, get
-applied.
-
-## Phase 0 — Orient (do this once, yourself)
+## Phase 0 — Orient
 
 Before dispatching anything, build an accurate map of the project, the flow, and
 what it's being optimized for. You gather this **once** and bundle it into every
@@ -119,16 +102,13 @@ pricing, or CTAs), say there's nothing to UX-psychology-review and stop — sugg
 
 ## Phase 1 — Fan out the review
 
-Dispatch all six lens sub-agents **in parallel** — issue all the Agent/Task calls
-in a single message so they run concurrently. (This is the
-`superpowers:dispatching-parallel-agents` pattern.)
+Dispatch all six independent lens sub-agents concurrently, batching to the
+host's limits.
 
-**Model choice:** unless the user specified a model, run the fan-out
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each lens prompt is narrow and single-principle,
-so the cheaper tier is normally enough. If a lens comes back clearly
-degraded, re-run that one lens on the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only review, or inherit the session
+model. Retry at the session tier only when required fields or assigned coverage
+are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -170,16 +150,14 @@ The finders are optimistic: each is primed to see its principle everywhere, so t
 raw pile they return contains false positives. Never present a finding — and
 never, in the autonomous loop, apply one — on a finder's word alone.
 
-Dispatch verification sub-agents **in parallel**, the same way you fanned out the
-review — including the Phase 1 model default (lesser tier unless the user
-specified a model). Run one verifier per finding; when the finding count is
-large, batch several low-severity findings into a single verifier. A verifier
-is a **fresh, skeptical** agent that did **not** produce the finding. Its
-prompt is:
+Dispatch at most four verification batches concurrently, grouped by lens and
+severity. A fresh, skeptical verifier that produced none of its batch's findings
+returns a separate verdict for every finding. Use the Phase 1 model rule.
+Each verifier's prompt is:
 
 1. **The shared Phase 0 context** — project guidance, target metric, flow map, and
    the rendered frames.
-2. **The single finding** to check — its location, problem, proposed fix, and the
+2. **The findings in its batch** — each location, problem, proposed fix, and the
    metric it claims to move.
 3. **The verifier instruction:** *You are a skeptical verifier. Do not assume the
    finding is correct. Open the actual file at the given location (and look at the
@@ -194,9 +172,10 @@ prompt is:
 Reading the **real code/flow**, not the finder's snippet, is the point — a finder
 reasoning from a partial view is exactly where false positives come from.
 
-Each verifier returns:
+Each verifier returns a list with one record per finding:
 
 ```
+id:          <finding id>
 verdict:     confirmed | refuted | uncertain
 confidence:  high | medium | low
 rationale:   one line — what the code/flow actually shows
@@ -220,7 +199,7 @@ moving on.
 
 ## Phase 3 — Consolidate & present
 
-Merge all **verified** findings (confirmed and uncertain) into one list:
+Merge all **surviving** findings (confirmed and uncertain) into one list:
 
 - **Deduplicate across lenses.** The same location with the same fix collapses
   into one entry; keep the higher severity. Several lenses will legitimately flag
@@ -255,11 +234,11 @@ If the original request already chose a path — "report only", "fix everything"
 - **(a) Implement selected** — they name the finding IDs to apply. A finding may have
   identical instances elsewhere; Phase 5 sweeps for them, reports the count,
   and asks before editing anything outside the target you chose.
-- **(b) Autonomous loop (significant only)** — apply all verified 🔴/🟡 findings,
+- **(b) Autonomous loop (significant only)** — apply all confirmed 🔴/🟡 findings,
   re-review, repeat until convergence or the round cap. Skips 🟢 refinements
   (see loop rules).
 - **(c) Autonomous loop (everything, including refinements)** — apply *all*
-  verified findings including 🟢, re-review, fix again, until a round surfaces
+  confirmed findings including 🟢, re-review, fix again, until a round surfaces
   nothing new (see loop rules).
 - **(d) Stop** — report only; change nothing.
 
@@ -299,7 +278,8 @@ For each accepted finding, in order:
    finding's `hypothesis` (metric + expected direction) into the commit so the
    change is set up to be validated (e.g. by an experiment) afterward.
 4. **Hold the gate hard.** If lint or the build goes red, fix it or revert that one
-   finding. Never commit red.
+   finding. Mark a revert `attempted, reverted — needs manual work`, then
+   continue with the remaining findings. Never commit red.
 5. **Commit on the current branch** — one commit per finding, Conventional Commits
    style (`<type>(<scope>): <subject>`, e.g. `feat(onboarding): …`), scoped to the
    finding's lens, and mention the target metric in the body. One commit per
@@ -355,56 +335,18 @@ in isolation, no smart defaults); 🟢 for refinement.
 
 ## Autonomous loop rules (paths b and c)
 
-Both loop paths repeat the same cycle — apply findings, re-run the full review
-(fan-out → verify → consolidate, Phases 1–3) on the now-updated target, then apply
-again — until they converge. Because verification runs every round, the loop only
-ever applies findings that survived it. The paths differ only in **which findings
-they apply** and **when they stop**.
+| Path | Apply | Stop when | Cap |
+| --- | --- | --- | --- |
+| b — significant | confirmed 🔴 and 🟡 | no confirmed significant findings remain | 3 rounds |
+| c — everything | every confirmed severity | no new surviving findings remain | 6 rounds |
 
-### Path b — significant only
-
-1. Apply every **verified significant** finding — a 🔴 or 🟡 that Phase 2 returned
-   as `confirmed`. 🟢 findings and any left `uncertain` are reported but not
-   auto-applied. Each fix follows the Phase 5 apply-and-gate steps. If a confirmed
-   finding turns out to be a structural change that can't be made cleanly behind
-   the gate, revert it and report it rather than forcing it.
-2. Re-run the full review (fan-out → verify → consolidate) on the updated target.
-3. Repeat. **Stop** when either a round produces no verified 🔴/🟡 findings
-   (convergence) or three apply-then-re-review rounds have completed (cost bound),
-   whichever comes first.
-
-### Path c — everything, including refinements
-
-1. Apply **every verified** finding the round produced — 🔴, 🟡, *and* 🟢 — that
-   verification marked `confirmed`; `uncertain` ones are reported, and structural
-   changes that can't be made cleanly are reverted and reported. Each fix follows
-   the Phase 5 apply-and-gate steps.
-2. Re-run the full review (fan-out → verify → consolidate) on the updated target.
-3. Track findings already addressed across rounds (by location + fix) so you can
-   tell genuinely **new** findings from ones that keep resurfacing. Repeat. **Stop**
-   when either a round produces **no new findings** at any severity — every finding
-   it raises is one already applied, or already attempted-and-reverted as an
-   unfixable structural change in an earlier round (full convergence) — or **six**
-   apply-then-re-review rounds have completed (safety bound), whichever comes
-   first. This retirement clause matters here: because attempting a structural
-   finding and reverting it is a first-class outcome (Phase 4), a reverted finding
-   is never applied and would otherwise be re-detected every round, so without it
-   the loop could never reach "no new findings".
-4. If a 🟢 finding is pure taste with no clear improvement, or two rounds in a row
-   re-propose the same change you already applied or already reverted as unfixable,
-   treat it as addressed and don't churn — convergence, not perfection, is the
-   target.
-
-### Common to both paths
-
-- Each round reports: findings applied, the gate result, what verification
-  filtered out, and what remains (including structural findings deferred to the
-  user). On stop, summarize total commits made and everything left for the user.
-- The loop is **stateless across invocations**: hitting the round cap is not the
-  end of the road. Because each run re-orients and re-reviews from the current
-  state, the user can re-invoke this skill to run another set of rounds — a fresh
-  run naturally continues where the last one stopped. Mention this in the stop
-  summary.
+For either row: apply each finding through Phase 5, re-run Phases 1–3, and
+repeat. Never auto-apply `uncertain` findings. Revert and retire structural
+changes that cannot pass the gate. Track addressed findings by location + fix;
+retire repeated or pure-taste proposals instead of churning. Report each
+round's fixes, gate, filtered findings, and remainder, then the total commits
+and deferred findings. The cap is per invocation; a later invocation starts
+from the updated target.
 
 ## When to use this vs. `review-design` vs. the `uxpolish` agent
 
@@ -419,24 +361,3 @@ they apply** and **when they stop**.
 
 They compose: a full UX audit is often `review-ux-psychology` for the flow's
 conversion logic plus `review-design` for its visual craft.
-
-## Error handling
-
-- **No decision surface** (target is pure backend/library or purely
-  presentational, or empty after resolving): report nothing and stop; suggest
-  `review-design` for a visual pass.
-- **No target metric given:** ask which metric the flow is optimized for before
-  fanning out — findings are ranked by impact on it.
-- **Can't render the flow:** fall back to a code-only review and say so; don't
-  silently present a code-only review as if it were grounded in the rendered UI.
-- **Ambiguous target** (nothing specified): ask which flow to review before
-  scanning — don't default to the whole repo.
-- **Lint/build command not found:** warn and ask whether to proceed without the
-  gate or supply the command. Never silently skip verification.
-- **A sub-agent or verifier fails:** note it; for a failed verifier, treat the
-  finding as `uncertain` (surface it, don't auto-apply). Continue with the others.
-- **A fix breaks the gate and can't be repaired quickly:** revert that finding,
-  mark it "attempted, reverted — needs manual work," and continue with the rest.
-- **A finding is a structural product decision:** the loop attempts it, but if it
-  can't be made as a clean in-pattern change, revert and present it as a
-  recommendation with a proposed approach rather than forcing it.

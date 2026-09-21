@@ -284,8 +284,8 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   its own workspace, is the user's only contact, and reports a questions
   section plus one header and one fixed status block per manager. Each
   manager runs: orient, ask early, and pick a roster sized to the work item
-  from the agent-type catalogue (`references/agent-types.md` — no count is
-  prescribed) → parallel planners (plan-feature) → a coordinator's SWOT merge
+  from the agent-type catalogue (`references/agent-types.md` — planning warning:
+  40 direct and nested agent starts) → parallel planners (plan-feature) → a coordinator's SWOT merge
   → implement → parallel reviewers (review-pr) → validate and fix → simplify
   (simplify-sweep) → final review of what was committed since the last review
   → hand back in the fixed per-team status block. A manager's questions are
@@ -330,7 +330,7 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   location, problem, measured, gap, fix, effort}` for review-pr, which its verify
   pass then annotates with `{verdict, confidence}`; `{id, severity, lens,
   principle, location, problem, measured, fix, effort}` for review-design;
-  `{id, severity, lens, location, problem, measured, fix, effort}` for
+  `{id, kind, severity, lens, location, problem, measured, fix, effort}` for
   simplify-sweep; `{id, severity, lens, principle, location, problem, fix,
   hypothesis, effort}` for review-ux-psychology, which (like review-pr) runs a verify pass that annotates
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
