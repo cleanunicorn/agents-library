@@ -21,16 +21,16 @@ AGENT_WORD_CEILING = 1800
 # Per-skill root ceilings, keyed by name: each is the current size rounded up.
 # domains/, lenses/, references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
-    "batch-merge-prs": 1700,
-    "describe-codebase": 1300,
-    "install-agents": 1500,
-    "manager": 2900,
-    "plan-feature": 1600,
-    "review-design": 2500,
-    "review-pr": 3100,
-    "review-ux-psychology": 4100,
-    "simplify-sweep": 2200,
-    "triage-issues": 3300,
+    "batch-merge-prs": 1400,
+    "describe-codebase": 1000,
+    "install-agents": 1400,
+    "manager": 2700,
+    "plan-feature": 1300,
+    "review-design": 1800,
+    "review-pr": 2200,
+    "review-ux-psychology": 3000,
+    "simplify-sweep": 1800,
+    "triage-issues": 2800,
 }
 # The manager's agent-type catalogue — see test_manager_roster_is_chosen_per_item.
 # Further types are allowed; these are the ones the pipeline starts.
