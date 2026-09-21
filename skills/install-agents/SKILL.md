@@ -32,14 +32,16 @@ the user decides something else.
    - Otherwise ask the user for the path to their agents-library checkout.
 2. **Confirm the target.** The install target is the current project's repo
    root (`git rev-parse --show-toplevel`; the current directory outside git —
-   warn that the agents themselves expect a git repo, since every run branches
-   and opens a PR).
+   installing still works, but warn that the agents themselves expect a git
+   repo, since every run branches and opens a PR, and skip mechanisms that need
+   a remote).
 3. **Detect prior installs.** List what already exists in `.claude/agents/` so
    the proposal distinguishes fresh installs from updates, and look for an
    existing `.github/workflows/periodic-agents.yml` or scheduled jobs from an
    earlier run (this makes re-runs an upgrade, not a duplicate).
 
-If no agent sources can be found, report exactly what you looked for and stop.
+If no agent sources can be found, report exactly what you looked for and stop —
+never fabricate agent definitions from memory.
 
 ## Phase 1 — Choose agents, cadence, and mechanism (one confirmation)
 
@@ -68,7 +70,8 @@ how to pick a default). If the user already made these choices in their
 invocation — named the agents, the cadence, or the mechanism, or said to
 proceed without confirmation — skip the ask and use their choices, filling
 gaps with the defaults. "Install but don't schedule" is a valid choice:
-run Phases 2 and 4 only.
+run Phases 2 and 4 only. If the user declines everything, write nothing and
+report what would have been done.
 
 ## Phase 2 — Install the definitions (script)
 
@@ -121,6 +124,12 @@ no preference:
    or an explicit permission mode) rather than silently recommending
    skipped permissions.
 
+With no mechanism available (no scheduler tools, no GitHub remote, cron
+declined), finish as install-only and say how to run an agent manually: paste
+the run prompt into a session. An existing `periodic-agents.yml` or schedules
+from an earlier install make this an upgrade: show what would change before
+rewriting, and never duplicate an agent's schedule.
+
 **The run prompt** — identical across mechanisms, one per agent:
 
 > Read `.claude/agents/<name>.md` and act as that agent for exactly one run
@@ -145,20 +154,3 @@ End with one compact report:
 - **Changing it later** — re-run this skill to add/remove agents or change
   cadence; uninstall by deleting `.claude/agents/<name>.md` (and its journal)
   and removing the agent's cron entry / schedule / workflow mapping.
-
-## Error handling
-
-- **Agent sources not found:** report every location checked and stop —
-  never fabricate agent definitions from memory.
-- **Not a git repo:** installing definitions still works; warn that the
-  agents' PR workflow expects git, and skip mechanisms that need a remote.
-- **`CONFLICT` from the script:** show the diff, per-agent approval before
-  `--force`; default to keeping the user's copy.
-- **No scheduling mechanism available** (no scheduler tools, no GitHub
-  remote, user declines cron): finish as install-only and say how to run an
-  agent manually (paste the run prompt into a session).
-- **Existing `periodic-agents.yml` or schedules from an earlier install:**
-  treat as an upgrade — show what would change before rewriting, and never
-  duplicate schedules for the same agent.
-- **User declines everything:** write nothing; report what would have been
-  done.

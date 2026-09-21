@@ -15,11 +15,8 @@ You are the **orchestrator** of a read-to-explain survey of a codebase. The user
 wants to understand how some code is shaped — the whole repository, one
 subsystem, or one feature's execution path. Your job is to orient on the
 project, fan out read-only explorer sub-agents, consolidate what they find into
-one orientation brief, and optionally persist it.
-
-This is the inverse of `review-pr`: where that skill reads a diff to *critique*
-it, you read a codebase to *explain* it. You produce orientation, not findings to
-fix.
+one orientation brief, and optionally persist it. You produce orientation, not
+findings to fix.
 
 ## Phase 0 — Orient & resolve scope
 
@@ -70,14 +67,16 @@ Each sub-agent's prompt is assembled from three parts:
 **Flow-trace scope — per-segment tracers:**
 
 Identify the entry point for the named feature/flow first (search for the route,
-handler, command, or symbol). Then dispatch tracers along the path it touches —
+handler, command, or symbol). If you cannot find it, report what you searched
+(the symbol, route, or file patterns tried) and ask the user to disambiguate
+rather than guessing. Then dispatch tracers along the path it touches —
 entry/handler, business logic, data access, and any external call — each given
 `lenses/flow-trace.md` verbatim plus its assigned segment and starting location.
 If the segments aren't knowable up front, dispatch the entry tracer first, then
 fan out the remaining segments from where it hands off.
 
 If a sub-agent fails or returns nothing, note it and continue with the others —
-never block the whole brief on one lens or segment.
+render the brief from whatever returned; never block it on one lens or segment.
 
 ## Phase 2 — Consolidate & present the brief
 
@@ -101,8 +100,8 @@ For a **map scope**, render the brief in this shape:
 Fill each line from the explorers' findings, each pointing at a `file:line`. The
 **Start here** list is your synthesis — the handful of files that best orient a
 newcomer, drawn from across the three lenses. If an explorer reported "not found"
-for something (e.g. no central config, commands undiscoverable), say so plainly
-rather than omitting the line.
+for something (e.g. no central config, commands undiscoverable), mark that line
+"not found" rather than omitting or fabricating it.
 
 For a **flow trace**, render an ordered, numbered walkthrough instead: each hop a
 `file:line` reference, from the entry point through to the data/external boundary
@@ -115,7 +114,8 @@ Keep it skimmable — an orientation, not an essay.
 Chat is the default: do not ask a persistence question after delivering the
 brief. If the original request asks to save it, write a new `ARCHITECTURE.md` or
 append it to the `AGENTS.md` project-specific section, as requested. Preview
-changes to an existing target and confirm before writing. Never edit code.
+changes to an existing target and confirm before writing; never overwrite
+silently. Never edit code.
 
 ## Finding schema
 
@@ -129,16 +129,3 @@ detail:    one or two lines on what's there and why it matters
 ```
 
 You compose these into the brief sections; you do not surface the raw records.
-
-## Error handling
-
-- **Empty or unrecognized target** (no source files in scope): report there's
-  nothing to map and stop.
-- **An explorer fails or returns nothing:** note it, continue with the others;
-  render the brief from whatever returned.
-- **Flow-trace target not found:** report what you searched (the symbol, route,
-  or file patterns tried) and ask the user to disambiguate rather than guessing.
-- **Commands not discoverable:** render the brief with the **Commands** line
-  marked "not found" rather than fabricating them.
-- **Doc-write target already exists:** show the diff/append preview and confirm;
-  never overwrite silently.

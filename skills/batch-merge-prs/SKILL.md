@@ -128,18 +128,13 @@ ascending PR number):
 bash scripts/merge-prs.sh <remote> <main> <target>|auto <pr-number>...
 ```
 
-The script encodes the whole procedure: a target of `auto` generates the
-branch name `batch/<YYYYMMDD-HHMM>` from the current date/time (the default
-when the user didn't name one — the `TARGET` line it prints tells you the
-generated name); it refuses a dirty working tree (protecting uncommitted
-work), creates the target from an up-to-date `<remote>/<main>` if needed or
-checks it out as-is, fetches each PR via the base-repo pull ref (works for
-fork PRs), merges `--no-ff` so each PR stays a distinct revertable merge
-commit, aborts (never half-resolves) any merge that conflicts, and cleans up
-its temporary branches. It prints one
-`MERGED <n>` / `SKIPPED <n> <reason>` ledger line per PR — capture these; they
-are Phase 5's input. If it exits non-zero it stopped at setup (dirty tree,
-target checkout failed): relay the error to the user instead of improvising.
+The script owns the procedure (its header documents it): it refuses a dirty
+working tree, merges each PR `--no-ff`, and aborts — never half-resolves — a
+merge that conflicts or a PR that won't fetch, then continues. It prints a
+`TARGET` line with the branch name and one `MERGED <n>` / `SKIPPED <n> <reason>`
+line per PR — capture these; they are Phase 5's input. A non-zero exit means
+setup failed (dirty tree, target checkout): relay the error — for a dirty tree,
+ask the user to commit or stash first — instead of improvising.
 
 Do not push, and do not run `gh pr merge`. The branch stays local.
 
@@ -175,20 +170,5 @@ reason:         one line on why include / review / skip
 risks:          short note on anything that gives pause (empty if none)
 ```
 
-`recommendation` maps to triviality and risk: **include** = trivial and cleanly
-mergeable with no correctness concerns; **review** = borderline or low-but-real
-risk the user should eyeball before batching; **skip** = not trivial, conflicts,
-red CI, or a correctness concern the agent actually found in the diff.
-
-## Error handling
-
-- **`gh` missing/unauthenticated:** stop in Phase 0; this skill needs it.
-- **No open PRs:** report nothing to triage and stop.
-- **A sub-agent fails:** mark that PR "not assessed," continue with the others,
-  and list it in Phase 2 so the user knows it was not judged.
-- **Dirty working tree at merge time:** stop before touching any branch; ask the
-  user to stash or commit first. Never merge over uncommitted work.
-- **A PR head won't fetch** (deleted branch, fork gone): skip it, note why,
-  continue.
-- **A merge conflicts:** abort that one merge, skip the PR, continue. Report it
-  in the Phase 5 ledger.
+`recommendation` is defined in `references/pr-assessment.md` ("Collapsing to a
+recommendation").

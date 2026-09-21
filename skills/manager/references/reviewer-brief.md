@@ -36,13 +36,7 @@ Return review-pr's findings **in its own schema, unchanged** — including
 reviewer:  <label> | final       (the label the manager gave you — A, B, …)
 ```
 
-Then, as review-pr does: the count at each severity, the domains that were
-quiet, the filtered-out tally with one-line reasons, and any domain or
-verifier that failed. An empty list is a valid result; say which domains
-produced it.
-
-Every finding needs evidence a maintainer can open: the code at `path:line`,
-a command and its output, or the project rule it breaks. A finding whose
-`measured` is an adjective is not ready.
+Then review-pr's own summary, plus any domain or verifier that failed. An
+empty list is a valid result; say which domains produced it.
 
 End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

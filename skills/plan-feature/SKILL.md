@@ -151,19 +151,3 @@ acceptance_ids:  the AC labels this finding serves (e.g. [AC1, AC3])
 ```
 
 You compose these into the plan; you do not surface the raw records.
-
-## Error handling
-
-- **No feature named:** ask for the intended capability; do not invent one.
-- **Empty repository:** say there is nothing to inspect, label every path and
-  command as proposed, and plan the smallest runnable scaffold first.
-- **A product decision is missing and nobody can answer:** proceed under a
-  labelled assumption, keep dependent steps conditional, and list it under
-  *Open decisions*. Never end a non-interactive run on a question.
-- **An explorer fails or returns nothing:** cover that lens yourself or name
-  the gap; a missing report is not evidence that no work is needed.
-- **No test command, or a command that only checks syntax:** say so, and make
-  the smallest assertion-based loop the first checklist step.
-- **Save target already exists:** read it, update only the relevant plan, and
-  preserve unrelated content. Never overwrite an unrelated document just
-  because its path collides.

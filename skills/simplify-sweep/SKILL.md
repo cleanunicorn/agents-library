@@ -28,16 +28,15 @@ Two properties frame everything below:
 
 ## Phase 0 — Orient
 
-Build an accurate map of the project, gathered once and bundled into every
-sub-agent so they don't each re-derive it.
+Gather this context **once** and bundle it into every sub-agent's prompt.
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and architecture notes. Capture the layering, conventions,
    code-style bars, commit format, and confidence-indicator rules verbatim — the
    clarity/idiom and docs lenses are judged against exactly these.
-2. **Detect the main branch.** Don't hard-code `main` — detect it
-   (`git symbolic-ref refs/remotes/origin/HEAD`, or fall back to whichever of
-   `main`/`master` exists). Call it `<main>`.
+2. **Detect the main branch** as `<main>`: `git symbolic-ref
+   refs/remotes/origin/HEAD`, else whichever of `main`/`master` exists — never
+   hard-code `main`.
 3. **Resolve the target.** From the user's request:
    - nothing specified → the whole repository
    - a path or glob → just that subtree / matching files
@@ -47,8 +46,7 @@ sub-agent so they don't each re-derive it.
    If it's ambiguous which they meant, ask before scanning.
 4. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — docs first, then config (package.json scripts, Makefile,
-   pyproject, etc.). You need these for the Phase 6 gate. If you can't find them,
-   you'll ask the user later rather than silently skipping verification.
+   pyproject, etc.). You need these for the Phase 6 gate.
 
 ## Phase 1 — Build & shard the scan surface
 
@@ -102,17 +100,13 @@ The four lenses and their files:
 If a sub-agent fails or returns nothing, note it and continue with the others —
 never block the whole survey on one shard or lens.
 
-**Deletion is a finding, not a failure.** The lenses above hunt for code that
-can be written more simply. Sometimes what a shard shows is that a whole
-capability is elaborate machinery for something nobody uses that way — a
-generalised model where the callers only ever take one path, an abstraction with
-a single implementation, a format nothing reads back. Raise it. A finding whose
-`fix` is *"delete this and the four things that exist to serve it"* is often the
-highest-value one in the sweep, and it is the one a sub-agent told to "simplify"
-will otherwise talk itself out of. Its `measured` field is the line count it
-takes with it. Removing behaviour is out of this skill's remit to *apply* —
-report it, size it, and mark it `kind: removal-candidate`. Only
-`kind: simplification` records enter implementation.
+**Deletion is a finding, not a failure.** A whole capability that is machinery
+for something nobody uses that way — a generalised model whose callers take one
+path, an abstraction with a single implementation, a format nothing reads back —
+is often the sweep's highest-value finding. Raise it as `kind:
+removal-candidate`, with the line count it takes with it as `measured`. Removing
+behaviour is not this skill's to *apply*: only `kind: simplification` records
+enter implementation.
 
 ## Phase 3 — Consolidate
 
@@ -151,13 +145,10 @@ to keep and what it would take with it.
 
 If the original request already chose a path — "report only", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
-  identical instances elsewhere; Phase 6 sweeps for them, reports the count,
-  and asks before editing anything outside the target you chose.
-- **(b) Autonomous loop** — apply all significant findings, re-scan, repeat until
-  convergence or the round cap (see loop rules). On a whole-repo target this can
-  run long: each round gates every fix and then re-surveys — say so before
-  starting it so the user opts in knowingly.
+- **(a) Implement selected** — they name the finding IDs to apply.
+- **(b) Autonomous loop** — see *Autonomous loop rules*. On a whole-repo target
+  this can run long: each round gates every fix and then re-surveys — say so
+  before starting it so the user opts in knowingly.
 - **(c) Stop** — report only; change nothing.
 
 ## Phase 6 — Implement (paths a and b)
@@ -209,18 +200,13 @@ effort:    small | medium | large
 
 ## Autonomous loop rules (path b)
 
-1. Apply every **significant** finding — severity 🔴 or 🟡. 🟢 findings are
-   reported but not auto-applied (judgment calls the user should opt into). Each
-   fix follows the Phase 6 apply-and-gate steps.
-2. Re-run the full survey (Phases 1–3) on the now-updated target.
-3. Repeat. **Stop** when either a survey round produces no 🔴/🟡 findings
-   (convergence) or three apply-then-re-scan rounds have completed (cost bound),
-   whichever comes first.
-4. Each round reports: findings applied, the gate result, and what remains. On
-   stop, summarize total commits and any 🟢 findings left for the user.
+| Path | Apply | Stop when | Cap |
+| --- | --- | --- | --- |
+| b — significant | 🔴 and 🟡 | no 🔴/🟡 findings remain | 3 rounds |
 
-The loop is **stateless across invocations**: hitting the 3-round cap is not the
-end of the road. Because each run re-orients and re-surveys from the current
-state, the user can re-invoke this skill to run another set of rounds — a fresh
-run naturally continues where the last one stopped. Mention this in the stop
+Apply each finding through Phase 6, re-run Phases 1–3 on the updated target,
+and repeat. 🟢 findings are reported, not auto-applied. Report each round's
+fixes, gate, and remainder, then the total commits and the 🟢 findings left for
+the user. The cap is per invocation: a later invocation re-surveys from the
+updated target and continues where this one stopped — say so in the stop
 summary.

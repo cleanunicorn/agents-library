@@ -33,9 +33,6 @@ Two guardrails frame everything below:
   posting any comment, show the user its exact text. Before closing anything,
   name the issue and the reason. Labels and closures are reversible; a comment
   in a contributor's inbox is not — treat comment text with the most care.
-  Fixes have their own form of this guardrail: every fix arrives as **its own
-  pull request** on its own branch, never as a commit to the default branch —
-  the PR review is where the user judges the code.
 
 ## Phase 0 — Orient
 
@@ -46,7 +43,7 @@ sub-agent so the agents don't each re-derive it.
    `CLAUDE.md`, `CONTRIBUTING`, and any issue templates under `.github/`.
    These tell you what a well-formed issue looks like here and what
    information reporters are expected to provide. Capture a short summary to
-   pass along.
+   pass along; missing guidance files are not an error — note it and continue.
 2. **Run the listing script.** `bash scripts/list-issues.sh` verifies `gh` is
    installed and authenticated (a `FATAL` line and non-zero exit if not —
    stop and relay it; this skill cannot run without `gh`), then prints three
@@ -84,7 +81,7 @@ fanning out that wide; offer to batch (newest first) instead.
 **Model choice:** honor a user-selected model. Otherwise use an explicitly
 available cheaper model for bounded read-only assessments, or inherit the
 session model. Retry at the session tier only when required verdict fields or
-assigned coverage are missing. Phase 5 fix agents still use the session model.
+assigned coverage are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -111,6 +108,11 @@ If a sub-agent fails, note that issue as "not assessed" and continue with the
 rest — never block the whole sweep on one issue.
 
 ## Phase 2 — Consolidate & present
+
+Treat an incomplete or inconsistent verdict — an `easy-win` without `evidence`,
+a `needs-info` without a `comment_draft`, a `duplicate` without
+`duplicate_of` — as a failed assessment: mark the issue "not assessed" rather
+than acting on a verdict that didn't earn trust.
 
 First, **resolve duplicate claims into clusters.** Each sub-agent saw only its
 own issue plus what its search surfaced, so claims may be one-directional or
@@ -248,9 +250,11 @@ Each fix sub-agent's prompt is assembled from three parts:
 The sub-agent does its own branching, committing, pushing, and
 `gh pr create` from inside its worktree, and returns the PR URL (or an
 honest "did not open a PR because..."). As each one finishes, relay the
-result in one line (`#47 → PR #103`, `#52 → no PR: fix not contained`). A
-fix sub-agent that fails or bails out costs nothing on GitHub — no branch
-push, no PR — so failures here are reports, not messes to clean up.
+result in one line (`#47 → PR #103`, `#52 → no PR: fix not contained`), and
+remove its worktree. A fix sub-agent that fails or bails out costs nothing on
+GitHub — `references/issue-fix.md` has it push nothing, or delete a branch it
+already pushed — so failures here are reports, not messes to clean up: the
+issue stays open and triaged for a human.
 
 Two boundaries hold no matter what:
 
@@ -305,37 +309,3 @@ risks:          short note on anything that gives pause (empty if none)
 `recommendation` collapses the five lenses into one action; the authoritative
 definitions of each value live in `references/issue-assessment.md`
 ("Collapsing to a recommendation") — don't restate them here.
-
-## Error handling
-
-- **`gh` missing/unauthenticated:** stop in Phase 0; this skill needs it.
-- **The listing script degrades or fails:** `scripts/list-issues.sh` exits
-  `FATAL` when `gh` is unusable or the issue list can't be fetched — report
-  the error and stop. Its `(repo view failed)` / `(label list failed)`
-  markers are non-fatal — say so and ask whether to continue (triage works
-  without labels; duplicate search degrades to the issue list). Missing
-  guidance files are not an error — note it and continue.
-- **No issues in scope:** report nothing to triage and stop.
-- **A sub-agent fails:** mark that issue "not assessed," continue with the
-  others, and list it in Phase 2 so the user knows it was not judged.
-- **A verdict is incomplete or inconsistent** — an `easy-win` without
-  `evidence`, a `needs-info` without a `comment_draft`, a `duplicate` without
-  `duplicate_of`: treat it as a failed assessment and mark the issue "not
-  assessed" rather than acting on a verdict that didn't earn trust.
-- **Search rate limit:** many parallel sub-agents running `gh search issues`
-  can trip GitHub's search rate limit. The assessment file tells them to fall
-  back to the issue list they were given and note it in `risks` — don't
-  retry into the limit.
-- **Conflicting duplicate claims:** don't pick a side — keep both issues open
-  in the table, show the conflict, let the user decide.
-- **A write action fails in Phase 4:** record it, continue with the remaining
-  actions, report it in the Phase 6 ledger.
-- **A fix sub-agent fails or bails out:** the fix contract has it push
-  nothing — or delete its remote branch if it bailed after pushing — so
-  there is nothing to undo. Report it in the ledger with the reason, remove
-  its worktree, and leave the issue open and triaged for a human.
-- **A fix can't pass the project's tests:** the contract says no PR — the
-  fixer reports what it tried and why it's stuck instead of pushing red.
-- **The repo has no labels at all:** triage still works (the table is the
-  value); propose a minimal label set in Phase 3 instead of inventing labels
-  per issue.

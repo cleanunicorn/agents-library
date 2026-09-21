@@ -279,9 +279,9 @@ Reviewers return review-pr's finding schema unchanged, plus
 
 ## Hosting the team
 
-`references/hosting-agents.md` has the detail: the two levels and the hosting
-order. The super manager uses Herdr whenever it is available; otherwise it
-uses native subagents. Record which one was used and how it was detected. With
+`references/hosting-agents.md` has the two levels and the hosting order —
+Herdr when it is available, else native subagents. Record which one was used
+and how it was detected. With
 no delegation, follow the briefs yourself, in sequence, and report the lost
 independence. A member without a sibling skill receives the skill itself,
 never a rewritten copy.
@@ -294,8 +294,6 @@ never a rewritten copy.
   list; it adds none, and nobody claims green.
 - **The main branch moved:** rebase or merge as the project allows, then
   re-check the citations the change touches.
-- **The team sub-space cannot be created:** use native subagents. Never fall
-  back to your own pane.
 - **The worktree already exists:** fetch and rebase as the project says.
 
 End every response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.
