@@ -37,20 +37,7 @@ Two guardrails frame everything below:
   pull request** on its own branch, never as a commit to the default branch —
   the PR review is where the user judges the code.
 
-## Why this shape
-
-Issue titles are a hall of mirrors — "app crashes on save" and "data loss when
-exporting" can be the same bug — and issue text alone can't say whether a bug
-is still real or how contained a fix is: only the code can. So each issue gets
-one sub-agent holding all five lenses that reads the thread, searches for
-duplicates, and goes into the codebase; you then resolve duplicate claims into
-clusters (no single agent sees the whole graph) and present one decision
-table. The assessment sub-agents **only assess** — labeling, commenting,
-closing, and fixing happen in later phases, under your control, with the
-user's explicit approval; fixes are their own separate fan-out (Phase 5), one
-PR per issue.
-
-## Phase 0 — Orient (do this once, yourself)
+## Phase 0 — Orient
 
 Before dispatching anything, build the picture you'll bundle into every
 sub-agent so the agents don't each re-derive it.
@@ -90,20 +77,14 @@ If there are no issues in scope, say so and stop — there's nothing to triage.
 
 ## Phase 1 — Fan out the triage
 
-Dispatch **one sub-agent per issue, all in parallel** — issue every Agent/Task
-call in a single message so they run concurrently (the
-`superpowers:dispatching-parallel-agents` pattern). For a large scope (say >20
-issues), tell the user the count and confirm before fanning out that wide;
-offer to batch (newest first) instead.
+Dispatch one sub-agent per issue concurrently, batching to the host's limits.
+For a large scope (say >20 issues), tell the user the count and confirm before
+fanning out that wide; offer to batch (newest first) instead.
 
-**Model choice:** unless the user specified a model, run the assessment
-sub-agents on a **lesser model** than your own session — one tier down (e.g.
-`haiku` from a `sonnet` session, `sonnet` from an `opus` session), via the
-Agent tool's model parameter. Each assessment is a narrow read-and-judge
-task, so the cheaper tier is normally enough — and one agent per issue at
-session tier is an expensive default. If a verdict comes back clearly
-degraded or incomplete, re-run that one issue on the session model. This
-default does **not** apply to the Phase 5 fix sub-agents (see Phase 5).
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only assessments, or inherit the
+session model. Retry at the session tier only when required verdict fields or
+assigned coverage are missing. Phase 5 fix agents still use the session model.
 
 Each sub-agent's prompt is assembled from three parts:
 
@@ -242,9 +223,8 @@ retrying into a rate limit.
 Skip this phase entirely if the user approved no fixes. Otherwise, dispatch
 **one fix sub-agent per approved issue, in parallel, each in its own git
 worktree** — parallel fixes in a shared checkout would trample each other, so
-isolation is not optional. Use the Agent tool's worktree isolation if
-available; otherwise create a `git worktree` per fix yourself (the
-`superpowers:using-git-worktrees` pattern) and clean it up after. If more
+isolation is not optional. Use the host's worktree isolation if available;
+otherwise create a `git worktree` per fix yourself and clean it up after. If more
 than ~5 fixes were approved, confirm before fanning out that wide — each fix
 is a real implementation run, not a quick edit.
 

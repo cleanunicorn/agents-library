@@ -23,18 +23,10 @@ One card per type, the same labels on every card.
 | Runs | With every other planner, all started together | Alone, alive from Phase 2 to hand-back | With every other reviewer, all started together | Alone, after Phase 6 |
 | Floor | A plan the coordinator did not write exists before any edit | One agent holds the worktree at a time | Delivered code is reviewed by someone who neither planned nor implemented it | Commits added after the last review are checked by someone who did not write them |
 
-Why these types, and not one agent asked to do it all:
-
-- Planners who cannot see each other produce real alternatives; one asked for
-  "options" produces a plan and a strawman.
-- The implementer is the worst judge of its own diff, so agents of different
-  kinds that saw none of the planning review it.
-- Every planner gets the same brief, and so does every reviewer; the
-  difference comes from the agent kind.
-
-**Model choice:** managers, planners, reviewers, and the coordinator run at
-session tier; the fan-outs inside the sibling skills keep their lesser-tier
-default.
+**Model choice:** managers and writing agents inherit the session model unless
+the user chooses one. Sibling skills may use an explicitly available cheaper
+model for bounded read-only fan-out and retry incomplete results at session
+tier.
 
 ## Floors
 
@@ -90,9 +82,11 @@ type up or down; none of them is a number.
 | Attended or not | Nobody to answer a late question → lean toward the plan that exposes open decisions early |
 | The user's own words | "Quick" and "be thorough" are signals. A roster the user names is a constraint above the floors: take it as given where it meets them and record the reason as `user-specified`. One that would fall below a floor is `blocked` (see Floors), raised as a question record that names the floor |
 
-There is no upper bound and no size-to-count table. The check on a large
-roster is its stated cost and its reasons, which the user sees in the team
-block.
+Use 40 agent starts per work item as a planning warning, counting nested
+sibling-skill fan-outs and verifier batches. Prefer batching compatible
+read-only work when the estimate exceeds it, but never drop a required lens or
+verification to meet the number. Finding-driven verification may exceed the
+estimate; continue it and record the actual count in the hand-back.
 
 Agents of the same type differ in kind where the host has kinds to offer;
 where it does not, they differ in model and the ledger records that they are
@@ -107,7 +101,7 @@ Write it in the ledger in Phase 0, before opening the per-agent rows:
 roster:    planners: N · coordinator: 1 · reviewers: N · final: fresh | reuse:<reviewer label> | decided after Phase 6
 signals:   what you read off the work item — layers, files, risk exposure, gate strength, kinds available
 reason:    one line per type, tied to a signal — "1 planner: one obvious home, src/service.py; no contested design"; a type left out says what covers its job
-cost:      1 manager + N team agents · N plan-feature + N review-pr + 1 simplify-sweep fan-outs
+cost:      direct agents + estimated nested starts · N plan-feature + N review-pr + 1 simplify-sweep fan-outs
 changes:   [{phase, change, reason}] — or none
 ```
 

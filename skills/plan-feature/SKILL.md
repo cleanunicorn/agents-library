@@ -21,16 +21,7 @@ user already asked for both a plan and implementation, finish the plan and
 continue with that authorization rather than asking again. Do not turn a direct
 "add X" request into a plan-only result.
 
-## Why this shape
-
-"Where does this plug in?" and "how will we know it works?" are different
-questions with different evidence — one is answered by tracing callers and
-registration, the other by reading tests and the commands that run them. One
-explorer per question maps each more sharply, and you reconcile the two into a
-single ordered checklist. The explorers **only read**, which is what makes this
-safe to point at any checkout, including one with uncommitted work.
-
-## Phase 0 — Orient and define the outcome (do this once, yourself)
+## Phase 0 — Orient and define the outcome
 
 1. **Read the project's guidance and relevant source**, including existing local
    changes. Work from the current checkout; a remote or GitHub CLI is not
@@ -64,12 +55,10 @@ For a change spanning independent areas, dispatch two read-only explorers **in
 parallel** — issue both Agent/Task calls in a single message — using the host's
 available subagent mechanism.
 
-**Model choice:** unless the user specified a model, run the explorers on a
-**lesser model** than your own session — one tier down (e.g. `haiku` from a
-`sonnet` session, `sonnet` from an `opus` session), via the Agent tool's model
-parameter. Each lens is a bounded read-and-report task, so the cheaper tier is
-normally enough. If a lens comes back clearly degraded, re-run that one lens on
-the session model.
+**Model choice:** honor a user-selected model. Otherwise use an explicitly
+available cheaper model for bounded read-only exploration, or inherit the
+session model. Retry at the session tier only when required fields or assigned
+coverage are missing.
 
 Each explorer's prompt is assembled from three parts:
 

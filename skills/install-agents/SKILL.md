@@ -19,18 +19,6 @@ Your job is to locate the agent definitions, install the chosen ones into
 `.claude/agents/`, and wire a periodic schedule — **weekly by default**, unless
 the user decides something else.
 
-## Why this shape
-
-The copy itself is deterministic, so it lives in a script — the only judgement
-calls are *which agents*, *what cadence*, and *which scheduling mechanism*, and
-those belong to the user, gathered in one confirmation. There is no fan-out:
-this is a linear installer (orient → confirm → install → schedule → report).
-
-The schedule is **staggered** on purpose: each agent's run opens at most one
-PR, so spreading the agents across the week yields a steady drip of small
-reviewable PRs instead of a Monday-morning flood, keeps CI load smooth, and
-ensures two agents never run at the same moment and collide on the same fix.
-
 ## Phase 0 — Orient & locate the agent sources
 
 1. **Find the agent definitions.** Check, in order, and use the first hit:
