@@ -62,10 +62,10 @@ violates.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the principle
-violated and where it reads wrong; `fix` is the concrete, token-reusing change
-(which scale value, which contrast-passing token, which button style). Severity:
-🔴 for a contrast failure that blocks readability or a hierarchy so broken the
-user can't tell the primary action; 🟡 for off-scale spacing/type or a clear
-visual inconsistency; 🟢 for refinement. Analysis only — never edit files. Empty
-list (with a one-line "no visual surface" note) when the change isn't user-facing.
+`problem` names the principle violated and where it reads wrong; `fix` is the
+concrete, token-reusing change (which scale value, which contrast-passing token,
+which button style). Severity: 🔴 for a contrast failure that blocks readability
+or a hierarchy so broken the user can't tell the primary action; 🟡 for off-scale
+spacing/type or a clear visual inconsistency; 🟢 for refinement. When the change
+isn't user-facing, return an empty list with a one-line "no visual surface"
+note.

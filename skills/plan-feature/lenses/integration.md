@@ -26,13 +26,10 @@ name is not an existing integration point.
 
 ## What NOT to do
 
-- Do not modify any file. Analysis only.
 - Do not widen scope into unrelated cleanup or hypothetical future needs.
 - Do not present a proposed path or symbol as if it already exists.
 - Do not re-run installs, tests, or services; read the code and configuration.
 
 ## Output
 
-Return findings in the orchestrator's schema, one record per integration point
-or necessary change. Name unknowns that block a concrete step as explicit
-`unknown:` evidence rather than guessing.
+One record per integration point or necessary change.

@@ -37,8 +37,6 @@ lose its contracts. Calibrate to what's already here.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the redundancy,
-drift, or bloat and where it is; `fix` says what to consolidate, correct, or cut
-and roughly to what. Severity: 🟡 when a doc is now wrong/misleading (drift), 🟢
-for consolidation and tightening. Analysis only — never edit files. Empty list if
-the docs in your shard are already lean and accurate.
+`problem` names the redundancy, drift, or bloat and where it is; `fix` says what
+to consolidate, correct, or cut and roughly to what. Severity: 🟡 when a doc is
+now wrong/misleading (drift), 🟢 for consolidation and tightening.

@@ -45,10 +45,9 @@ a new spacing number.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "visual
-hierarchy" or "grids, layout & spacing". `problem` names what reads wrong and
-where the eye goes instead; `fix` is concrete and reuses the project's scale
-(which step, which element to demote to secondary, which alignment). Severity: 🔴
-when the user can't tell the primary action or the layout reads as broken; 🟡 for
-off-scale spacing or weak grouping; 🟢 for refinement. Analysis only — never edit
-files. Empty list if hierarchy and spacing are sound.
+Set `principle` to "visual hierarchy" or "grids, layout & spacing". `problem`
+names what reads wrong and where the eye goes instead; `fix` is concrete and
+reuses the project's scale (which step, which element to demote to secondary,
+which alignment). Severity: 🔴 when the user can't tell the primary action or the
+layout reads as broken; 🟡 for off-scale spacing or weak grouping; 🟢 for
+refinement.

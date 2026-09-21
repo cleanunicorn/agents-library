@@ -39,9 +39,8 @@ contract was broken). Then look for code that is wrong, not merely ugly.
 
 ## Output
 
-Return findings in the orchestrator's schema. For each bug, make `problem` name
-the concrete failure (and the input/sequence that triggers it where you can),
-and make `fix` a specific, behavior-correcting change. Severity: 🔴 for wrong
-results, crashes, or data loss on a realistic path; 🟡 for narrower edge cases;
-🟢 for defensive hardening that's nice but not strictly needed. Analysis only —
-never edit files. Empty list if the diff is correct.
+For each bug, make `problem` name the concrete failure (and the input/sequence
+that triggers it where you can), and make `fix` a specific, behavior-correcting
+change. Severity: 🔴 for wrong results, crashes, or data loss on a realistic
+path; 🟡 for narrower edge cases; 🟢 for defensive hardening that's nice but not
+strictly needed.

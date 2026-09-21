@@ -25,7 +25,6 @@ miss the wiring.
 
 ## What NOT to do
 
-- Do not modify any file. Analysis only.
 - Do not run installs, test suites, paid evals, or stateful services merely to
   write a plan; inspect commands and distinguish inspected commands from
   executed results.
@@ -33,6 +32,5 @@ miss the wiring.
 
 ## Output
 
-Return findings in the orchestrator's schema, one record per acceptance
-criterion or feedback-loop gap. Label new commands and paths as proposed, and
-name unknowns as explicit `unknown:` evidence rather than guessing.
+One record per acceptance criterion or feedback-loop gap. Label new commands
+and paths as proposed.

@@ -28,15 +28,13 @@ with a `file:line` reference and a one-line description of what happens there.
 ## What NOT to do
 
 - Do not critique the flow or propose changes — this is a trace, not a review.
-- Do not modify any file.
 - Do not trace beyond your assigned segment; stop at the hand-off and name it.
 - Do not invent hops. If the trail goes cold (dynamic dispatch, a call you can't
   resolve), report the last solid hop and say where it became unclear.
 
 ## Output
 
-Return findings in the orchestrator's schema, one finding per hop. `topic` is the
-hop's order and role (e.g. "1. handler", "2. validation", "3. service call"),
-`location` is the `path:line` (required), and `detail` is one line on what happens
-at that hop. Read-only — never edit files. If you cannot locate the starting
-point at all, return that and describe what you searched.
+One finding per hop. `topic` is the hop's order and role (e.g. "1. handler", "2.
+validation", "3. service call"), `location` is the `path:line` (required), and
+`detail` is one line on what happens at that hop. If you cannot locate the
+starting point at all, return that and describe what you searched.

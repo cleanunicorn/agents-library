@@ -35,9 +35,8 @@ existing style.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the specific
-behavior/branch/edge case that's unprotected and the regression it would let
-through; `fix` describes the test to add (which unit, which input, what to
-assert). Severity: 🔴 when an untested path is critical or error-prone (auth,
-money, data writes); 🟡 for ordinary gaps; 🟢 for nice-to-have hardening.
-Analysis only — never edit files. Empty list if the change is well covered.
+`problem` names the specific behavior/branch/edge case that's unprotected and
+the regression it would let through; `fix` describes the test to add (which
+unit, which input, what to assert). Severity: 🔴 when an untested path is
+critical or error-prone (auth, money, data writes); 🟡 for ordinary gaps; 🟢 for
+nice-to-have hardening.

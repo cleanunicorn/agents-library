@@ -35,9 +35,7 @@ is the goal — not your personal preference.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names what's unclear and
-the cost to the reader; `fix` is the concrete rename or idiomatic rewrite and
-must preserve behavior exactly. Severity is usually 🟢 — raise to 🟡 only when
-the unclarity is genuinely misleading (a name that implies the wrong thing).
-Analysis only — never edit files. Empty list if your shard already reads
-clearly.
+`problem` names what's unclear and the cost to the reader; `fix` is the concrete
+rename or idiomatic rewrite and must preserve behavior exactly. Severity is
+usually 🟢 — raise to 🟡 only when the unclarity is genuinely misleading (a name
+that implies the wrong thing).

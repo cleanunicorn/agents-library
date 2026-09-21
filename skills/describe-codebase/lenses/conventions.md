@@ -30,7 +30,6 @@ build?".
 ## What NOT to do
 
 - Do not critique, rank, or propose changes — this is orientation, not review.
-- Do not modify any file.
 - Do not map layering/auth/config (the layering explorer) or schema/migrations
   (the data explorer) beyond naming examples.
 - Do not invent commands. If you cannot find the lint/format/test/build command,
@@ -38,8 +37,7 @@ build?".
 
 ## Output
 
-Return findings in the orchestrator's schema. Each finding's `topic` is a short
-label (e.g. "naming idiom", "component wiring", "test command", "commit
-format"), `location` is the `path:line` evidence (required; for a command, the
-config file and line it's declared in), and `detail` is one or two lines a
-newcomer can act on. Read-only — never edit files.
+Each finding's `topic` is a short label (e.g. "naming idiom", "component
+wiring", "test command", "commit format"), `location` is the `path:line`
+evidence (required; for a command, the config file and line it's declared in),
+and `detail` is one or two lines a newcomer can act on.

@@ -35,8 +35,7 @@ ways a local read won't show.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` should state what is
-dead and the evidence it's unreferenced (e.g. "no callers found project-wide");
-`fix` is the removal. Severity is usually 🟢 (cleanup) — raise to 🟡 only when
-the dead code is actively misleading (e.g. a stale branch that looks live).
-Analysis only — never edit files. Empty list if the diff leaves nothing dead.
+`problem` should state what is dead and the evidence it's unreferenced (e.g. "no
+callers found project-wide"); `fix` is the removal. Severity is usually 🟢
+(cleanup) — raise to 🟡 only when the dead code is actively misleading (e.g. a
+stale branch that looks live).

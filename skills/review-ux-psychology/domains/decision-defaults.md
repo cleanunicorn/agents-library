@@ -51,14 +51,12 @@ conversion. A true default removes work; a self-serving one just relocates it.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "decision
-fatigue" or "smart defaults". `problem` names the decisions forced and the moment
-the user is likely to stall or leave; `fix` is concrete — which field to prefill
-with which common value, which choices to curate or disclose progressively, what
-outcome the button should preview — reusing the project's existing form/default
-patterns. `hypothesis` names the metric the fix should move and the direction
-(e.g. "↑ form completion; watch per-field drop-off and correction rate").
-Severity: 🔴 when a blank/overloaded high-stakes step is a likely abandonment
-point; 🟡 for a missing smart default or an outcome-blind button; 🟢 for
-refinement. Analysis
-only — never edit files. Empty list if the flow already minimizes decisions well.
+Set `principle` to "decision fatigue" or "smart defaults". `problem` names the
+decisions forced and the moment the user is likely to stall or leave; `fix` is
+concrete — which field to prefill with which common value, which choices to
+curate or disclose progressively, what outcome the button should preview —
+reusing the project's existing form/default patterns. `hypothesis` names the
+metric the fix should move and the direction (e.g. "↑ form completion; watch
+per-field drop-off and correction rate"). Severity: 🔴 when a blank/overloaded
+high-stakes step is a likely abandonment point; 🟡 for a missing smart default or
+an outcome-blind button; 🟢 for refinement.

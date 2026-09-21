@@ -35,9 +35,8 @@ code, never a personal preference.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the structural cost
-(what makes it hard to follow); `fix` is the concrete restructuring (which
-guard clause, what to inline, where to split) and must preserve behavior
-exactly. Keep each suggestion localized and reviewable. Severity is usually 🟡 or
-🟢 — reserve 🟡 for complexity that actively impedes maintenance. Analysis only —
-never edit files. Empty list if your shard is already clear.
+`problem` names the structural cost (what makes it hard to follow); `fix` is the
+concrete restructuring (which guard clause, what to inline, where to split) and
+must preserve behavior exactly. Keep each suggestion localized and reviewable.
+Severity is usually 🟡 or 🟢 — reserve 🟡 for complexity that actively impedes
+maintenance.

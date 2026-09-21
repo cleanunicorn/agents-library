@@ -37,9 +37,8 @@ moves that match the surrounding code, never a personal preference.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the readability or
-duplication cost; `fix` is the concrete simplification (what to extract, what to
-rename, how to flatten) and must preserve behavior exactly. Keep each suggestion
-localized and reviewable. Severity is usually 🟡 or 🟢 — reserve 🟡 for
-duplication/complexity that will actively bite maintenance. Analysis only —
-never edit files. Empty list if the changed code is already clean.
+`problem` names the readability or duplication cost; `fix` is the concrete
+simplification (what to extract, what to rename, how to flatten) and must
+preserve behavior exactly. Keep each suggestion localized and reviewable.
+Severity is usually 🟡 or 🟢 — reserve 🟡 for duplication/complexity that will
+actively bite maintenance.

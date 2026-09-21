@@ -29,7 +29,6 @@ and the data-access code first; report what's there, with evidence.
 ## What NOT to do
 
 - Do not critique, rank, or propose changes — this is orientation, not review.
-- Do not modify any file.
 - Do not map entry points/auth/config (the layering explorer owns those) or
   naming/build commands (the conventions explorer owns those).
 - Do not assert a store or schema you can't point at — if the project has no
@@ -37,9 +36,8 @@ and the data-access code first; report what's there, with evidence.
 
 ## Output
 
-Return findings in the orchestrator's schema. Each finding's `topic` is a short
-label (e.g. "schema owner", "migrations", "data-access layer", "core entity"),
-`location` is the `path:line` evidence (required), and `detail` is one or two
-lines on what's there and why a newcomer cares. Read-only — never edit files.
-If the target has no data layer, return that conclusion with what evidence you
-have.
+Each finding's `topic` is a short label (e.g. "schema owner", "migrations",
+"data-access layer", "core entity"), `location` is the `path:line` evidence
+(required), and `detail` is one or two lines on what's there and why a newcomer
+cares. If the target has no data layer, return that conclusion with what
+evidence you have.

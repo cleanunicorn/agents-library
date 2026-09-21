@@ -57,13 +57,11 @@ then ask.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "reciprocity".
-`problem` names where the app asks before it gives and why the ask reads as a wall
-(the walk-out moment); `fix` is concrete — what real value to surface *before* the
-gate, exactly what to keep gated, how to reorder so the give precedes the ask —
-reusing the project's existing patterns. `hypothesis` names the metric the fix
-should move and the direction (e.g. "↑ signup conversion; watch bounce at the
-gate"). Severity: 🔴 for value held hostage or a hard wall before any value (a
-prime abandonment point); 🟡 for an ask that could easily follow a give but
-doesn't; 🟢 for refinement. Analysis only —
-never edit files. Empty list if the flow already gives before it asks.
+Set `principle` to "reciprocity". `problem` names where the app asks before it
+gives and why the ask reads as a wall (the walk-out moment); `fix` is concrete —
+what real value to surface *before* the gate, exactly what to keep gated, how to
+reorder so the give precedes the ask — reusing the project's existing patterns.
+`hypothesis` names the metric the fix should move and the direction (e.g. "↑
+signup conversion; watch bounce at the gate"). Severity: 🔴 for value held
+hostage or a hard wall before any value (a prime abandonment point); 🟡 for an
+ask that could easily follow a give but doesn't; 🟢 for refinement.

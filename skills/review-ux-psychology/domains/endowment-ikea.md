@@ -57,15 +57,13 @@ the work so leaving really does mean losing something they made.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "endowment/IKEA
-effect". `problem` names where commitment is asked against a blank slate and why
-leaving costs the user nothing there; `fix` is concrete — what the user should
-build/choose *before* the gate, which personalization to move earlier, the button
-copy change ("Sign up" → "Continue"), how to persist the pre-signup work — reusing
-the project's existing patterns. `hypothesis` names the metric the fix should move
-and the direction (e.g. "↑ signup completion; watch drop-off at the account
-step"). Severity: 🔴 for a commitment gate against a completely blank slate at a
-key drop-off; 🟡 for missed pre-commitment personalization or chore-framed button
-copy; 🟢 for refinement.
-Analysis only — never edit files. Empty list if the user is already invested
-before being asked to commit.
+Set `principle` to "endowment/IKEA effect". `problem` names where commitment is
+asked against a blank slate and why leaving costs the user nothing there; `fix`
+is concrete — what the user should build/choose *before* the gate, which
+personalization to move earlier, the button copy change ("Sign up" →
+"Continue"), how to persist the pre-signup work — reusing the project's existing
+patterns. `hypothesis` names the metric the fix should move and the direction
+(e.g. "↑ signup completion; watch drop-off at the account step"). Severity: 🔴
+for a commitment gate against a completely blank slate at a key drop-off; 🟡 for
+missed pre-commitment personalization or chore-framed button copy; 🟢 for
+refinement.

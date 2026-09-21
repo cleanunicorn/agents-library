@@ -40,10 +40,8 @@ rest of the codebase clearly follows — not a pattern you wish existed.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` should name the specific
-boundary or pattern being violated and point at the established pattern it
-should follow; `fix` should describe the move toward alignment (where the logic
-belongs, what to route through, where to register). Severity: 🔴 if the
-misplacement will cause real maintenance pain or hide bugs; 🟡 for clear
-inconsistencies; 🟢 for minor structural nits. Analysis only — never edit files.
-Empty list if the change fits cleanly.
+`problem` should name the specific boundary or pattern being violated and point
+at the established pattern it should follow; `fix` should describe the move
+toward alignment (where the logic belongs, what to route through, where to
+register). Severity: 🔴 if the misplacement will cause real maintenance pain or
+hide bugs; 🟡 for clear inconsistencies; 🟢 for minor structural nits.
