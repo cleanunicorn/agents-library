@@ -39,10 +39,9 @@ answer:    the user's words, verbatim, as the super manager forwarded them
 ```
 
 1. After writing a record, rewrite `status.md` with the header
-   `blocked — waiting on <slug>-Q<n>`. A pending question always makes you
-   `blocked`, so the user sees who waits on them; the work your `blocks`
-   field names as continuing carries on, and you end your turn when nothing
-   else can proceed.
+   `blocked — waiting on <slug>-Q<n>` (rule 7); the work your `blocks` field
+   names as continuing carries on, and you end your turn when nothing else can
+   proceed.
 2. The super manager forwards the answer with its id. Record it verbatim, set
    `status: answered`, **acknowledge the id** in your reply and in
    `status.md`, update the acceptance criteria, and carry on.

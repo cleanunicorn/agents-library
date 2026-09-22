@@ -36,10 +36,8 @@ refactor/architecture domains; you enforce what the project explicitly asked for
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` should quote or cite the
-specific rule and point at where the diff breaks it; `fix` is the change that
-brings it into compliance. Severity reflects how the project frames the rule: an
-explicit "never" or a hard requirement is 🔴/🟡; a soft preference is 🟢.
-Analysis only — never edit files. Empty list if the diff follows the project's
-declared conventions. If the project declares no checkable conventions, say so
-and return an empty list.
+`problem` should quote or cite the specific rule and point at where the diff
+breaks it; `fix` is the change that brings it into compliance. Severity reflects
+how the project frames the rule: an explicit "never" or a hard requirement is
+🔴/🟡; a soft preference is 🟢. If the project declares no checkable conventions,
+say so and return an empty list.

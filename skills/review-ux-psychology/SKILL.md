@@ -17,15 +17,8 @@ think and decide — in the service of moving a **specific product metric**. You
 job is to orient on the product goal and that metric, fan out specialized
 sub-agents across six behavioral-design lenses, independently verify what they
 report, consolidate the survivors, and help the user act on it behind a
-lint/build gate.
-
-This is the behavior-and-conversion counterpart to `review-design`. Where
-`review-design` reviews the *visual craft* of a UI (hierarchy, spacing,
-typography, color, depth), `review-ux-psychology` reviews the *decision
-architecture* — the defaults, progress, framing, and reference points that decide
-whether a user finishes a flow. The two are complementary: a screen can be
-beautifully laid out and still leak users because it starts them at 0%, gates
-value behind a signup wall, or shows a price in isolation.
+lint/build gate. Missing loading/empty/error states and keyboard handling in a
+diff are the `uxpolish` agent's, not this skill's.
 
 Three properties frame everything below:
 
@@ -37,19 +30,16 @@ Three properties frame everything below:
   specific target metric (activation, signup conversion, trial-to-paid, checkout
   completion, feature adoption, retention). Each finding states which metric it is
   meant to move and in which direction, so findings can be ranked by leverage and
-  validated afterward. A corollary keeps fixes real: a fabricated signal — fake
-  progress, a phantom reference price, invented urgency — does not durably move a
-  real metric (users learn, and the effect evaporates), so the fix must rest on a
-  *true* signal (real progress the user made, a real reference number, a real
-  stake). This is optimization discipline, not a compliance checkbox.
+  validated afterward. Every fix rests on a *true* signal — real progress the
+  user made, a real reference number, a real stake: a fabricated one (fake
+  progress, a phantom reference price, invented urgency) does not durably move a
+  real metric, because users learn and the effect evaporates.
 - **You never push or touch the remote.** All work is local: edits on the current
   branch, gated on the project's lint and build. No `gh`, no remote required.
 
 ## Phase 0 — Orient
 
-Before dispatching anything, build an accurate map of the project, the flow, and
-what it's being optimized for. You gather this **once** and bundle it into every
-sub-agent's prompt, so the six agents don't each re-derive the same context.
+Gather this context **once** and bundle it into every sub-agent's prompt.
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and any product/design notes. Capture the conventions, commit
@@ -79,9 +69,9 @@ sub-agent's prompt, so the six agents don't each re-derive the same context.
    Pass the rendered frames to the sub-agents so findings anchor to what's
    actually on screen. If you genuinely cannot render it, fall back to reading the
    source — and **say so**, so the user knows the review is code-only.
-5. **Detect the main branch.** Don't hard-code `main` — detect it
-   (`git symbolic-ref refs/remotes/origin/HEAD`, or fall back to whichever of
-   `main`/`master` exists). Call it `<main>`.
+5. **Detect the main branch** as `<main>`: `git symbolic-ref
+   refs/remotes/origin/HEAD`, else whichever of `main`/`master` exists — never
+   hard-code `main`.
 6. **Resolve the target.** From the user's request:
    - a named screen/flow or a path/glob → just those files;
    - "diff" / "my changes" / `--diff` → the current branch diff
@@ -136,10 +126,6 @@ The six lenses and their files:
 | Endowment & the IKEA effect | 🔨 | `domains/endowment-ikea.md` | `endowment` | Commitment asked before the user builds/owns anything; nothing to lose by leaving; "Sign up" where "Continue" fits. |
 | Loss aversion & framing | ⚖️ | `domains/loss-aversion.md` | `loss-aversion` | CTAs framed as gains not losses; no stakes for inaction; abstract benefits over concrete things at risk; frictionless "maybe later". |
 | Anchoring & the contrast effect | ⚓ | `domains/anchoring-contrast.md` | `anchoring` | Prices/costs shown in isolation; no reference anchor; absolute where relative lands; ordering that sets a bad comparison. |
-
-The **ID prefix** column is the `<lens>` value each finding's `id` uses (e.g.
-`progress-1` comes from `domains/goal-gradient.md`) — the mapping isn't always the
-filename's leading token, so this column is the lookup.
 
 If a sub-agent fails or returns nothing, note it and continue with the others —
 never block the whole review on one lens.
@@ -225,29 +211,17 @@ its verification tag and the metric it targets:
 Then summarize: how many findings at each severity, which lenses were quiet, how
 many candidates verification filtered out (list those with one-line reasons), and
 whether the review was rendered or code-only. Note which findings are **structural
-product decisions** vs. **mechanical edits** (see Phase 4). Keep it skimmable.
+product decisions** vs. **mechanical edits** (see Phase 5). Keep it skimmable.
 
 ## Phase 4 — Decide
 
 If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
-  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
-  and asks before editing anything outside the target you chose.
-- **(b) Autonomous loop (significant only)** — apply all confirmed 🔴/🟡 findings,
-  re-review, repeat until convergence or the round cap. Skips 🟢 refinements
-  (see loop rules).
-- **(c) Autonomous loop (everything, including refinements)** — apply *all*
-  confirmed findings including 🟢, re-review, fix again, until a round surfaces
-  nothing new (see loop rules).
+- **(a) Implement selected** — they name the finding IDs to apply.
+- **(b) Autonomous loop, significant only** — see *Autonomous loop rules*.
+- **(c) Autonomous loop, everything** — including 🟢 refinements; see
+  *Autonomous loop rules*.
 - **(d) Stop** — report only; change nothing.
-
-Note for the user: some findings are **mechanical** (a clean, in-pattern code
-edit — prefill a default, reorder a step, change button copy) and some are
-**structural product decisions** (restructure onboarding, ungate a paywall) that
-change behavior and may want product judgment. The loop will *attempt* structural
-findings too, but if one can't be made as a clean change behind the gate, it
-reverts and reports it rather than forcing it (see loop rules).
 
 ## Phase 5 — Implement (for paths a, b, and c)
 
@@ -256,8 +230,7 @@ For each accepted finding, in order:
 1. **Apply the edit** to the working tree — **reusing the project's existing
    patterns and components** (its progress bar, its default-value mechanism, its
    pricing component, its CTA button). Never invent a new pattern where one
-   exists, and rest the change on a **true signal** (real progress, a real
-   reference number, a real stake) — a fabricated one won't hold the metric.
+   exists, and rest the change on a **true signal**.
 2. **Fix every instance, not just the one found.** Search the whole
    repository for the same anti-pattern — its *shape*, not the literal text
    (the same blank default in other forms, the same "Submit" CTA on other
@@ -286,15 +259,15 @@ For each accepted finding, in order:
    finding keeps the history reviewable and lets any single change be reverted —
    which also makes each change cleanly A/B-testable in isolation.
 
-A Phase 3 merged multi-principle entry (one presented entry, one ID, carrying a
-fix per lens) expands here into its per-lens fixes: apply and commit each as if it
-were its own finding — one commit per fix, each scoped to that lens — so "one
-commit per finding, scoped to the lens" still holds. Presenting once is a
-reader-facing convenience, not a change to how fixes are applied.
+A Phase 3 entry merged across lenses expands here into its per-lens fixes:
+apply and commit each as its own finding, scoped to its lens.
 
-If a finding is a structural product decision that can't be made as a clean
-in-pattern change, don't force it into a commit — surface it as a recommendation
-with a concrete proposed approach and let the user drive it. If you couldn't find
+Some findings are **mechanical** in-pattern edits (prefill a default, reorder a
+step, change button copy); others are **structural product decisions**
+(restructure onboarding, ungate a paywall) that may want product judgment.
+Attempt structural ones too, but one that can't be made as a clean in-pattern
+change behind the gate is not forced into a commit — surface it as a
+recommendation with a concrete proposed approach and let the user drive it. If you couldn't find
 the lint/build commands in Phase 0, ask the user for them or whether to proceed
 without the gate — don't silently skip verification.
 
@@ -320,13 +293,8 @@ hypothesis: the metric this targets and the expected direction, plus how to
 effort:     small | medium | large
 ```
 
-Phase 2 verification then annotates each surviving finding with two more fields
-(refuted findings are dropped, not annotated):
-
-```
-verdict:    confirmed | uncertain
-confidence: high | medium | low
-```
+Phase 2 annotates each surviving finding with `verdict` (confirmed |
+uncertain) and `confidence` (high | medium | low); refuted findings are dropped.
 
 Severity guidance: 🔴 for a hard blocker on the target metric (a signup wall
 before any value, a blank high-stakes form that drives abandonment); 🟡 for a clear
@@ -347,17 +315,3 @@ retire repeated or pure-taste proposals instead of churning. Report each
 round's fixes, gate, filtered findings, and remainder, then the total commits
 and deferred findings. The cap is per invocation; a later invocation starts
 from the updated target.
-
-## When to use this vs. `review-design` vs. the `uxpolish` agent
-
-- **`review-ux-psychology`** (this skill) — judges the **decision architecture** of
-  a flow to move a metric: defaults, progress, value-first, ownership, framing,
-  anchoring. Reach for it for onboarding/signup/checkout/pricing conversion.
-- **`review-design`** — judges how the UI **looks**: hierarchy, spacing,
-  typography, color/contrast, dark mode, depth. Reach for it for a visual pass.
-- **`uxpolish` agent** — fixes **interaction friction** in a diff: missing
-  loading/empty/error states, keyboard handling, labels. Reach for it for
-  state/affordance gaps rather than persuasion or visual craft.
-
-They compose: a full UX audit is often `review-ux-psychology` for the flow's
-conversion logic plus `review-design` for its visual craft.

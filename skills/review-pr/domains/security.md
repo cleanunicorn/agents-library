@@ -37,9 +37,8 @@ rule that secrets/tokens are never logged. Judge the diff against *that* model.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the exposure and
-what an attacker or accident could do with it; `fix` follows the project's
-existing pattern (the same auth guard, config access, error handling, validation
-the rest of the code uses). Severity: 🔴 for missing auth, a committed secret, or
-a real leak; 🟡 for missing validation or swallowed errors; 🟢 for hardening.
-Analysis only — never edit files. Empty list if the change is clean.
+`problem` names the exposure and what an attacker or accident could do with it;
+`fix` follows the project's existing pattern (the same auth guard, config
+access, error handling, validation the rest of the code uses). Severity: 🔴 for
+missing auth, a committed secret, or a real leak; 🟡 for missing validation or
+swallowed errors; 🟢 for hardening.

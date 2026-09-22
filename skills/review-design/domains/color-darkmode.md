@@ -45,11 +45,10 @@ passes.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "color theory"
-or "dark mode". `problem` names the failure and, for contrast, the measured ratio
-and where it appears; `fix` is concrete and token-reusing (which passing token,
-which desaturated value, the non-color cue to add). Severity: 🔴 for an AA
-contrast failure on real content or color-only meaning on a critical state; 🟡
-for a vibrating dark-mode hue or a muddled palette; 🟢 for refinement. Analysis
-only — never edit files. Empty list if color and theming are sound (and a
-one-line "no themed surface here" note if dark mode doesn't apply).
+Set `principle` to "color theory" or "dark mode". `problem` names the failure
+and, for contrast, the measured ratio and where it appears; `fix` is concrete
+and token-reusing (which passing token, which desaturated value, the non-color
+cue to add). Severity: 🔴 for an AA contrast failure on real content or
+color-only meaning on a critical state; 🟡 for a vibrating dark-mode hue or a
+muddled palette; 🟢 for refinement. If dark mode doesn't apply, add a one-line
+"no themed surface here" note.

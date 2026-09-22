@@ -47,11 +47,9 @@ never hand-roll a shadow or borrow an icon from another set.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "shadows" or
-"icons & buttons". `problem` names the inconsistency and where it shows; `fix` is
-concrete and token-reusing (which elevation token, which icon variant, which
-button style maps to the priority, the accessible name to add). Severity: 🔴 for
-an unlabeled icon-only control or a too-small touch target on a key action; 🟡 for
-mixed icon styles, mismatched button weight, or inconsistent shadows; 🟢 for
-refinement. Analysis only — never edit files. Empty list if depth and components
-are consistent.
+Set `principle` to "shadows" or "icons & buttons". `problem` names the
+inconsistency and where it shows; `fix` is concrete and token-reusing (which
+elevation token, which icon variant, which button style maps to the priority,
+the accessible name to add). Severity: 🔴 for an unlabeled icon-only control or a
+too-small touch target on a key action; 🟡 for mixed icon styles, mismatched
+button weight, or inconsistent shadows; 🟢 for refinement.

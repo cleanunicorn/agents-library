@@ -35,10 +35,9 @@ introduce a new font or an off-scale size.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "typography &
-font sizing". `problem` names the readability cost (e.g. "13px body is hard to
-read on mobile"); `fix` is concrete and scale-reusing (which step to snap to,
-which line-height token, where to constrain measure). Severity: 🔴 for text that's
-genuinely hard to read (far-too-small body, unreadable measure); 🟡 for off-scale
-sizes or weak heading distinction; 🟢 for refinement. Analysis only — never edit
-files. Empty list if the type system is honored.
+Set `principle` to "typography & font sizing". `problem` names the readability
+cost (e.g. "13px body is hard to read on mobile"); `fix` is concrete and
+scale-reusing (which step to snap to, which line-height token, where to
+constrain measure). Severity: 🔴 for text that's genuinely hard to read
+(far-too-small body, unreadable measure); 🟡 for off-scale sizes or weak heading
+distinction; 🟢 for refinement.

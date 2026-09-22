@@ -33,7 +33,6 @@ what the code *does*, with evidence — not what you'd prefer.
 ## What NOT to do
 
 - Do not critique, rank, or propose changes — this is orientation, not review.
-- Do not modify any file.
 - Do not map data schema/migrations (the data explorer owns that) or naming/
   build commands (the conventions explorer owns those) beyond what you need to
   explain the flow.
@@ -42,9 +41,8 @@ what the code *does*, with evidence — not what you'd prefer.
 
 ## Output
 
-Return findings in the orchestrator's schema. Each finding's `topic` is a short
-label (e.g. "entry point", "config object", "auth guard", "error handling"),
-`location` is the `path:line` evidence (required), and `detail` is one or two
-lines on what's there and why a newcomer cares. Read-only — never edit files.
-If the target genuinely has no discernible layering (e.g. a flat script),
+Each finding's `topic` is a short label (e.g. "entry point", "config object",
+"auth guard", "error handling"), `location` is the `path:line` evidence
+(required), and `detail` is one or two lines on what's there and why a newcomer
+cares. If the target genuinely has no discernible layering (e.g. a flat script),
 return what you can and say so.

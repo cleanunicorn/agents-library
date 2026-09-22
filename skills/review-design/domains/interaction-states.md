@@ -54,11 +54,10 @@ every fix.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "affordances &
-signifiers", "feedback & states", "micro-interactions", or "overlays". `problem`
-names the gap and the user moment it hurts; `fix` is concrete and
-pattern-reusing (which state to add, which focus token, which transition
-duration, the dismissal/focus-trap to wire). Severity: 🔴 for a removed focus
-state, a hidden affordance on a key control, or an unescapable modal; 🟡 for
-missing hover/loading/disabled states or janky motion; 🟢 for refinement.
-Analysis only — never edit files. Empty list if interaction and states are sound.
+Set `principle` to "affordances & signifiers", "feedback & states",
+"micro-interactions", or "overlays". `problem` names the gap and the user moment
+it hurts; `fix` is concrete and pattern-reusing (which state to add, which focus
+token, which transition duration, the dismissal/focus-trap to wire). Severity: 🔴
+for a removed focus state, a hidden affordance on a key control, or an
+unescapable modal; 🟡 for missing hover/loading/disabled states or janky motion;
+🟢 for refinement.

@@ -18,14 +18,6 @@ current branch diff. Your job is to orient on the project's design system, fan
 out specialized sub-agents across five design lenses, consolidate what they find,
 and help the user act on it behind a lint/build gate.
 
-This is the design-focused counterpart to `review-pr`. Where `review-pr` reviews
-a diff across ten quality domains (correctness, architecture, tests, …),
-`review-design` reviews the *visual craft* of a UI — hierarchy, spacing,
-typography, color, depth, and interaction feel — across a target you pick, not
-just the diff. If the user's real question is about conversion, drop-off, or a
-product metric (defaults, framing, pricing psychology), that's
-`review-ux-psychology`, not this skill.
-
 Two properties frame everything below:
 
 - **Every finding traces to a principle.** A design critique that can't name the
@@ -35,9 +27,7 @@ Two properties frame everything below:
 
 ## Phase 0 — Orient
 
-Before dispatching anything, build an accurate map of the project's design
-system and the review target. You gather this **once** and bundle it into every
-sub-agent's prompt, so the five agents don't each re-derive the same context.
+Gather this context **once** and bundle it into every sub-agent's prompt.
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and any design-system or component-library notes. Capture the
@@ -53,9 +43,9 @@ sub-agent's prompt, so the five agents don't each re-derive the same context.
      are built and themed.
    Find where these live (a tokens file, a Tailwind/theme config, a component
    directory) and capture them so findings reuse real tokens, not invented ones.
-3. **Detect the main branch.** Don't hard-code `main` — detect it
-   (`git symbolic-ref refs/remotes/origin/HEAD`, or fall back to whichever of
-   `main`/`master` exists). Call it `<main>`.
+3. **Detect the main branch** as `<main>`: `git symbolic-ref
+   refs/remotes/origin/HEAD`, else whichever of `main`/`master` exists — never
+   hard-code `main`.
 4. **Resolve the target.** From the user's request:
    - a named view/component or a path/glob → just those files;
    - "diff" / "my changes" / `--diff` → the current branch diff
@@ -67,8 +57,7 @@ sub-agent's prompt, so the five agents don't each re-derive the same context.
    Capture the resolved file list.
 5. **Find the commands that matter.** Detect how the project lints, formats, and
    builds the frontend — docs first, then config (package.json scripts, etc.).
-   You'll need these for the gate in Phase 5. If you can't find them, you'll ask
-   the user later rather than silently skipping verification.
+   You'll need these for the gate in Phase 5.
 
 If the resolved target has **no visual surface** (no components, templates,
 styles, or rendered output — e.g. it's pure backend or a library), say there's
@@ -138,15 +127,10 @@ Keep it skimmable — the user is choosing what to act on, not reading five essa
 
 If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
-  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
-  and asks before editing anything outside the target you chose.
-- **(b) Autonomous loop (significant only)** — apply all 🔴/🟡 findings,
-  re-review, repeat until convergence or the round cap. Skips 🟢 refinements
-  (see loop rules).
-- **(c) Autonomous loop (everything, including refinements)** — apply *all*
-  findings including 🟢, re-review, fix again, and keep going until a round
-  surfaces nothing new. The most thorough path (see loop rules).
+- **(a) Implement selected** — they name the finding IDs to apply.
+- **(b) Autonomous loop, significant only** — see *Autonomous loop rules*.
+- **(c) Autonomous loop, everything** — including 🟢 refinements; see
+  *Autonomous loop rules*.
 - **(d) Stop** — report only; change nothing.
 
 ## Phase 5 — Implement (for paths a, b, and c)
@@ -163,8 +147,8 @@ For each accepted finding, in order:
    icon). Apply the same token-reusing fix wherever it is mechanical and safe,
    in the same commit, and record the search and its count (`N found · N fixed
    · N left`) in the commit body and in the round report. Two limits hold:
-   every swept view is checked like the original — re-verify contrast in each
-   theme it affects, and cut the sweep to the views you can actually verify;
+   every swept view gets the step 3 checks, so cut the sweep to the views you
+   can actually verify;
    and instances outside the reviewed surface are reported with their count and
    edited only on the user's say-so — in the autonomous loop they are reported,
    never auto-applied. A finding fixed on one view while identical ones remain

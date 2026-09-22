@@ -57,16 +57,14 @@ contrast is just presentation.
 
 ## Output
 
-Return findings in the orchestrator's schema. Set `principle` to "anchoring /
-contrast effect". `problem` names the cost shown in isolation (or the bad ordering)
-and why it reads as expensive; `fix` is concrete — which larger, *truthful* number
-to place first as the anchor, the honest relative framing to add ("just X% of the
-order"), the reorder that makes the target look reasonable — reusing the project's
-existing pricing components. **Every anchor must be a real number the user is
-actually dealing with.** `hypothesis` names the metric the fix should move and the
-direction (e.g. "↑ add-on attach rate; watch checkout conversion"). Severity: 🔴
-for a cost shown in isolation right at the purchase decision with an obvious real
-anchor going unused; 🟡 for a cost in isolation or bad ordering elsewhere where
-honest anchoring would help; 🟢 for refinement.
-Analysis only — never edit files. Empty list if costs are already anchored
-honestly.
+Set `principle` to "anchoring / contrast effect". `problem` names the cost shown
+in isolation (or the bad ordering) and why it reads as expensive; `fix` is
+concrete — which larger, *truthful* number to place first as the anchor, the
+honest relative framing to add ("just X% of the order"), the reorder that makes
+the target look reasonable — reusing the project's existing pricing components.
+**Every anchor must be a real number the user is actually dealing with.**
+`hypothesis` names the metric the fix should move and the direction (e.g. "↑
+add-on attach rate; watch checkout conversion"). Severity: 🔴 for a cost shown in
+isolation right at the purchase decision with an obvious real anchor going
+unused; 🟡 for a cost in isolation or bad ordering elsewhere where honest
+anchoring would help; 🟢 for refinement.

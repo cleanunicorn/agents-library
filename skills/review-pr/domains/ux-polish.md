@@ -36,9 +36,8 @@ those patterns — never inline styles or a new pattern.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the friction and
-the user moment it hurts; `fix` is the concrete, pattern-following improvement
-(which state to add, which label, which handler). Severity: 🟡 for friction that
-blocks or confuses a user completing a task; 🟢 for refinement. Analysis only —
-never edit files. Empty list (with a one-line "no user-facing surface" note) when
-the change isn't user-facing.
+`problem` names the friction and the user moment it hurts; `fix` is the
+concrete, pattern-following improvement (which state to add, which label, which
+handler). Severity: 🟡 for friction that blocks or confuses a user completing a
+task; 🟢 for refinement. When the change isn't user-facing, return an empty list
+with a one-line "no user-facing surface" note.

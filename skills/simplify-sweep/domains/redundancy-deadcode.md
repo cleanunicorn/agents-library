@@ -55,10 +55,8 @@ block you can delete.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the duplication or
-dead code and its evidence (e.g. "same decode block in auth.ts and session.ts",
-"no callers found in shard"); `fix` is the concrete extraction or removal and
-must preserve behavior exactly. Severity is usually 🟢 (cleanup); raise to 🟡
-for duplication that will actively bite maintenance or dead code that looks live
-and misleads. Analysis only — never edit files. Empty list if your shard is
-already lean.
+`problem` names the duplication or dead code and its evidence (e.g. "same decode
+block in auth.ts and session.ts", "no callers found in shard"); `fix` is the
+concrete extraction or removal and must preserve behavior exactly. Severity is
+usually 🟢 (cleanup); raise to 🟡 for duplication that will actively bite
+maintenance or dead code that looks live and misleads.

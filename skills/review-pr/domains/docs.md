@@ -34,9 +34,7 @@ lists components, an API reference), then the change should keep them current.
 
 ## Output
 
-Return findings in the orchestrator's schema. `problem` names the symbol or doc
-that's now missing/stale and who it hurts; `fix` says what to document and
-roughly what it should say (the contract — *what* and *why*, not *how*).
-Severity: 🟡 when a public/user-facing surface is undocumented or a doc is now
-wrong; 🟢 for nice-to-have additions. Analysis only — never edit files. Empty
-list if the change is adequately documented for this project.
+`problem` names the symbol or doc that's now missing/stale and who it hurts;
+`fix` says what to document and roughly what it should say (the contract —
+*what* and *why*, not *how*). Severity: 🟡 when a public/user-facing surface is
+undocumented or a doc is now wrong; 🟢 for nice-to-have additions.

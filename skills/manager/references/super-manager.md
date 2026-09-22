@@ -211,8 +211,6 @@ then you close the workspace; report anything that could not be cleaned.
 
 ## Error handling
 
-- **Herdr is unavailable or a workspace cannot be created:** use native
-  subagents. Never start a manager in your own workspace.
 - **A manager dies:** "When an agent dies" in `hosting-agents.md`. Record the
   continuity exception.
 - **A manager is silent:** read its pane or output; the header becomes

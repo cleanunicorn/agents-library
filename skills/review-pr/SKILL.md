@@ -11,22 +11,16 @@ description: >-
 
 # review-pr
 
-You are the **orchestrator** of a multi-domain review of the current branch.
-The user has implemented a change and wants a fresh, thorough review before it
-is finalized. Your job is to orient on the project, fan out ten specialized
-review sub-agents, independently verify what they report, consolidate the
-findings that survive, and help the user act on it.
-
-The review target is always the **local branch diff** — everything on the
-current branch that isn't yet in the main branch, plus any uncommitted
-working-tree changes. This works before a GitHub PR exists; you never need `gh`
-or a remote.
+You are the **orchestrator** of a multi-domain review of the current branch:
+orient on the project, fan out ten review sub-agents, independently verify what
+they report, consolidate the findings that survive, and help the user act on
+them. The target is always the **local branch diff** — everything not yet in
+the main branch, plus uncommitted and untracked work — so it works before a PR
+exists, without `gh` or a remote.
 
 ## Phase 0 — Orient
 
-Before dispatching anything, build an accurate map of the project and the
-change. You gather this **once** and bundle it into every sub-agent's prompt, so
-the ten agents don't each re-derive the same context.
+Gather this context **once** and bundle it into every sub-agent's prompt.
 
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and any architecture notes. These tell you the layering,
@@ -44,8 +38,7 @@ the ten agents don't each re-derive the same context.
 3. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — from the docs first, then config files (package.json
    scripts, Makefile, pyproject, etc.). You'll need these for the gate in
-   Phase 5. If you can't find them, you'll ask the user later rather than
-   silently skipping verification.
+   Phase 5.
 
 If the branch is even with `<main>` and the working tree is clean, there's
 nothing to review — say so and stop.
@@ -162,8 +155,7 @@ its verification tag:
 ```
 
 Render `measured` and `gap` on their own indented lines under any finding that
-has them. They are the two things a maintainer reads to decide whether the
-finding is real, and dropping them turns a verified defect back into an opinion.
+has them.
 
 Then summarize: how many findings at each severity, which domains were quiet,
 and how many candidate findings verification filtered out — list those with
@@ -174,17 +166,10 @@ skimmable — the user is choosing what to act on, not reading ten essays.
 
 If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
 
-- **(a) Implement selected** — they name the finding IDs to apply. A finding may have
-  identical instances elsewhere; Phase 5 sweeps for them, reports the count,
-  and asks before editing anything outside the target you chose.
-- **(b) Autonomous loop (significant only)** — apply all confirmed 🔴/🟡 findings,
-  re-review, repeat until convergence or the round cap. Skips 🟢 nice-to-haves
-  (see loop rules).
-- **(c) Autonomous loop (everything, including nice-to-haves)** — apply *all*
-  confirmed findings including 🟢, re-review, fix again, and keep going until a
-  round surfaces nothing new. Use this when nice-to-haves matter — a 🟢
-  "nice-to-have" is often a refactor that's actually worth doing. The most
-  thorough path (see loop rules).
+- **(a) Implement selected** — they name the finding IDs to apply.
+- **(b) Autonomous loop, significant only** — see *Autonomous loop rules*.
+- **(c) Autonomous loop, everything** — including 🟢 nice-to-haves, which are
+  often refactors worth doing; see *Autonomous loop rules*.
 - **(d) Stop** — report only; change nothing.
 
 ## Phase 5 — Implement (for paths a, b, and c)
@@ -245,13 +230,8 @@ effort:    small | medium | large
 they argue with. A finding whose `measured` is an adjective isn't ready; a
 defect whose `gap` is `n/a` should say why nothing could have caught it.
 
-Phase 2 verification then annotates each surviving finding with two more fields
-(refuted findings are dropped, not annotated):
-
-```
-verdict:     confirmed | uncertain
-confidence:  high | medium | low
-```
+Phase 2 annotates each surviving finding with `verdict` (confirmed |
+uncertain) and `confidence` (high | medium | low); refuted findings are dropped.
 
 ## Autonomous loop rules (paths b and c)
 
