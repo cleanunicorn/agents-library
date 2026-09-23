@@ -36,7 +36,11 @@ instead.
 | 2 | Native subagents (the host's Agent/Task tool) | Each manager is a subagent, if the nesting limit allows — see Rung 2 | Subagents own no panes, so the rule holds with no extra step — say so in the ledger |
 | 3 | No delegation | The super manager plays each manager itself, in sequence (`manager: self`) | The manager runs each pass in sequence, as the Floors section of `agent-types.md` says |
 
-Falling a rung is a recorded degradation, not a failure.
+Falling a rung is a recorded degradation, not a failure. Herdr available but
+`herdr workspace create` or `herdr tab create` fails → that level falls to
+rung 2 for this run: native subagents, `workspace: n/a` in the ledger, the
+degradation recorded. Never start the agent in your own pane or in the super
+manager's workspace instead.
 
 ### Rung 1 — a terminal multiplexer (Herdr as the example)
 

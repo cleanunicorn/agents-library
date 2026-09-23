@@ -277,6 +277,20 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
                                  f"{name} sends the marker with a suffix")
 
+    def test_manager_hosting_falls_back_when_a_create_fails(self):
+        """A failed Herdr create falls to native subagents, at both levels.
+
+        `hosting-agents.md` is the only file both roles read for hosting, so it
+        owns this rule. "Prefer Herdr, else native subagents" answers a host
+        that has no Herdr; it does not answer a `workspace create` or
+        `tab create` that failed, and without this rule that run is blocked.
+        """
+        hosting = " ".join((ROOT / "skills/manager/references/hosting-agents.md")
+                           .read_text(encoding="utf-8").split())
+        self.assertRegex(hosting, r"`herdr workspace create` or `herdr tab create` fails"
+                                  r".{0,200}?native subagents",
+                         "a failed create no longer falls back to native subagents")
+
     def test_manager_agent_type_cards(self):
         """The manager's catalogue defines every type it can start, the same way.
 
