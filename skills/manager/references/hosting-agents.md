@@ -38,8 +38,11 @@ instead.
 
 Falling a rung is a recorded degradation, not a failure. Herdr available but
 `herdr workspace create` or `herdr tab create` fails → that level falls to
-rung 2 for this run: native subagents, `workspace: n/a` in the ledger, the
-degradation recorded.
+rung 2 for this run: native subagents, with the degradation recorded. If
+`herdr workspace create` fails, record `workspace: n/a` in the super manager's
+ledger. If `herdr tab create` fails, record `workspace: n/a` for the team, but
+keep the recorded manager workspace id in the super manager's ledger so it can
+be closed when the manager finishes.
 
 ### Rung 1 — a terminal multiplexer (Herdr as the example)
 

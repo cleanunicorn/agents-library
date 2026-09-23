@@ -290,6 +290,9 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertRegex(hosting, r"`herdr workspace create` or `herdr tab create` fails"
                                   r".{0,200}?native subagents",
                          "a failed create no longer falls back to native subagents")
+        self.assertRegex(hosting, r"`herdr tab create` fails"
+                                  r".{0,250}?keep the recorded manager workspace id",
+                         "a failed team tab must not lose its parent workspace id")
 
     def test_manager_agent_type_cards(self):
         """The manager's catalogue defines every type it can start, the same way.
