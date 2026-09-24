@@ -67,6 +67,11 @@ rule 10 of `SKILL.md`.
 
 ## Picking the roster
 
+Here, kind means the agent host: `claude`, `codex`, or `opencode`, for example.
+Planner, coordinator, and reviewer are roles. Check which kinds the current
+hosting route can start and which can run the required skill briefs before
+assigning them.
+
 Read these signals off the work item and the repository. Each one moves a
 type up or down; none of them is a number.
 
