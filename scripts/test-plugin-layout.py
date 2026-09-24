@@ -388,7 +388,7 @@ class PluginLayoutTests(unittest.TestCase):
                 if path.name == "README.md":
                     # README also describes the sibling skills ("Ten specialized
                     # reviewers" is review-pr); only its manager section is a copy.
-                    section = re.search(r"(?ms)^## The Manager Skill\n.*?(?=^## |\Z)", text)
+                    section = re.search(r"(?ms)^#{2,3} The Manager Skill\n.*?(?=^#{2,3} |\Z)", text)
                     self.assertIsNotNone(section, "README.md lost its manager section")
                     text = section.group(0)
                 if path.name == "evals.md":

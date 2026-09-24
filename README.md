@@ -12,24 +12,10 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 - [Install (Codex plugin)](#install-codex-plugin)
 - [Install (Claude Code plugin)](#install-claude-code-plugin)
 - [Install (opencode)](#install-opencode)
+- [Choose a skill](#choose-a-skill)
 - [Updating](#updating)
-- [The Manager Skill](#the-manager-skill)
-- [The Feature Planning Skill](#the-feature-planning-skill)
-- [The PR Review Skill](#the-pr-review-skill)
-- [The Review Design Skill](#the-review-design-skill)
-- [The UX Psychology Review Skill](#the-ux-psychology-review-skill)
-- [The Batch PR Merge Skill](#the-batch-pr-merge-skill)
-- [The Issue Triage Skill](#the-issue-triage-skill)
-- [The Simplify Sweep Skill](#the-simplify-sweep-skill)
-- [The Describe Codebase Skill](#the-describe-codebase-skill)
-- [The Install Agents Skill](#the-install-agents-skill)
-- [Local checks](#local-checks)
-- [Skill Evals](#skill-evals)
-- [Releasing](#releasing)
-- [The Agents](#the-agents)
-- [Shared Conventions](#shared-conventions)
-- [Adapting to a Project](#adapting-to-a-project)
-- [Journals](#journals)
+- [About the agents](#about-the-agents)
+- [Maintain the library](#maintain-the-library)
 <!-- toc:end -->
 
 ## Install (Codex plugin)
@@ -135,6 +121,127 @@ Global installs use symlinks by default, so `git pull` in this repo updates
 every linked install. Project installs use copies for self-containment. Run
 `./scripts/install-opencode.sh --help` for all options.
 
+## Choose a skill
+
+Pick the skill that matches the job:
+
+- **Deliver work:** [`/manager`](#the-manager-skill) or [`/plan-feature`](#the-feature-planning-skill).
+- **Review or improve:** [`/review-pr`](#the-pr-review-skill), [`/review-design`](#the-review-design-skill), [`/review-ux-psychology`](#the-ux-psychology-review-skill), or [`/simplify-sweep`](#the-simplify-sweep-skill).
+- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), or [`/install-agents`](#the-install-agents-skill).
+- **Understand a codebase:** [`/describe-codebase`](#the-describe-codebase-skill).
+
+### The Manager Skill
+
+[`/manager`](skills/manager/SKILL.md) delivers one or more work items end to
+end by directing other coding agents. The agent you invoke it on becomes the
+**super manager**: your single point of contact. It starts one **manager**
+per feature or fix, each in its own workspace, and tracks them in a ledger.
+
+Each manager runs the same pipeline for its work item, with a team it sizes
+to that item. The [agent-type catalogue](skills/manager/references/agent-types.md)
+defines the types it can start — planner, coordinator, reviewer, final
+reviewer — and how each behaves; the manager picks which types and how many
+of each, and records the roster with its reason. Planners — different agent
+kinds where the host has them — each write an independent plan with
+`plan-feature`. The coordinator, which wrote none of them, runs a SWOT
+analysis on each plan, merges the best decisions into one plan that opens
+with a Progress checklist, and implements it in a dedicated worktree as one
+PR. Independent reviewers then run `review-pr`; every finding is confirmed,
+refuted, or kept open as uncertain — with evidence — before the confirmed
+ones are fixed, `simplify-sweep` tidies the branch diff, and a final review
+checks whatever was committed after the last review.
+
+A manager asks its clarifying questions at the start, before any planner
+runs, and never talks to you directly: the super manager lists every pending
+question with the manager and workspace it came from, you answer there by
+id, and it forwards the answer. Its status is that questions section plus one
+header line and one fixed status block per manager, so reports on several
+teams concatenate.
+
+It works with native subagents alone; a terminal multiplexer such as Herdr
+can host the agents live — each manager's team in a sub-space of that
+manager's workspace, never in the super manager's. Each level closes only
+what it created. It never merges the PR.
+
+### The Feature Planning Skill
+
+[`/plan-feature`](skills/plan-feature/SKILL.md) turns a feature request into a
+plan grounded in the current repository before coding starts: reuse and
+integration points, acceptance criteria mapped to real tests and the command
+that runs them, and an ordered checklist covering implementation, wiring, and
+delivery risk. Missing test infrastructure becomes the first step. The plan
+stays in chat unless you ask for a file, and a request to plan *and* implement
+continues into implementation without asking again; no GitHub remote is
+required.
+
+### The PR Review Skill
+
+[`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
+before you finalize it. Ten specialized reviewers inspect the local diff, and a
+separate verification pass screens their findings before presenting a ranked
+list. It can apply approved fixes or run an improve-until-converged loop behind
+the project's lint and test gate; no GitHub remote is required.
+
+### The Review Design Skill
+
+[`/review-design`](skills/review-design/SKILL.md) is the design-focused
+counterpart to `review-pr`: it reviews a view, component, frontend path, or
+branch diff against the project's visual system and core UI principles. It
+ranks findings across five design lenses, then can apply approved fixes or run
+an improve-until-converged loop behind the lint and build gate. No `gh` or
+remote is required.
+
+### The UX Psychology Review Skill
+
+[`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
+behavior-and-conversion counterpart to `review-design`. It reviews a screen,
+flow, path, or branch diff against behavioral principles for a named product
+metric, using rendered evidence when available and independently verifying each
+finding. It can apply approved fixes or iterate behind the project's lint and
+build gate; no `gh` or remote is required.
+
+### The Batch PR Merge Skill
+
+[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
+pull requests and collects approved trivial ones onto a branch you name. Each PR
+is assessed for scope, type, correctness, CI, and mergeability before you choose
+what to include. Merges are local and abort cleanly on conflict; nothing is
+pushed or closed on GitHub. Requires the `gh` CLI.
+
+### The Issue Triage Skill
+
+[`/triage-issues`](skills/triage-issues/SKILL.md) triages the project's open
+GitHub issues into a code-grounded action plan covering duplicates, easy wins,
+needs-info cases, and larger work. Every GitHub write needs per-action approval;
+approved easy wins are fixed in separate worktrees and pull requests behind the
+project's lint and test gate. Requires the `gh` CLI.
+
+### The Simplify Sweep Skill
+
+[`/simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
+the whole repository, a path/glob, or the current branch diff — for
+**behavior-preserving** simplifications across redundancy, complexity, clarity,
+and documentation. It ranks findings, then can apply approved changes or run an
+improve-until-converged loop behind the project's lint and test gate. No `gh` or
+remote is required.
+
+### The Describe Codebase Skill
+
+[`/describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
+counterpart to `review-pr`. It maps a whole repository or subsystem, or traces
+one feature end to end, producing an orientation brief with `file:line`
+evidence. The analysis is read-only; it writes `ARCHITECTURE.md` or updates
+`AGENTS.md` only with explicit approval. No `gh` or remote is required.
+
+### The Install Agents Skill
+
+[`/install-agents`](skills/install-agents/SKILL.md) puts a project on automatic
+maintenance by copying a chosen set into `.claude/agents/`, seeding journals,
+and optionally scheduling staggered runs weekly by default. It supports Claude
+Code schedules, GitHub Actions, and local cron, and preserves locally customized
+agent files unless you explicitly approve an overwrite. Re-running upgrades or
+extends an installation.
+
 ## Updating
 
 Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,
@@ -235,119 +342,55 @@ scopes with `claude plugin list --json`. If the entry really is gone from
 claude plugin install agents-library@agents-library --scope user
 ```
 
-## The Manager Skill
+## About the agents
 
-[`/manager`](skills/manager/SKILL.md) delivers one or more work items end to
-end by directing other coding agents. The agent you invoke it on becomes the
-**super manager**: your single point of contact. It starts one **manager**
-per feature or fix, each in its own workspace, and tracks them in a ledger.
+### The Agents
 
-Each manager runs the same pipeline for its work item, with a team it sizes
-to that item. The [agent-type catalogue](skills/manager/references/agent-types.md)
-defines the types it can start — planner, coordinator, reviewer, final
-reviewer — and how each behaves; the manager picks which types and how many
-of each, and records the roster with its reason. Planners — different agent
-kinds where the host has them — each write an independent plan with
-`plan-feature`. The coordinator, which wrote none of them, runs a SWOT
-analysis on each plan, merges the best decisions into one plan that opens
-with a Progress checklist, and implements it in a dedicated worktree as one
-PR. Independent reviewers then run `review-pr`; every finding is confirmed,
-refuted, or kept open as uncertain — with evidence — before the confirmed
-ones are fixed, `simplify-sweep` tidies the branch diff, and a final review
-checks whatever was committed after the last review.
+| Agent | Emoji | Focus |
+|-------|-------|-------|
+| [Architect](agents/architect.md) | 🏗️ | Align code with the project's established architecture |
+| [DeadWood](agents/deadwood.md) | 🌲 | Remove dead code without changing live behavior |
+| [DocBot](agents/docbot.md) | 📝 | Fill documentation gaps without changing code |
+| [Refactor](agents/refactor.md) | 🔧 | Micro-refactors that improve clarity without changing behavior |
+| [Sentinel](agents/sentinel.md) | 🛡️ | Light security hygiene (auth guards, error leakage, hardcoded config) |
+| [TestForge](agents/testforge.md) | 🧪 | Fill test gaps without changing production code |
+| [UIDesigner](agents/uidesigner.md) | 🖌️ | Visual-design fixes (hierarchy, spacing, type, color, depth) using the project's tokens |
+| [UXPolish](agents/uxpolish.md) | 🎨 | Frontend UX friction fixes without touching contracts |
 
-A manager asks its clarifying questions at the start, before any planner
-runs, and never talks to you directly: the super manager lists every pending
-question with the manager and workspace it came from, you answer there by
-id, and it forwards the answer. Its status is that questions section plus one
-header line and one fixed status block per manager, so reports on several
-teams concatenate.
+Install them into any project as weekly periodic agents with
+[`/install-agents`](skills/install-agents/SKILL.md).
 
-It works with native subagents alone; a terminal multiplexer such as Herdr
-can host the agents live — each manager's team in a sub-space of that
-manager's workspace, never in the super manager's. Each level closes only
-what it created. It never merges the PR.
+### Shared Conventions
 
-## The Feature Planning Skill
+Every agent follows the same operating model:
 
-[`/plan-feature`](skills/plan-feature/SKILL.md) turns a feature request into a
-plan grounded in the current repository before coding starts: reuse and
-integration points, acceptance criteria mapped to real tests and the command
-that runs them, and an ordered checklist covering implementation, wiring, and
-delivery risk. Missing test infrastructure becomes the first step. The plan
-stays in chat unless you ask for a file, and a request to plan *and* implement
-continues into implementation without asking again; no GitHub remote is
-required.
+- **How much to do per run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
+- **Fix it everywhere** — the PR body reports the exact search run for other instances and its count (`N found · N fixed · N left`). A *different* problem, however close by, still gets its own PR.
+- **Look where the fix needs** — the project's docs and a well-built module, read as far as the change requires; refactor *toward* the existing style, never toward a personal preference.
+- **Evidence before claims** — the linter and tests are the feedback loop, run without asking; the PR carries their output.
+- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective; a qualitative claim cites the code path, rule, test, or before/after that makes it checkable.
+- **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
+- **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
+- **Journal critical learnings only** — record recurring patterns, not routine work.
 
-## The PR Review Skill
+### Adapting to a Project
 
-[`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
-before you finalize it. Ten specialized reviewers inspect the local diff, and a
-separate verification pass screens their findings before presenting a ranked
-list. It can apply approved fixes or run an improve-until-converged loop behind
-the project's lint and test gate; no GitHub remote is required.
+Each agent is written against generic roles. To use one on a specific codebase, give it (or its host project's docs) the concrete details:
 
-## The Review Design Skill
+- the lint, format, test, and build commands
+- the architecture/layering conventions
+- the auth and configuration model
+- the test layout and naming conventions
 
-[`/review-design`](skills/review-design/SKILL.md) is the design-focused
-counterpart to `review-pr`: it reviews a view, component, frontend path, or
-branch diff against the project's visual system and core UI principles. It
-ranks findings across five design lenses, then can apply approved fixes or run
-an improve-until-converged loop behind the lint and build gate. No `gh` or
-remote is required.
+The agents are designed to discover most of this themselves, but supplying it up front makes them sharper.
 
-## The UX Psychology Review Skill
+### Journals
 
-[`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
-behavior-and-conversion counterpart to `review-design`. It reviews a screen,
-flow, path, or branch diff against behavioral principles for a named product
-metric, using rendered evidence when available and independently verifying each
-finding. It can apply approved fixes or iterate behind the project's lint and
-build gate; no `gh` or remote is required.
+Agents append durable, codebase-specific learnings to `agents/journals/<agent>.md`. These are intentionally empty here — they accumulate per project.
 
-## The Batch PR Merge Skill
+## Maintain the library
 
-[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
-pull requests and collects approved trivial ones onto a branch you name. Each PR
-is assessed for scope, type, correctness, CI, and mergeability before you choose
-what to include. Merges are local and abort cleanly on conflict; nothing is
-pushed or closed on GitHub. Requires the `gh` CLI.
-
-## The Issue Triage Skill
-
-[`/triage-issues`](skills/triage-issues/SKILL.md) triages the project's open
-GitHub issues into a code-grounded action plan covering duplicates, easy wins,
-needs-info cases, and larger work. Every GitHub write needs per-action approval;
-approved easy wins are fixed in separate worktrees and pull requests behind the
-project's lint and test gate. Requires the `gh` CLI.
-
-## The Simplify Sweep Skill
-
-[`/simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
-the whole repository, a path/glob, or the current branch diff — for
-**behavior-preserving** simplifications across redundancy, complexity, clarity,
-and documentation. It ranks findings, then can apply approved changes or run an
-improve-until-converged loop behind the project's lint and test gate. No `gh` or
-remote is required.
-
-## The Describe Codebase Skill
-
-[`/describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
-counterpart to `review-pr`. It maps a whole repository or subsystem, or traces
-one feature end to end, producing an orientation brief with `file:line`
-evidence. The analysis is read-only; it writes `ARCHITECTURE.md` or updates
-`AGENTS.md` only with explicit approval. No `gh` or remote is required.
-
-## The Install Agents Skill
-
-[`/install-agents`](skills/install-agents/SKILL.md) puts a project on automatic
-maintenance by copying a chosen set into `.claude/agents/`, seeding journals,
-and optionally scheduling staggered runs weekly by default. It supports Claude
-Code schedules, GitHub Actions, and local cron, and preserves locally customized
-agent files unless you explicitly approve an overwrite. Re-running upgrades or
-extends an installation.
-
-## Local checks
+### Local checks
 
 Run the repository's local validation before opening a PR:
 
@@ -389,7 +432,7 @@ version. `claude plugin validate .` selects the marketplace in this repository,
 so it must not be treated as validation of every skill and agent. The local gate
 does not require either CLI or depend on their user-specific plugin caches.
 
-## Skill Evals
+### Skill Evals
 
 Every skill ships an eval suite (`skills/<name>/evals/cases.json`) — at least
 10 outcome-based cases each, including cross-triggering negatives that must
@@ -403,7 +446,7 @@ Evals are **manual-only** — never wired to CI or git hooks. Start with
 `python3 run_evals.py --dry-run`; see [docs/evals.md](docs/evals.md) for the
 full guide and cost notes.
 
-## Releasing
+### Releasing
 
 Releases are cut **automatically when a PR merges to main**, sized by the
 Conventional-Commit prefix of the PR title
@@ -428,47 +471,3 @@ rather than by release tag, so both tools track `main` — see
 
 The skill evals are **not** part of any workflow — they spawn real agent runs
 and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).
-
-## The Agents
-
-| Agent | Emoji | Focus |
-|-------|-------|-------|
-| [Architect](agents/architect.md) | 🏗️ | Align code with the project's established architecture |
-| [DeadWood](agents/deadwood.md) | 🌲 | Remove dead code without changing live behavior |
-| [DocBot](agents/docbot.md) | 📝 | Fill documentation gaps without changing code |
-| [Refactor](agents/refactor.md) | 🔧 | Micro-refactors that improve clarity without changing behavior |
-| [Sentinel](agents/sentinel.md) | 🛡️ | Light security hygiene (auth guards, error leakage, hardcoded config) |
-| [TestForge](agents/testforge.md) | 🧪 | Fill test gaps without changing production code |
-| [UIDesigner](agents/uidesigner.md) | 🖌️ | Visual-design fixes (hierarchy, spacing, type, color, depth) using the project's tokens |
-| [UXPolish](agents/uxpolish.md) | 🎨 | Frontend UX friction fixes without touching contracts |
-
-Install them into any project as weekly periodic agents with
-[`/install-agents`](skills/install-agents/SKILL.md).
-
-## Shared Conventions
-
-Every agent follows the same operating model:
-
-- **How much to do per run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
-- **Fix it everywhere** — the PR body reports the exact search run for other instances and its count (`N found · N fixed · N left`). A *different* problem, however close by, still gets its own PR.
-- **Look where the fix needs** — the project's docs and a well-built module, read as far as the change requires; refactor *toward* the existing style, never toward a personal preference.
-- **Evidence before claims** — the linter and tests are the feedback loop, run without asking; the PR carries their output.
-- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective; a qualitative claim cites the code path, rule, test, or before/after that makes it checkable.
-- **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
-- **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
-- **Journal critical learnings only** — record recurring patterns, not routine work.
-
-## Adapting to a Project
-
-Each agent is written against generic roles. To use one on a specific codebase, give it (or its host project's docs) the concrete details:
-
-- the lint, format, test, and build commands
-- the architecture/layering conventions
-- the auth and configuration model
-- the test layout and naming conventions
-
-The agents are designed to discover most of this themselves, but supplying it up front makes them sharper.
-
-## Journals
-
-Agents append durable, codebase-specific learnings to `agents/journals/<agent>.md`. These are intentionally empty here — they accumulate per project.
