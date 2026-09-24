@@ -366,6 +366,11 @@ class PluginLayoutTests(unittest.TestCase):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
         self.assertRegex(root_text, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
                          "Phase 0 no longer records the roster and its reason")
+        catalogue_text = " ".join((skill / "references/agent-types.md").read_text(encoding="utf-8").split())
+        self.assertRegex(catalogue_text, r"(?i)kind means.{0,120}claude.{0,80}codex.{0,80}opencode",
+                         "the catalogue must distinguish host agent kinds from roster roles")
+        self.assertRegex(catalogue_text, r"across the whole roster.{0,200}at least two kinds.{0,200}use both",
+                         "the roster must use distinct agent kinds when the host offers them")
         self.assertRegex(root_text, r"- Team: roster\b", "the team block no longer reports the roster")
         # Phase 7 may hand the final pass to a Phase 4 reviewer, so a rule that
         # holds in every phase cannot say every final reviewer is new to the run.

@@ -67,6 +67,11 @@ rule 10 of `SKILL.md`.
 
 ## Picking the roster
 
+Here, kind means the agent host: `claude`, `codex`, or `opencode`, for example.
+Planner, coordinator, and reviewer are roles. Check which kinds the current
+hosting route can start and which can run the required skill briefs before
+assigning them.
+
 Read these signals off the work item and the repository. Each one moves a
 type up or down; none of them is a number.
 
@@ -88,10 +93,14 @@ read-only work when the estimate exceeds it, but never drop a required lens or
 verification to meet the number. Finding-driven verification may exceed the
 estimate; continue it and record the actual count in the hand-back.
 
-Agents of the same type differ in kind where the host has kinds to offer;
-where it does not, they differ in model and the ledger records that they are
-not different kinds. A type with one agent needs no partner for diversity's
-sake.
+Assign kinds across the whole roster, not only among agents of the same type.
+When the host offers at least two kinds that can run their assigned briefs,
+use both even if the roster has only one planner and one reviewer. Choose
+kinds for the work item and each role's skill. Do not add a planner or reviewer
+only to reach another kind. If just one kind can run the required briefs,
+record that limit in `signals` and the ledger; different models of that kind
+are not different kinds. Agents of the same type also differ in kind when
+possible.
 
 ## The roster record
 
