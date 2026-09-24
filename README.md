@@ -141,7 +141,8 @@ Each manager runs the same pipeline for its work item, with a team it sizes
 to that item. The [agent-type catalogue](skills/manager/references/agent-types.md)
 defines the types it can start — planner, coordinator, reviewer, final
 reviewer — and how each behaves; the manager picks which types and how many
-of each, and records the roster with its reason. Planners — different agent
+of each, assigns different agent kinds when the host offers them, and records
+the roster with its reason. Planners — different agent
 kinds where the host has them — each write an independent plan with
 `plan-feature`. The coordinator, which wrote none of them, runs a SWOT
 analysis on each plan, merges the best decisions into one plan that opens
