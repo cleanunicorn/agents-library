@@ -58,6 +58,7 @@ check_host() {
   fi
 }
 
+# Keep this host list in sync with install-host.sh and test-check-host-sync.py.
 for dir in .opencode .kilo; do
   check_host "$dir"
 done

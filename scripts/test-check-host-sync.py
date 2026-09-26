@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 CHECKER = Path(__file__).resolve().with_name("check-host-sync.sh")
+# Must list the same mirrors as check-host-sync.sh and install-host.sh.
 HOST_DIRS = (".opencode", ".kilo")
 
 
@@ -44,14 +45,14 @@ class SyncTests(unittest.TestCase):
         self.assertIn(message, result.stdout)
 
     def test_valid_links_from_another_directory(self):
-        self.check(0, f"{self.host}/ in sync")
+        self.check(0, f"{self.host}/ in sync (2 symlinks)")
 
     def test_absolute_links(self):
         self.agent.unlink()
         self.agent.symlink_to(self.root / "agents/architect.md")
         self.skill.unlink()
         self.skill.symlink_to(self.root / "skills/review")
-        self.check(0, f"{self.host}/ in sync")
+        self.check(0, f"{self.host}/ in sync (2 symlinks)")
 
     def test_missing_link(self):
         self.agent.unlink()
@@ -103,7 +104,7 @@ class SyncTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("MISSING:", result.stdout)
-        self.assertIn(f"{HOST_DIRS[1]}/ in sync", result.stdout)
+        self.assertIn(f"{HOST_DIRS[1]}/ in sync (2 symlinks)", result.stdout)
 
 
 if __name__ == "__main__":

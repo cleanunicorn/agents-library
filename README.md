@@ -454,7 +454,7 @@ Agents append durable, codebase-specific learnings to `agents/journals/<agent>.m
 
 ## DeadWood
 
-🌲 **[DeadWood](agents/deadwood.md)** — Removes dead code without changing live behavior. Use for unused imports or variables, commented-out blocks, unreachable branches, orphaned files, stale TODO/FIXME comments, or dead parameters, once nothing references them.
+🌲 **[DeadWood](agents/deadwood.md)** — Removes dead code without changing live behavior. Use for unused imports or variables, commented-out blocks, unreachable branches, orphaned files, stale TODO/FIXME comments, or dead parameters, once nothing references them — dynamic dispatch included.
 
 ## DocBot
 

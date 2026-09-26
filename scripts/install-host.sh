@@ -84,6 +84,7 @@ if [ -z "$host" ]; then
 fi
 shift
 
+# Keep this host list in sync with check-host-sync.sh and test-check-host-sync.py.
 case "$host" in
   opencode) global_root="${HOME}/.config/opencode"; project_root="${PWD}/.opencode" ;;
   kilo)     global_root="${HOME}/.config/kilo";     project_root="${PWD}/.kilo" ;;
