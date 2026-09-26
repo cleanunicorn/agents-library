@@ -367,7 +367,8 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertRegex(root_text, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
                          "Phase 0 no longer records the roster and its reason")
         catalogue_text = " ".join((skill / "references/agent-types.md").read_text(encoding="utf-8").split())
-        self.assertRegex(catalogue_text, r"(?i)kind means.{0,120}claude.{0,80}codex.{0,80}opencode",
+        self.assertRegex(catalogue_text,
+                         r"(?i)kind means.{0,120}claude.{0,80}codex.{0,80}opencode.{0,80}kilo",
                          "the catalogue must distinguish host agent kinds from roster roles")
         self.assertRegex(catalogue_text, r"across the whole roster.{0,200}at least two kinds.{0,200}use both",
                          "the roster must use distinct agent kinds when the host offers them")
