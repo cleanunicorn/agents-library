@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the sync checker in temporary repositories, without agent runs."""
 
+import re
 import shutil
 import subprocess
 import tempfile
@@ -91,6 +92,22 @@ class SyncTests(unittest.TestCase):
         (self.root / "skills/review/SKILL.md").unlink()
         self.check(1, "STALE:")
 
+    def test_stray_agent_file(self):
+        self.agent.write_text("not a link\n")
+        self.skill.unlink()
+        self.skill.mkdir()
+        self.check(1, "STRAY:")
+
+    def test_stray_skill_directory(self):
+        extra = self.root / self.host / "skills" / "extra"
+        extra.mkdir()
+        self.check(1, "STRAY:")
+
+    def test_stray_entry_named_like_a_source_skill(self):
+        self.skill.unlink()
+        self.skill.mkdir()
+        self.check(1, "STRAY:")
+
     def test_stale_skill_link(self):
         shutil.rmtree(self.root / "skills/review")
         self.check(1, "STALE:")
@@ -105,6 +122,45 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("MISSING:", result.stdout)
         self.assertIn(f"{HOST_DIRS[1]}/ in sync (2 symlinks)", result.stdout)
+
+
+class HostListAgreementTests(unittest.TestCase):
+    """The three scripts that name the hosts must agree on what they are.
+
+    A host added to one script but not the others installs a mirror the
+    checker never inspects (or vice versa). The lists live as literals in
+    each script; this test extracts and compares them so drift fails here.
+    """
+
+    SCRIPTS = ("install-host.sh", "check-host-sync.sh", "test-check-host-sync.py")
+    # In install-host.sh each host appears as "<host>)"; in the other two
+    # scripts the list is a shell/Python tuple or loop over ".<host>" dirs.
+    CASE_LINE = re.compile(r"^\s{2}(\w+)\)\s+global_root=")
+    QUOTED_DOT_DIR = re.compile(r'"(\.\w+)"')
+
+    def host_sets(self):
+        root = Path(__file__).resolve().parent
+        found = {}
+        for script in self.SCRIPTS:
+            text = (root / script).read_text(encoding="utf-8")
+            if script == "install-host.sh":
+                found[script] = {match.group(1) for line in text.splitlines()
+                                 if (match := self.CASE_LINE.match(line))}
+            else:
+                found[script] = {match.lstrip(".") for match
+                                 in self.QUOTED_DOT_DIR.findall(text)}
+        return found
+
+    def test_host_lists_agree(self):
+        found = self.host_sets()
+        for script, hosts in found.items():
+            self.assertEqual(hosts, found[self.SCRIPTS[0]],
+                             f"{script} disagrees with {self.SCRIPTS[0]}: "
+                             f"{sorted(hosts)} vs {sorted(found[self.SCRIPTS[0]])}")
+
+    def test_lists_are_not_empty(self):
+        for script, hosts in self.host_sets().items():
+            self.assertTrue(hosts, f"{script} has no host list")
 
 
 if __name__ == "__main__":

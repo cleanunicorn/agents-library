@@ -6,6 +6,11 @@ The table of contents is the list between the toc markers. It must name every
 an added, renamed, or moved section fails here instead of leaving a dead or
 missing link behind.
 
+Every shared definition must also appear in README.md: each agent gets its own
+`##` section (the heading is the agent's display name) and each skill a `###`
+subsection under *Choose a skill*, so a component added without its README
+section fails here too.
+
 Anchors follow GitHub's slug rule for the headings these guides use: lowercase,
 drop punctuation other than hyphens and underscores, turn each space into a
 hyphen, and suffix repeats with -1, -2 in document order. This models the
@@ -181,6 +186,49 @@ class LiveGuideTests(unittest.TestCase):
             with self.subTest(guide=guide):
                 text = (ROOT / guide).read_text(encoding="utf-8")
                 self.assertEqual(link_problems(text), [])
+
+
+class DefinitionSectionTests(unittest.TestCase):
+    """Every shared definition has its README section, reached from the contents.
+
+    A component added without its section fails here: each agent must get a
+    `##` heading whose anchor the contents links to, and each skill a `###`
+    subsection linking the skill's SKILL.md from the *Choose a skill* part of
+    the document.
+    """
+
+    def readme(self):
+        return (ROOT / "README.md").read_text(encoding="utf-8")
+
+    def test_every_agent_has_a_readme_section(self):
+        text = self.readme()
+        anchors = {heading.anchor for heading in headings(text)}
+        for agent in sorted((ROOT / "agents").glob("*.md")):
+            with self.subTest(agent=agent.stem):
+                anchor = slug(agent.stem)
+                self.assertIn(anchor, anchors,
+                              f"agents/{agent.stem}.md has no README `## {agent.stem}` section")
+                link = f"](agents/{agent.stem}.md)"
+                self.assertIn(link, text,
+                              f"agents/{agent.stem}.md is not linked from README.md")
+
+    def test_every_skill_is_linked_from_choose_a_skill(self):
+        text = self.readme()
+        choose_a_skill = re.search(
+            r"(?ms)^## Choose a skill\n.*?(?=^## )", text)
+        self.assertIsNotNone(choose_a_skill, "README.md lost its Choose a skill section")
+        for skill_dir in sorted(path for path in (ROOT / "skills").iterdir()
+                                if (path / "SKILL.md").is_file()):
+            with self.subTest(skill=skill_dir.name):
+                link = f"](skills/{skill_dir.name}/SKILL.md)"
+                self.assertIn(link, choose_a_skill.group(0),
+                              f"skills/{skill_dir.name} has no subsection under Choose a skill")
+
+    def test_missing_agent_section_fails(self):
+        stripped = re.sub(r"(?ms)^## Architect\n.*?(?=^## )", "", self.readme())
+        self.assertNotIn(slug("architect"),
+                         {heading.anchor for heading in headings(stripped)},
+                         "the strip stopped removing the section")
 
 
 class SlugTests(unittest.TestCase):

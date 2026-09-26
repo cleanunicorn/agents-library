@@ -4,4 +4,5 @@
 # The shared implementation lives in install-host.sh.
 
 set -u
-exec "$(dirname "$0")/install-host.sh" opencode "$@"
+# --as names the wrapper so install-host.sh's usage output reads install-opencode.sh.
+exec "$(dirname "$0")/install-host.sh" opencode --as "$(basename "$0")" "$@"

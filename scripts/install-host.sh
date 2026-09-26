@@ -5,13 +5,29 @@
 
 set -u
 
+# --as names the calling wrapper (set during arg parsing); empty when the
+# shared entry point runs directly.
+as_name=""
+
 show_help() {
-  cat << 'HELP'
+  # Via a per-host wrapper (--as names it) the host is already chosen, so the
+  # usage line and the host paragraph only make sense for the shared entry point.
+  if [ -z "$as_name" ]; then
+    cat << 'HELP'
 Usage: install-host.sh <host> [options] [name ...]
 
 host                opencode or kilo — picks the discovery paths:
                       opencode: ~/.config/opencode/  global, ./.opencode/  project
                       kilo:     ~/.config/kilo/      global, ./.kilo/      project
+HELP
+  else
+    cat << HELP
+Usage: $as_name [options] [name ...]
+
+host                $as_name targets its host's discovery paths directly
+HELP
+  fi
+  cat << 'HELP'
 
 Options:
   --global          Install to the host's global config directory (default)
@@ -103,6 +119,7 @@ names=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --global)       scope="global";    shift ;;
+    --as)           as_name="$2";      shift 2 ;;
     --project)      scope="project";   shift ;;
     --copy)         method="copy";     shift ;;
     --symlink)      method="symlink";  shift ;;

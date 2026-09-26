@@ -52,6 +52,16 @@ check_host() {
     [ -f "skills/${name}/SKILL.md" ] || { echo "STALE: $link — no source skill skills/${name}/SKILL.md"; status=1; host_status=1; }
   done
 
+  # A stray file or directory that is not a symlink is not installed by this
+  # library — flag it so a mistaken copy does not linger in the mirror.
+  for stray in "$dir"/agents/* "$dir"/skills/*; do
+    [ -e "$stray" ] || [ -L "$stray" ] || continue
+    [ -L "$stray" ] && continue
+    echo "STRAY: $stray — not a symlink; expected a link installed by install-host.sh"
+    status=1
+    host_status=1
+  done
+
   if [ "$host_status" -eq 0 ]; then
     count=$(find "$dir/agents" "$dir/skills" -type l 2>/dev/null | wc -l)
     echo "OK: $dir/ in sync ($count symlinks)"
@@ -59,7 +69,7 @@ check_host() {
 }
 
 # Keep this host list in sync with install-host.sh and test-check-host-sync.py.
-for dir in .opencode .kilo; do
+for dir in ".opencode" ".kilo"; do
   check_host "$dir"
 done
 
