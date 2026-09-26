@@ -243,12 +243,13 @@ reason.
 ## Project-specific section — this repository
 
 This repo is a **plugin marketplace for both Claude Code and Codex**, and is
-**directly compatible with opencode** via its `.opencode/` directory of
-symlinked agent/skill definitions. There is no runtime, database, or build —
-"behavior" is the prose contracts each tool loads and executes.
+**directly compatible with opencode and Kilo Code** via their `.opencode/` and
+`.kilo/` directories of symlinked agent/skill definitions. There is no
+runtime, database, or build — "behavior" is the prose contracts each tool
+loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
-  role; `mode: subagent` in frontmatter so opencode registers them as
+  role; `mode: subagent` in frontmatter so opencode and Kilo register them as
   subagents). `skills/<name>/SKILL.md` are 10 orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
@@ -263,11 +264,13 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
   Repo-level scripts (installers, CI helpers) live in top-level `scripts/`.
-  The `.opencode/` directory mirrors `agents/` and `skills/` via symlinks so
-  opencode auto-discovers both without duplicating files.
-  `scripts/install-opencode.sh` installs the agents and skills into an
-  opencode discovery path (global `~/.config/opencode/` by default, or a
-  target project's `.opencode/` with `--project`) via symlinks or copies.
+  The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
+  symlinks so both hosts auto-discover everything without duplicating files.
+  The per-host wrappers `scripts/install-opencode.sh` and
+  `scripts/install-kilo.sh` delegate to the shared
+  `scripts/install-host.sh <host>`, which installs the agents and skills into
+  a discovery path (global `~/.config/<host>/` by default, or a target
+  project's `.<host>/` with `--project`) via symlinks or copies.
 - **Skill shape** — the review and survey skills follow Phase 0 *orient* →
   Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
@@ -306,9 +309,9 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   registries resolve to the repo root, so installing on either tool copies the
   **whole repository** into that tool's plugin cache — anything added here
   ships to every user. Enabled plugins in `.claude/settings.json`.
-  opencode is the exception: it has no marketplace manifest — `.opencode/`
-  is auto-discovered, which is why it mirrors the content tree via symlinks
-  rather than pointing at the root.
+  opencode and Kilo are the exceptions: they have no marketplace manifest —
+  `.opencode/` and `.kilo/` are auto-discovered, which is why they mirror the
+  content tree via symlinks rather than pointing at the root.
 - **Releases / changelog** — a release is cut automatically when a PR merges
   to main (`.github/workflows/auto-release.yml`): the Conventional-Commit PR
   title decides the bump (`type!:` → major, `feat:` → minor,
@@ -324,7 +327,7 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   inspect *target* projects for these; this repo holds none. The only durable
   per-project state is the per-agent journals in `agents/journals/`.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
-  (`mode: subagent` for opencode compatibility; ignored by Claude Code/Codex),
+  (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
   the in-skill finding records sub-agents return (`{id, severity, domain,
   location, problem, measured, gap, fix, effort}` for review-pr, which its verify
@@ -349,16 +352,22 @@ symlinked agent/skill definitions. There is no runtime, database, or build —
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
-  the file(s) and add a README entry plus its line in the README's table of
-  contents (the gate fails without it). No manifest edit needed.
+  the file(s), add a README section (each agent gets its own `##` section,
+  listed in the table of contents; each skill its `###` subsection under
+  *Choose a skill*), symlink it into both `.opencode/` and `.kilo/`, and
+  update the README's contents block — the gate fails without it. A new agent
+  also joins the agent set in `scripts/test-fix-everywhere.py`. No manifest
+  edit needed.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
-  links (`scripts/test-readme-toc.py`), opencode link validation and regression tests,
-  installer smoke tests, and eval case validation (`--dry-run`). Requires
-  Python 3.9+ and Bash; no host CLI, model calls, credentials, or installs —
-  safe to run as often as needed.
+  links (`scripts/test-readme-toc.py`), opencode/Kilo mirror link validation
+  and regression tests (`scripts/check-host-sync.sh`,
+  `scripts/test-check-host-sync.py`), installer smoke tests for both hosts
+  (`scripts/test-install-host.sh`), and eval case validation (`--dry-run`).
+  Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
+  installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
   validation. Lint/format/build: no separate tools. Behavioral skill
   evals: `python3 run_evals.py` — **manual-only and expensive** (real agent

@@ -12,9 +12,21 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 - [Install (Codex plugin)](#install-codex-plugin)
 - [Install (Claude Code plugin)](#install-claude-code-plugin)
 - [Install (opencode)](#install-opencode)
+- [Install (Kilo Code)](#install-kilo-code)
 - [Choose a skill](#choose-a-skill)
-- [Updating](#updating)
+- [Update (Claude Code plugin)](#update-claude-code-plugin)
+- [Update (Codex plugin)](#update-codex-plugin)
+- [Update (opencode)](#update-opencode)
+- [Update (Kilo Code)](#update-kilo-code)
 - [About the agents](#about-the-agents)
+- [Architect](#architect)
+- [DeadWood](#deadwood)
+- [DocBot](#docbot)
+- [Refactor](#refactor)
+- [Sentinel](#sentinel)
+- [TestForge](#testforge)
+- [UIDesigner](#uidesigner)
+- [UXPolish](#uxpolish)
 - [Maintain the library](#maintain-the-library)
 <!-- toc:end -->
 
@@ -54,7 +66,7 @@ The marketplace manifest is
 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json); the
 plugin metadata is [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 Start a new Codex thread after installing so the skills load. To pick up later
-changes, see [Updating](#updating).
+changes, see [Update (Codex plugin)](#update-codex-plugin).
 
 ## Install (Claude Code plugin)
 
@@ -120,6 +132,47 @@ cd /path/to/your/project
 Global installs use symlinks by default, so `git pull` in this repo updates
 every linked install. Project installs use copies for self-containment. Run
 `./scripts/install-opencode.sh --help` for all options.
+
+## Install (Kilo Code)
+
+This repo is directly compatible with [Kilo Code](https://kilo.ai). Kilo
+auto-discovers a `.kilo/` config directory, so there is no marketplace or
+manifest — the same install paths as opencode.
+
+**Work inside the clone** — just run `kilo` in the repo root. The `.kilo/`
+directory is auto-discovered, no install step needed:
+
+- `.kilo/agents/*.md` → the eight subagents (architect, deadwood, docbot,
+  refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
+  `mode: subagent` so Kilo registers them as subagents (dispatchable via the
+  Task tool or by the orchestrator skills).
+- `.kilo/skills/<name>/SKILL.md` → the ten orchestrator skills
+  (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
+  `triage-issues`, `simplify-sweep`, `describe-codebase`, `plan-feature`,
+  `install-agents`, `manager`),
+  loaded on demand via Kilo's `skill` tool.
+
+Both directories symlink to the canonical `agents/` and `skills/` at the repo
+root, so there is a single source of truth.
+
+**Install into other projects or globally** — run the installer script from
+the repo root:
+
+```
+# Global: symlink all 8 agents + 10 skills into ~/.config/kilo/
+./scripts/install-kilo.sh
+
+# Project: copy into a specific project's .kilo/
+cd /path/to/your/project
+/path/to/agents-library/scripts/install-kilo.sh --project
+
+# Pick specific items only
+./scripts/install-kilo.sh review-pr simplify-sweep architect
+```
+
+Global installs use symlinks by default, so `git pull` in this repo updates
+every linked install. Project installs use copies for self-containment. Run
+`./scripts/install-kilo.sh --help` for all options.
 
 ## Choose a skill
 
@@ -243,13 +296,10 @@ Code schedules, GitHub Actions, and local cron, and preserves locally customized
 agent files unless you explicitly approve an overwrite. Re-running upgrades or
 extends an installation.
 
-## Updating
+## Update (Claude Code plugin)
 
-Both tools **pin** what they fetched — Claude Code the plugin's commit SHA,
-Codex the marketplace snapshot's revision and the copy installed from it. New
-commits on `main` do not reach either until you update it.
-
-In Claude Code, one command does it:
+Claude Code **pins** the plugin's commit SHA; new commits on `main` do not
+reach an installed copy until you update it. One command does it:
 
 ```
 claude plugin update agents-library@agents-library
@@ -275,31 +325,6 @@ claude plugin update agents-library@agents-library --scope project
 
 `claude plugin list --json` shows the scope, pinned version, and install path of
 every install.
-
-In Codex, also one:
-
-```
-codex plugin marketplace upgrade agents-library
-```
-
-It re-points the marketplace snapshot at the latest `main` *and* refreshes the
-installed copy from it, so no reinstall is needed — and it lands new commits
-even when the plugin version is unchanged. Omit the name to refresh every
-configured Git marketplace. Codex records the revision it pinned as
-`last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
-Start a new Codex thread afterwards.
-
-In opencode, the update path depends on how you installed:
-
-- **Working inside the clone** — no update step; `.opencode/` is always current.
-- **Global symlink install** — `git pull` in this repo updates every linked
-  install automatically (the symlinks point here).
-- **Project copy install** — re-run the installer with `--force` to refresh:
-
-  ```
-  cd /path/to/your/project
-  /path/to/agents-library/scripts/install-opencode.sh --project --force
-  ```
 
 ### Troubleshooting
 
@@ -343,22 +368,56 @@ scopes with `claude plugin list --json`. If the entry really is gone from
 claude plugin install agents-library@agents-library --scope user
 ```
 
+## Update (Codex plugin)
+
+Codex **pins** the marketplace snapshot's revision and the copy installed from
+it; new commits on `main` do not reach either until you update it. One command
+does it:
+
+```
+codex plugin marketplace upgrade agents-library
+```
+
+It re-points the marketplace snapshot at the latest `main` *and* refreshes the
+installed copy from it, so no reinstall is needed — and it lands new commits
+even when the plugin version is unchanged. Omit the name to refresh every
+configured Git marketplace. Codex records the revision it pinned as
+`last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
+Start a new Codex thread afterwards.
+
+## Update (opencode)
+
+The update path depends on how you installed:
+
+- **Working inside the clone** — no update step; `.opencode/` is always current.
+- **Global symlink install** — `git pull` in this repo updates every linked
+  install automatically (the symlinks point here).
+- **Project copy install** — re-run the installer with `--force` to refresh:
+
+  ```
+  cd /path/to/your/project
+  /path/to/agents-library/scripts/install-opencode.sh --project --force
+  ```
+
+## Update (Kilo Code)
+
+The same three paths as opencode:
+
+- **Working inside the clone** — no update step; `.kilo/` is always current.
+- **Global symlink install** — `git pull` in this repo updates every linked
+  install automatically (the symlinks point here).
+- **Project copy install** — re-run the installer with `--force` to refresh:
+
+  ```
+  cd /path/to/your/project
+  /path/to/agents-library/scripts/install-kilo.sh --project --force
+  ```
+
 ## About the agents
 
-### The Agents
-
-| Agent | Emoji | Focus |
-|-------|-------|-------|
-| [Architect](agents/architect.md) | 🏗️ | Align code with the project's established architecture |
-| [DeadWood](agents/deadwood.md) | 🌲 | Remove dead code without changing live behavior |
-| [DocBot](agents/docbot.md) | 📝 | Fill documentation gaps without changing code |
-| [Refactor](agents/refactor.md) | 🔧 | Micro-refactors that improve clarity without changing behavior |
-| [Sentinel](agents/sentinel.md) | 🛡️ | Light security hygiene (auth guards, error leakage, hardcoded config) |
-| [TestForge](agents/testforge.md) | 🧪 | Fill test gaps without changing production code |
-| [UIDesigner](agents/uidesigner.md) | 🖌️ | Visual-design fixes (hierarchy, spacing, type, color, depth) using the project's tokens |
-| [UXPolish](agents/uxpolish.md) | 🎨 | Frontend UX friction fixes without touching contracts |
-
-Install them into any project as weekly periodic agents with
+Eight agents, one section each below — the linked file is the full
+definition, and every host loads them as subagents. Install them into any
+project as weekly periodic agents with
 [`/install-agents`](skills/install-agents/SKILL.md).
 
 ### Shared Conventions
@@ -389,6 +448,38 @@ The agents are designed to discover most of this themselves, but supplying it up
 
 Agents append durable, codebase-specific learnings to `agents/journals/<agent>.md`. These are intentionally empty here — they accumulate per project.
 
+## Architect
+
+🏗️ **[Architect](agents/architect.md)** — Aligns code with the project's established architecture without changing behavior. Use when a layer bypasses its boundary, business code reads the environment directly, a shared helper is duplicated across modules, or equivalent operations return different shapes.
+
+## DeadWood
+
+🌲 **[DeadWood](agents/deadwood.md)** — Removes dead code without changing live behavior. Use for unused imports or variables, commented-out blocks, unreachable branches, orphaned files, stale TODO/FIXME comments, or dead parameters, once nothing references them.
+
+## DocBot
+
+📝 **[DocBot](agents/docbot.md)** — Fills documentation gaps without changing code. Use when a public function, class, or contract has no doc comment, a module's purpose is not obvious from its name, or a README or architecture note went stale after a change.
+
+## Refactor
+
+🔧 **[Refactor](agents/refactor.md)** — Behavior-preserving micro-refactors. Use to extract duplicated logic into a helper, replace a magic value with a named constant, flatten deep nesting with early returns, rename a vague identifier, or simplify redundant boolean logic. Not for bug fixes.
+
+## Sentinel
+
+🛡️ **[Sentinel](agents/sentinel.md)** — Light security-hygiene fixes without changing business logic. Use for a missing auth guard on a protected endpoint, internal error details reaching clients, a hardcoded secret or config value, missing input validation, or sensitive data in logs. Hygiene only, not vulnerability research.
+
+## TestForge
+
+🧪 **[TestForge](agents/testforge.md)** — Fills test-suite gaps without changing production code. Use to cover an untested error path or edge case, replace a status-only or truthiness assertion with a specific one, share a copy-pasted fixture, or stabilize a flaky test.
+
+## UIDesigner
+
+🖌️ **[UIDesigner](agents/uidesigner.md)** — Visual-design fixes using the project's existing tokens and components. Use for competing primary actions, off-scale spacing or type, contrast below WCAG AA, dark-mode or shadow inconsistencies, or mismatched icons. Interaction states and friction belong to UXPolish.
+
+## UXPolish
+
+🎨 **[UXPolish](agents/uxpolish.md)** — Frontend UX friction fixes without touching backend behavior or API contracts. Use to add a loading, empty, or error state, a confirmation for a destructive action, keyboard handling, an accessibility label, or a clearer button label. Visual-system fixes belong to UIDesigner.
+
 ## Maintain the library
 
 ### Local checks
@@ -399,13 +490,14 @@ Run the repository's local validation before opening a PR:
 bash scripts/check.sh
 ```
 
-The same command covers all three supported platforms:
+The same command covers all four supported hosts:
 
-| Platform | Local coverage |
+| Host | Local coverage |
 | --- | --- |
 | Claude Code | Plugin/marketplace identity, GitHub source, agent and skill discovery paths, and the intentionally versionless manifest. |
 | Codex | Plugin/marketplace identity, local source path, release version, interface metadata, availability policy, and skill discovery. |
 | opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
+| Kilo Code | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests (shared with opencode via `scripts/install-host.sh`). |
 
 It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
@@ -468,7 +560,8 @@ The workflow bumps the version in `.codex-plugin/plugin.json`, commits
 generated notes. **Those release notes are the changelog** — there is no
 `CHANGELOG.md` to update. The Claude Code plugin stays versioned by commit SHA
 rather than by release tag, so both tools track `main` — see
-[Updating](#updating) for how an installed copy picks it up.
+[Update (Claude Code plugin)](#update-claude-code-plugin) for how an installed
+copy picks it up.
 
 The skill evals are **not** part of any workflow — they spawn real agent runs
 and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).

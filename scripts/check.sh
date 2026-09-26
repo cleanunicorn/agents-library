@@ -25,9 +25,9 @@ python3 scripts/test-fix-everywhere.py
 echo "Checking the README table of contents and in-page links..."
 python3 scripts/test-readme-toc.py
 
-bash scripts/check-opencode-sync.sh
-python3 scripts/test-check-opencode-sync.py
-bash scripts/test-install-opencode.sh
+bash scripts/check-host-sync.sh
+python3 scripts/test-check-host-sync.py
+bash scripts/test-install-host.sh
 python3 run_evals.py --dry-run
 
 echo "All local checks passed."
