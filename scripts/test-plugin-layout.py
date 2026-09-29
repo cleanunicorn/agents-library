@@ -230,12 +230,13 @@ class PluginLayoutTests(unittest.TestCase):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
                 self.assertTrue((skill / "references" / brief).is_file(), f"{brief} is missing")
-        coordinator = " ".join((skill / "references/coordinator-brief.md").read_text(encoding="utf-8").split())
+        brief_text = (skill / "references/coordinator-brief.md").read_text(encoding="utf-8")
+        coordinator = " ".join(brief_text.split())
         # The brief says its phase numbers are the manager's, so its headings
-        # must name phases SKILL.md actually has.
+        # must name phases SKILL.md actually has. Parsed from the raw text:
+        # `coordinator` collapses the line breaks headings need.
         heading = r"(?m)^## Phase (\d)([a-z]?) — (.+)$"
         phases = {n: title for n, _, title in re.findall(heading, (skill / "SKILL.md").read_text(encoding="utf-8"))}
-        brief_text = (skill / "references/coordinator-brief.md").read_text(encoding="utf-8")
         for number, suffix, title in re.findall(heading, brief_text):
             self.assertIn(number, phases, f"coordinator brief has a Phase {number} SKILL.md lacks")
             self.assertEqual(suffix, "", f"coordinator brief sub-numbers Phase {number}{suffix}")
