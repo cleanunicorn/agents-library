@@ -229,6 +229,16 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
                 self.assertTrue((skill / "references" / brief).is_file(), f"{brief} is missing")
         coordinator = " ".join((skill / "references/coordinator-brief.md").read_text(encoding="utf-8").split())
+        # The brief says its phase numbers are the manager's, so its headings
+        # must name phases SKILL.md actually has.
+        heading = r"(?m)^## Phase (\d)([a-z]?) — (.+)$"
+        phases = {n: title for n, _, title in re.findall(heading, (skill / "SKILL.md").read_text(encoding="utf-8"))}
+        brief_text = (skill / "references/coordinator-brief.md").read_text(encoding="utf-8")
+        for number, suffix, title in re.findall(heading, brief_text):
+            self.assertIn(number, phases, f"coordinator brief has a Phase {number} SKILL.md lacks")
+            self.assertEqual(suffix, "", f"coordinator brief sub-numbers Phase {number}{suffix}")
+            if number in ("2", "3"):
+                self.assertEqual(title, phases[number], f"coordinator Phase {number} is named differently")
         for quadrant in ("Strength", "Weakness", "Opportunity", "Threat"):
             self.assertIn(f"| {quadrant} |", coordinator, f"the SWOT table lost `{quadrant}`")
         removed = r"(?i)super manager|simplify-sweep|final reviewer|agent-types\.md|hosting-agents\.md|role: manager"

@@ -21,7 +21,7 @@ only. The decision table has that plan's line alone; an alternative you raise
 yourself is `new`, grounded in the repository, and never attributed to a plan
 that does not exist. The merge log opens with `single-plan run`.
 
-## Phase 2 — Debate and merge
+## Phase 2 — SWOT merge
 
 1. **Check the citations.** Open every `path:line` behind a load-bearing
    decision in any plan. A decision resting on a wrong citation is a
@@ -131,7 +131,7 @@ deviations:  plan changes made, with reason — or none
 pr:          draft PR URL | none — branch only | failed: <exact command and error>
 ```
 
-## Phase 4a — Validate the findings
+## Phase 4 — Validate the findings
 
 The manager hands you the review reports. Merge them: the same location with the same problem
 is one entry; keep the higher severity and every source id.
@@ -160,7 +160,7 @@ evidence behind every refutation, and a 🔴 or security finding is refuted only
 with the manager's confirmation — write evidence that survives that. A finding
 you cannot settle is `uncertain`: it is not applied, and it is not dropped.
 
-## Phase 4b — Fix what was confirmed
+## Phase 4 — Fix what was confirmed
 
 For each `confirmed`, `in-scope` finding, in severity order — the same steps
 as review-pr's own Phase 5:
