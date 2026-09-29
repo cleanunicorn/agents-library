@@ -41,10 +41,11 @@ A work item gets **at most five agents**, and most get four:
   investigate themselves. The reviewer runs `review-pr` as written; its
   fan-out is the one nested cost this skill keeps.
 
-Start agents with the host's native subagent tool, same-role agents in one
-message so they run together. Give each brief **verbatim** — never a
-rewritten summary. An agent without the sibling skill gets the absolute path of
-that skill's directory, beside this one.
+**Prefer Herdr:** with a `herdr` skill and `HERDR_ENV=1`, follow
+`references/herdr.md`; otherwise use native subagents, same-role agents in one
+message. Give each brief **verbatim** — never a rewritten summary. An agent
+without the sibling skill gets the absolute path of that skill's directory,
+beside this one.
 
 ## Rules
 
@@ -162,7 +163,7 @@ ticked; no diff → no review, report why.
 - Shipped: PR URL or branch · worktree path · N files changed, each by path
 - Gate: `<exact command>` → <result with a number, e.g. 269 tests pass>
 - Progress: N of M boxes ticked · the unticked ones, by name
-- Team: N planners · coordinator · N reviewers — <why that size> · <role>=<kind/model>, … · degradations or none
+- Team: N planners · coordinator · N reviewers — <why that size> · <role>=<kind/model>, … · herdr | native · degradations or none
 - Plan: SWOT counts per plan · N decisions from each plan · N hybrid · N new
 - Findings: N raised · N confirmed · N refuted · N uncertain · N fixed · each by id with verdict and evidence
 - Follow-ups: open items, assumed answers, deferred findings, what was not verified

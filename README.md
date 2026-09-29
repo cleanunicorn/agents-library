@@ -199,7 +199,9 @@ or a public contract — runs `review-pr`; every finding is confirmed, refuted,
 or kept open as uncertain, with evidence, before the confirmed ones are fixed,
 and the manager re-checks the fix commits itself. Planners and reviewers use a
 different agent kind (such as Claude, Codex, or opencode) from the coordinator
-when the host offers one. Several work items run one after another, each with
+when the host offers one. Inside the Herdr terminal multiplexer, with its `herdr`
+skill installed, the team runs as live agents in its own tab, so you can watch
+each one work. Several work items run one after another, each with
 its own PR. It never merges the PR.
 
 ### The Feature Planning Skill
