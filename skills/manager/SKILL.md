@@ -148,8 +148,9 @@ ticked; no diff → no review, report why.
 
 1. Run the gate one last time. Every delivery box is ticked; follow-ups and
    open items stay unticked and listed.
-2. With a draft PR: have the coordinator push, confirm the PR's head SHA
-   equals local `HEAD`, update the body from Progress, and mark it ready.
+2. Unless the run is `blocked`, with a draft PR: have the coordinator push;
+   then confirm the PR's head SHA equals local `HEAD`, update the body from
+   Progress, and mark it ready yourself.
    **Never merge.** A failed push or PR step keeps the committed branch,
    reports the exact command, and makes the run `blocked`.
 3. Confirm the worktree is clean and every artifact is in the run directory.

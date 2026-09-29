@@ -224,6 +224,8 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertRegex(root_text, r"\*\*A member that fails\*\*.{0,400}?review round that returned no report"
                                     r".{0,80}?PR stays a draft",
                          "a run with no review report must stay blocked")
+        self.assertRegex(root_text, r"## Phase 5 — .{0,200}?Unless the run is `blocked`.{0,200}?mark it ready",
+                         "Phase 5 marks a blocked run's PR ready")
         for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
