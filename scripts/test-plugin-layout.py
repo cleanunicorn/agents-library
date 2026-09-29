@@ -24,7 +24,7 @@ SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 1400,
     "describe-codebase": 1000,
     "install-agents": 1400,
-    "manager": 2700,
+    "manager": 1700,
     "plan-feature": 1300,
     "review-design": 1800,
     "review-pr": 2200,
@@ -32,44 +32,6 @@ SKILL_ROOT_WORD_CEILINGS = {
     "simplify-sweep": 1800,
     "triage-issues": 2800,
 }
-# The manager's agent-type catalogue — see test_manager_roster_is_chosen_per_item.
-# Further types are allowed; these are the ones the pipeline starts.
-MANAGER_AGENT_TYPES = ("planner", "coordinator", "reviewer", "final reviewer")
-MANAGER_CARD_LABELS = ("Does", "Writes", "Skill", "Brief", "Sees", "Never sees",
-                       "Returns", "Runs", "Floor")
-# Phrases that prescribe the team instead of letting the manager pick it. One
-# alternative per line. "two levels" and "both roles" are the topology, not
-# the roster, and README's "counterpart to `review-pr`" is a sibling skill.
-MANAGER_FIXED_ROSTER = re.compile("(?i)" + "|".join((
-    # A count in front of a roster noun. "one" is left out on purpose: the
-    # contract itself says "one obvious home → one planner".
-    r"\b(two|2|both|a pair of)\s+(\w+\s+){0,2}(planners|reviewers|plans)\b",
-    r"\b(\d+|three|four|five|six|seven|eight|nine|ten)\s+(\w+\s+){0,2}"
-    r"(planners|reviewers|reviews|team agents)\b",
-    r"\b(two|both) reviews\b",
-    r"\b(two|three) `(plan-feature|review-pr)`",
-    r"\btwo agents\b",
-    r"\ba second (planner|reviewer)\b",
-    # Exactly two of something: arity, pairs, and closed A | B labels.
-    r"\b(the other|either|neither) (plan|planner|reviewer|review)s?\b",
-    r"\bone of two\b",
-    r"\bthird agent\b",
-    r"\bpaired roles\b",
-    r"\ba pair runs\b",
-    r"\bsame-kind pair\b",
-    r"\bof a pair\b",
-    r"\bcounterpart's\b",
-    r"\b(planner|reviewer) A, B\b",
-    r"\b(planner|reviewer) A and B\b",
-    r"\b(planner|reviewer):\s+A \| B",
-    r"\bplan a and plan b\b",
-    r"\bplan_a\b",
-    r"\bplan_b\b",
-    # Fragments of main's sentences that survive no rewording of them.
-    r"\bboth get\b",
-    r"\btwo after the\b",
-)))
-
 
 class PluginLayoutTests(unittest.TestCase):
     def manifest(self, path):
@@ -234,176 +196,65 @@ class PluginLayoutTests(unittest.TestCase):
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
-    def test_manager_role_marker_agrees(self):
-        """The manager skill's two roles are told apart by one literal line.
+    def test_manager_team_stays_small(self):
+        """The manager keeps its pipeline and its agent budget.
 
-        SKILL.md's opening paragraph is the only router: the exact first line
-        makes a manager, a launch header without it fails closed, anyone else
-        is the super manager. The super manager sends that line and the launch
-        brief opens with it. A second router in a reference, or a sender that
-        puts anything else on the line, is how a started manager ends up
-        starting managers of its own.
-        """
-        marker = "role: manager"
-        skill = ROOT / "skills/manager"
-        texts = {name: (skill / name).read_text(encoding="utf-8")
-                 for name in ("SKILL.md", "references/super-manager.md",
-                              "references/manager-brief.md")}
-        router = " ".join(texts["SKILL.md"].split())
-        self.assertRegex(router, rf"A prompt whose first line is exactly `{marker}` makes you a \*\*manager\*\*",
-                         "SKILL.md no longer routes on the exact first line")
-        self.assertRegex(router, r"without that first line is a malformed launch: start nobody",
-                         "SKILL.md no longer fails closed on a malformed launch")
-        self.assertRegex(router, r"Anyone else is the \*\*super manager\*\*",
-                         "SKILL.md no longer has a default role")
-        for name in ("references/super-manager.md", "references/manager-brief.md"):
-            self.assertNotRegex(" ".join(texts[name].split()),
-                                r"(?i)go back to `SKILL\.md`|makes you (a|the) \*\*",
-                                f"{name} decides a role; SKILL.md is the only router")
-        # Every fenced block that carries the marker is a launch form: the
-        # marker is its first line, alone.
-        launch_forms = 0
-        for name, text in texts.items():
-            for block in re.findall(r"(?ms)^[ \t]*```\n(.*?)^[ \t]*```", text):
-                if marker in block:
-                    launch_forms += 1
-                    self.assertEqual(block.splitlines()[0].strip(), marker,
-                                     f"{name}: a launch form does not open with the bare marker")
-        self.assertGreaterEqual(launch_forms, 2, "expected the brief header and the compact launch form")
-        # Nothing shares the marker's line when it is quoted inline as something to send.
-        for name, text in texts.items():
-            with self.subTest(file=name):
-                self.assertIn(marker, text, f"{name} no longer names `{marker}`")
-                self.assertEqual(re.findall(rf"`{marker} [^`]*`", text), [],
-                                 f"{name} sends the marker with a suffix")
-
-    def test_manager_hosting_falls_back_when_a_create_fails(self):
-        """A failed Herdr create falls to native subagents, at both levels.
-
-        `hosting-agents.md` is the only file both roles read for hosting, so it
-        owns this rule. "Prefer Herdr, else native subagents" answers a host
-        that has no Herdr; it does not answer a `workspace create` or
-        `tab create` that failed, and without this rule that run is blocked.
-        """
-        hosting = " ".join((ROOT / "skills/manager/references/hosting-agents.md")
-                           .read_text(encoding="utf-8").split())
-        self.assertRegex(hosting, r"`herdr workspace create` or `herdr tab create` fails"
-                                  r".{0,200}?native subagents",
-                         "a failed create no longer falls back to native subagents")
-        self.assertRegex(hosting, r"`herdr tab create` fails"
-                                  r".{0,250}?keep the recorded manager workspace id",
-                         "a failed team tab must not lose its parent workspace id")
-
-    def test_manager_agent_type_cards(self):
-        """The manager's catalogue defines every type it can start, the same way.
-
-        `references/agent-types.md` carries one card per type with the same
-        labels on every card, exactly one type that writes, a brief that
-        exists, and floors that still say who may own each responsibility.
-        """
-        skill = ROOT / "skills/manager"
-        catalogue = skill / "references/agent-types.md"
-        self.assertTrue(catalogue.is_file(), "the agent-type catalogue is missing")
-        catalogue_lines = catalogue.read_text(encoding="utf-8").splitlines()
-        rows = [[cell.strip() for cell in line.strip().strip("|").split("|")]
-                for line in catalogue_lines if line.lstrip().startswith("|")]
-        header = next((row for row in rows if row and row[0] == "Label"), None)
-        self.assertIsNotNone(header, "agent-types.md has no `| Label | <type> | …` card table")
-        types = header[1:]
-        for name in MANAGER_AGENT_TYPES:
-            self.assertIn(name, types, f"{name}: a type the pipeline starts has no card")
-        cards = {}
-        for row in rows:
-            if row[0] in MANAGER_CARD_LABELS:
-                # zip would silently drop a cell that a stray pipe split off.
-                self.assertEqual(len(row), len(types) + 1, f"`{row[0]}` row has {len(row) - 1} cells")
-                self.assertNotIn(row[0], cards, f"`{row[0]}` appears on the cards twice")
-                cards[row[0]] = dict(zip(types, row[1:]))
-        for label in MANAGER_CARD_LABELS:
-            with self.subTest(label=label):
-                self.assertIn(label, cards, f"no `{label}` row on the cards")
-                for name in types:
-                    self.assertTrue(cards[label].get(name), f"{name}: `{label}` is empty")
-        # A blanket prohibition contradicts the card's own `Sees` cell: what an
-        # agent may see was produced earlier in the run too.
-        for name in types:
-            self.assertNotRegex(cards["Never sees"][name], r"(?i)\b(anything|everything|nothing)\b",
-                                f"{name}: `Never sees` must list artifacts, not forbid the whole run")
-        # The floors are who may own a responsibility. These are their
-        # load-bearing words, not the sentences around them.
-        floors = {"planner": r"coordinator did not write",
-                  "reviewer": r"neither planned nor implemented",
-                  "final reviewer": r"did not write"}
-        for name, owner in floors.items():
-            self.assertRegex(cards["Floor"][name], owner, f"{name}: the floor lost its eligible owner")
-        catalogue_text = " ".join(" ".join(catalogue_lines).split())
-        for clause, why in ((r"never writes the plan it would then merge", "a failed sole planner"),
-                            (r"`reuse:<label>`", "a Phase 4 reviewer reused for the final pass"),
-                            (r"nothing left to check", "a final review with no new commits"),
-                            (r"no delegation at all", "a host that cannot delegate")):
-            self.assertRegex(catalogue_text, clause, f"the Floors section no longer covers {why}")
-        writers = [name for name in types if re.match(r"\W*yes\b", cards["Writes"][name], re.I)]
-        self.assertEqual(writers, ["coordinator"], "exactly one type writes to the worktree")
-        for name in types:
-            brief = re.search(r"`([\w-]+\.md)`", cards["Brief"][name])
-            self.assertIsNotNone(brief, f"{name}: `Brief` names no file")
-            self.assertTrue((skill / "references" / brief.group(1)).is_file(),
-                            f"{name}: brief {brief.group(1)} does not exist")
-
-    def test_manager_roster_is_chosen_per_item(self):
-        """The manager sizes its team to the work item; no count is prescribed.
-
-        SKILL.md points at the catalogue and keeps the rules that never
-        depended on a count. A phrase that fixes the old roster — "two
-        planners", "a third agent", `plan_a` — is how the prescribed team comes
-        back, one copy-edit at a time. To say how many agents a run had, name
-        the roster ("the roster's planners", "every plan"), not a number.
+        The skill was collapsed from a super manager over per-item managers,
+        with a roster catalogue and a simplify pass and a fresh final reviewer,
+        to one manager and a capped team. This guards both halves: the stages
+        the user asked to keep (SWOT merge, implementation, independent review,
+        validated fixes) and the cap, so the removed layers do not creep back
+        one copy-edit at a time.
         """
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
-        self.assertIn("references/agent-types.md", root_text, "SKILL.md does not point at the catalogue")
-        for rule in ("Single writer.", "Independence.", "Re-run the gate yourself.", "Honest ledger."):
+        for rule in ("Single writer.", "Independence.", "Re-run the gate yourself."):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
-        self.assertRegex(root_text, r"\*\*Pick the roster\.\*\*.{0,600}?\broster record\b.{0,600}?\breason\b",
-                         "Phase 0 no longer records the roster and its reason")
-        catalogue_text = " ".join((skill / "references/agent-types.md").read_text(encoding="utf-8").split())
-        self.assertRegex(catalogue_text,
-                         r"(?i)kind means.{0,120}claude.{0,80}codex.{0,80}opencode.{0,80}kilo",
-                         "the catalogue must distinguish host agent kinds from roster roles")
-        self.assertRegex(catalogue_text, r"across the whole roster.{0,200}at least two kinds.{0,200}use both",
-                         "the roster must use distinct agent kinds when the host offers them")
-        self.assertRegex(root_text, r"- Team: roster\b", "the team block no longer reports the roster")
-        # Phase 7 may hand the final pass to a Phase 4 reviewer, so a rule that
-        # holds in every phase cannot say every final reviewer is new to the run.
-        self.assertIn("`reuse:<label>`", root_text, "Phase 7 lost the reuse route")
-        self.assertNotRegex(root_text, r"(?<!fresh )final reviewer has done nothing else",
-                            "rule 2 forbids the reuse route Phase 7 allows")
-        # SKILL.md still lets a manager run every pass itself on a host with no
-        # delegation, where the independence floors cannot be met; the rule that
-        # makes falling below a floor `blocked` has to name that exception.
-        if re.search(r"unless the host has no delegation", root_text):
-            self.assertRegex(root_text, r"\*\*A member that fails\.\*\*.{0,400}?below a floor"
-                                        r".{0,200}?no delegation",
-                             "rule 10 blocks the no-delegation fallback SKILL.md still offers")
-
-        guides = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "docs/evals.md",
-                  skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))]
-        for path in guides:
+        for stage in ("## Phase 2 — SWOT merge", "## Phase 3 — Implement",
+                      "## Phase 4 — Review, validate, fix"):
+            self.assertIn(stage, root_text, f"SKILL.md lost `{stage}`")
+        self.assertIn("**at most five agents**", root_text, "SKILL.md lost its agent cap")
+        # The cap is the sum of the team table, so pin each row's count too.
+        for role, count in (("planner", r"1 or 2"), ("coordinator", r"1"),
+                            ("reviewer", r"1, or 2 for high risk")):
+            self.assertRegex(root_text, rf"\| {role} \| {count} \|", f"the `{role}` count in the team table changed")
+        self.assertRegex(root_text, r"(?i)start no new reviewer", "the re-check must not start a reviewer")
+        # With one reviewer by default, a failed reviewer must not let an
+        # unreviewed PR be marked ready.
+        self.assertRegex(root_text, r"\*\*A member that fails\*\*.{0,400}?review round that returned no report"
+                                    r".{0,80}?PR stays a draft",
+                         "a run with no review report must stay blocked")
+        self.assertRegex(root_text, r"## Phase 5 — .{0,200}?Unless the run is `blocked`.{0,200}?mark it ready",
+                         "Phase 5 marks a blocked run's PR ready")
+        for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
+            with self.subTest(brief=brief):
+                self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
+                self.assertTrue((skill / "references" / brief).is_file(), f"{brief} is missing")
+        brief_text = (skill / "references/coordinator-brief.md").read_text(encoding="utf-8")
+        coordinator = " ".join(brief_text.split())
+        # The brief says its phase numbers are the manager's, so its headings
+        # must name phases SKILL.md actually has. Parsed from the raw text:
+        # `coordinator` collapses the line breaks headings need.
+        heading = r"(?m)^## Phase (\d)([a-z]?) — (.+)$"
+        phases = {n: title for n, _, title in re.findall(heading, (skill / "SKILL.md").read_text(encoding="utf-8"))}
+        for number, suffix, title in re.findall(heading, brief_text):
+            self.assertIn(number, phases, f"coordinator brief has a Phase {number} SKILL.md lacks")
+            self.assertEqual(suffix, "", f"coordinator brief sub-numbers Phase {number}{suffix}")
+            if number in ("2", "3"):
+                self.assertEqual(title, phases[number], f"coordinator Phase {number} is named differently")
+        for quadrant in ("Strength", "Weakness", "Opportunity", "Threat"):
+            self.assertIn(f"| {quadrant} |", coordinator, f"the SWOT table lost `{quadrant}`")
+        removed = r"(?i)super manager|simplify-sweep|final reviewer|agent-types\.md|hosting-agents\.md|role: manager"
+        for path in (skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))):
             with self.subTest(path=str(path.relative_to(ROOT))):
-                text = path.read_text(encoding="utf-8")
-                if path.name == "README.md":
-                    # README also describes the sibling skills ("Ten specialized
-                    # reviewers" is review-pr); only its manager section is a copy.
-                    section = re.search(r"(?ms)^#{2,3} The Manager Skill\n.*?(?=^#{2,3} |\Z)", text)
-                    self.assertIsNotNone(section, "README.md lost its manager section")
-                    text = section.group(0)
-                if path.name == "evals.md":
-                    # Its table rows describe fixtures ("two planted plans"),
-                    # not the team; the prose below them describes the pipeline.
-                    text = "\n".join(line for line in text.splitlines()
-                                     if not line.lstrip().startswith("|"))
-                found = MANAGER_FIXED_ROSTER.search(" ".join(text.split()))
-                self.assertIsNone(found, f"a fixed roster is back — found {found and found.group(0)!r}")
+                text = " ".join(path.read_text(encoding="utf-8").split())
+                found = re.search(removed, text)
+                self.assertIsNone(found, f"a removed layer is back — found {found and found.group(0)!r}")
+        # The manifests describe the manager to users who never open SKILL.md.
+        for path in (ROOT / ".codex-plugin/plugin.json", *sorted((ROOT / ".claude-plugin").glob("*.json"))):
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                found = re.search(r"(?i)final review|super.?manager|simplify pass", path.read_text(encoding="utf-8"))
+                self.assertIsNone(found, f"a manifest still sells a removed stage — found {found and found.group(0)!r}")
 
 
 if __name__ == "__main__":

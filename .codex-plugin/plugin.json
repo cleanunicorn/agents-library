@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Agents Library",
     "shortDescription": "Feature planning, coding review, and triage skills.",
-    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; installing the library's maintenance agents into a project on a periodic schedule; and managing one work item end to end through independent plans, a SWOT merge, implementation, parallel reviews, verified fixes, and a final review.",
+    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; installing the library's maintenance agents into a project on a periodic schedule; and managing one work item end to end through independent plans, a SWOT merge, implementation, parallel reviews, and verified fixes.",
     "developerName": "Daniel Luca",
     "category": "Developer Tools",
     "capabilities": [

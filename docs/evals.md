@@ -172,49 +172,21 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head` (one trivial PR, one conflicting) | batch branch exists with a `Merge PR #…` commit; conflict reported, never half-resolved; no-remote fixture exercises the Phase 0 guardrail |
-| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug, a variant whose required gate is absent, a `herdr` shim logging calls to `.git/herdr-calls.log` that hands out one workspace id per create, a copy whose caller is a started manager in `w7` and whose rules carry an ask-first line, and that copy again one commit past a reviewed tag | a roster is picked per work item, with a reason on the same line as a type, a stated cost, and a named final-review outcome; a roster of one reviewer with `final: reuse:A` hands the final pass to that reviewer and starts nobody; merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; two work items start two managers in two workspaces, and one item still reports through the super manager; a manager's team runs in a tab of its own workspace and each level closes only what it created; a started manager raises its question with no team agent started; the status lists each pending question with its manager and workspace above one header and one `done \| blocked \| in progress` team block per manager; an answer is forwarded to the one manager that asked; main never touched |
+| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug; a variant whose required gate is absent | merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the hand-back block reports the team, SWOT counts, and findings; a missing gate blocks; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 
 The manager suite is mostly slices of the pipeline, sized to the default
 900-second trial. Its one end-to-end case, `mg-h3`, nests a `plan-feature`
-run per planner, a `review-pr` run per reviewer and for the final review, and
-a `simplify-sweep` — how many is the roster the manager picks — so it carries
-its own `"timeout": 3600` and a full sweep gives it that without a flag. It
-is also the most expensive case in the repo — scope it in with `--case mg-h3`
-on purpose.
+run per planner and a `review-pr` run per reviewer, so it carries its own
+`"timeout": 3600` and a full sweep gives it that without a flag. It is also
+the most expensive case in the repo — scope it in with `--case mg-h3` on
+purpose.
 
-The roster slices assert a count only where the prompt names the roster or the
-catalogue's signals settle it (one obvious home → one planner). `mg-h15` asks
-for the roster record of a small and a risky work item, starts nothing, and
-checks what the table above lists, plus that the two costs differ and the
-small item gets one planner. `mg-h16` is the coordinator step on the one plan
-a roster called for — a *single-plan run* with no invented second side — and
-`mg-h17` is the same step on three plans, the third given inline in the
-prompt. `mg-h18` is a started manager whose roster record reads one reviewer
-and `final: reuse:A`, one commit past the reviewed tag: the shim's log must
-show the final-pass brief sent to reviewer A and no agent started, and the
-block must report `reuse:A`, not fresh. `mg-h8` still asserts exactly two
-planner starts, because its prompt names that roster.
-
-The two-level slices are compositional: `mg-h7` covers the super manager
-starting one named manager per work item, each prompted once with the bare
-`role: manager` marker first and a complete launch header — inline, or in the
-launch file the prompt names; `mg-h8` a started manager hosting its team in
-one tab and closing it; `mg-h13` a launch whose marker is displaced, which
-must start nobody; `mg-h14` a teardown that crosses both levels in order —
-the manager confirms first, then its workspace is closed, and the super
-manager never closes the tab itself. The relay is tested in pieces, because a
-trial is one turn: `mg-h9` is a started manager that must raise a complete,
-pending `<slug>-Q1` record and go `blocked` with no team agent started,
-`mg-h10` surfaces a pending question above the supplied blocks copied
-verbatim, `mg-h11` forwards the verbatim answer to the one manager and clears
-the question only after reading the scripted manager's acknowledgement, and
-`mg-h12` is the manager's side — an answer already given is recorded and
-never asked again. The shim's log verifies launch counts, names, ids,
-ordering, and cleanup in those cases, on the Herdr path only. Nothing here
-proves that a live answer arrives on a later turn and a real manager resumes,
-or that a real manager closes its tab on teardown: those replies are the
-shim's.
+`mg-h1` stops at the merged plan; `mg-h16` is the coordinator step on one
+plan — a *single-plan run* with no invented second side — and `mg-h17` the
+same step on three plans, the third given inline. `mg-h4` shows the team and
+order for two work items and starts nothing; `mg-h5` validates two reviewer
+findings, one false; `mg-h6` blocks on a missing gate.
 
 `mg-h3` is an **outcome** test, not an orchestration test. The runner keeps
 the agent's text and the names of the skills it invoked, and saves only the

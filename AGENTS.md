@@ -282,20 +282,14 @@ loads and executes.
   then add *decide* → *act* → *summarize* phases, acting only on what was
   approved. install-agents is a linear installer with no fan-out (orient → one
   confirmation → install via script → schedule → ledger). manager is the
-  delivery pipeline that composes the others, in two roles. The invoking
-  agent is the super manager: it starts one manager per work item, each in
-  its own workspace, is the user's only contact, and reports a questions
-  section plus one header and one fixed status block per manager. Each
-  manager runs: orient, ask early, and pick a roster sized to the work item
-  from the agent-type catalogue (`references/agent-types.md` — planning warning:
-  40 direct and nested agent starts) → parallel planners (plan-feature) → a coordinator's SWOT merge
-  → implement → parallel reviewers (review-pr) → validate and fix → simplify
-  (simplify-sweep) → final review of what was committed since the last review
-  → hand back in the fixed per-team status block. A manager's questions are
-  records the super manager relays and answers by id. Planners and reviewers
-  only read; one agent writes at a time; the team runs in a sub-space of its
-  manager's workspace, never the super manager's, and each level closes only
-  what it created.
+  delivery pipeline that composes the others. The invoking agent is the
+  manager and the user's only contact; it starts at most five agents per work
+  item: orient and ask early → one or two planners (plan-feature, without its
+  own fan-out) → a coordinator's SWOT merge → implement → one reviewer, or
+  two for high-risk changes (review-pr) → validate and fix, with the manager
+  auditing refutations and re-checking the fix commits itself → hand back in
+  a fixed status block. Several work items run one after another. Planners
+  and reviewers only read; one agent writes at a time.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -342,13 +336,9 @@ loads and executes.
   …}` verdicts for triage-issues; `{planner, plan, decisions}` plan records,
   `{id, quadrant, claim, evidence, affects, action}` SWOT records, `{topic,
   plan_<label> per plan, chosen, rule, reason, swot_refs}` decision records,
-  `{roster, signals, reason, cost, changes}` roster records, and
-  `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
-  action, sweep, status}` validation records, `{id, phase, question, why,
-  options, default, blocks, status, answer}` question records, and
-  `{work_item, slug, manager, workspace, run_dir, state, questions,
-  last_summary, closed}` super-manager ledger rows for manager, defined in
-  its `references/` files; the
+  and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
+  action, sweep, status}` validation records for manager, defined in its
+  `references/` files; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
