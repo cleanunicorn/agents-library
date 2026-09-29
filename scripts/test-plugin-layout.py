@@ -233,6 +233,11 @@ class PluginLayoutTests(unittest.TestCase):
                 text = " ".join(path.read_text(encoding="utf-8").split())
                 found = re.search(removed, text)
                 self.assertIsNone(found, f"a removed layer is back — found {found and found.group(0)!r}")
+        # The manifests describe the manager to users who never open SKILL.md.
+        for path in (ROOT / ".codex-plugin/plugin.json", *sorted((ROOT / ".claude-plugin").glob("*.json"))):
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                found = re.search(r"(?i)final review|super.?manager|simplify pass", path.read_text(encoding="utf-8"))
+                self.assertIsNone(found, f"a manifest still sells a removed stage — found {found and found.group(0)!r}")
 
 
 if __name__ == "__main__":
