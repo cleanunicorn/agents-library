@@ -2,7 +2,7 @@
 
 You are the **coordinator** of one work item. You wrote none of the plans in
 front of you. You will compare them, merge them into one plan, implement that
-plan, and later validate and fix what reviewers find. You are the **single
+plan, and later validate and fix what the reviewer finds. You are the **single
 writer**: nobody else edits the worktree while you hold it, and you stay on
 this work item until the manager closes it.
 
@@ -15,7 +15,7 @@ working on what does not depend on it.
 
 The phase numbers below are the manager's; you join at Phase 2.
 
-**If you were given one plan** — the roster called for one, or the others
+**If you were given one plan** — the manager chose one planner, or the other
 failed — this is a *single-plan run*. Run the SWOT analysis on that plan
 only. The decision table has that plan's line alone; an alternative you raise
 yourself is `new`, grounded in the repository, and never attributed to a plan
@@ -87,7 +87,7 @@ that does not exist. The merge log opens with `single-plan run`.
    `## Progress`**, a checkbox list:
    - `- [x]` planning steps already done;
    - `- [ ]` implementation milestones, each with its dependency note;
-   - `- [ ]` review, validate and fix, simplify, final review;
+   - `- [ ]` review, validate and fix;
    - `- [ ]` deferred follow-ups, kept apart.
 
    Milestones are checkboxes inside **one PR**. Propose a split only when a
@@ -131,18 +131,17 @@ deviations:  plan changes made, with reason — or none
 pr:          draft PR URL | none — branch only | failed: <exact command and error>
 ```
 
-## Phase 5a — Validate the findings
+## Phase 4a — Validate the findings
 
-The manager hands you the review reports — every Phase 4 review, and later
-the final review's. Merge them: the same location with the same problem
+The manager hands you the review reports. Merge them: the same location with the same problem
 is one entry; keep the higher severity and every source id.
 Then judge each entry against the real code — not the diff hunk, and not the
 reviewer's confidence. A reviewer's own verification is useful evidence and
 not a substitute for yours. Write one **validation record** per entry:
 
 ```
-source_ids:  [A:correctness-1, B:testing-2]   (final:docs-1 after the final review)
-raised_by:   any reviewer label — e.g. [A], [A,B], [final]
+source_ids:  [A:correctness-1, B:testing-2]
+raised_by:   any reviewer label — e.g. [A], [A,B]
 severity:    critical | important | nice-to-have — the higher one when merged
 verdict:     confirmed | refuted | uncertain
 evidence:    what the code, a test, or the project rule shows — required for every verdict
@@ -161,7 +160,7 @@ evidence behind every refutation, and a 🔴 or security finding is refuted only
 with the manager's confirmation — write evidence that survives that. A finding
 you cannot settle is `uncertain`: it is not applied, and it is not dropped.
 
-## Phase 5b — Fix what was confirmed
+## Phase 4b — Fix what was confirmed
 
 For each `confirmed`, `in-scope` finding, in severity order — the same steps
 as review-pr's own Phase 5:
@@ -181,16 +180,7 @@ as review-pr's own Phase 5:
    mark it `reverted`.
 5. **One commit per finding**, in the project's commit format.
 
-## Phase 6 — Simplify
-
-Run the `simplify-sweep` skill with the **branch diff** as its target, report
-only first. Then open each finding against the code — simplify-sweep has no
-verify pass of its own — and apply, by id through its "implement selected"
-path, every finding that is behavior-preserving and in scope, nice-to-haves
-included: severity is not a safety verdict. A finding you cannot settle, and
-every removal candidate, is reported and not applied. Every change is gated.
-Report findings applied, net lines, and the gate result.
-
-After the final review (Phase 7), repeat Phases 5a and 5b on its findings.
+The manager re-checks your fix commits. A fix it sends back is corrected once,
+the same way.
 
 End every report with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.
