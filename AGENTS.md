@@ -288,7 +288,9 @@ loads and executes.
   own fan-out) → a coordinator's SWOT merge → implement → one reviewer, or
   two for high-risk changes (review-pr) → validate and fix, with the manager
   auditing refutations and re-checking the fix commits itself → hand back in
-  a fixed status block. Several work items run one after another. Planners
+  a fixed status block. Inside Herdr (its `herdr` skill present, `HERDR_ENV=1`)
+  the team runs as live agents in one tab (`references/herdr.md`); otherwise
+  as native subagents. Several work items run one after another. Planners
   and reviewers only read; one agent writes at a time.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
