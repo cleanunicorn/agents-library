@@ -215,6 +215,11 @@ class PluginLayoutTests(unittest.TestCase):
             self.assertIn(stage, root_text, f"SKILL.md lost `{stage}`")
         self.assertIn("**at most five agents**", root_text, "SKILL.md lost its agent cap")
         self.assertRegex(root_text, r"(?i)start no new reviewer", "the re-check must not start a reviewer")
+        # With one reviewer by default, a failed reviewer must not let an
+        # unreviewed PR be marked ready.
+        self.assertRegex(root_text, r"\*\*A member that fails\*\*.{0,400}?review round that returned no report"
+                                    r".{0,80}?PR stays a draft",
+                         "a run with no review report must stay blocked")
         for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")

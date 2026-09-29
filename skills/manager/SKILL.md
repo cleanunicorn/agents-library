@@ -17,9 +17,6 @@ re-check of fix commits in Phase 4, which you did not write. On a host with no
 delegation at all, follow the briefs yourself in sequence and report the lost
 independence in the hand-back.
 
-The sibling skills do the planning and reviewing; this skill decides who runs
-them, on what, and what happens to their output.
-
 ## The team
 
 A work item gets **at most five agents**, and most get four:
@@ -74,7 +71,8 @@ that skill's directory, beside this one.
 8. **A member that fails** is retried once, on another kind where one exists;
    then continue without it, flagged, confidence 🟡 at best. A failed sole
    planner leaves the run `blocked`: the coordinator never merges a plan it
-   wrote.
+   wrote. So does a review round that returned no report: the PR stays a
+   draft.
 
 ## Phase 0 — Orient
 
