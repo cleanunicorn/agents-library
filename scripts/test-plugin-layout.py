@@ -214,6 +214,10 @@ class PluginLayoutTests(unittest.TestCase):
                       "## Phase 4 — Review, validate, fix"):
             self.assertIn(stage, root_text, f"SKILL.md lost `{stage}`")
         self.assertIn("**at most five agents**", root_text, "SKILL.md lost its agent cap")
+        # The cap is the sum of the team table, so pin each row's count too.
+        for role, count in (("planner", r"1 or 2"), ("coordinator", r"1"),
+                            ("reviewer", r"1, or 2 for high risk")):
+            self.assertRegex(root_text, rf"\| {role} \| {count} \|", f"the `{role}` count in the team table changed")
         self.assertRegex(root_text, r"(?i)start no new reviewer", "the re-check must not start a reviewer")
         # With one reviewer by default, a failed reviewer must not let an
         # unreviewed PR be marked ready.
