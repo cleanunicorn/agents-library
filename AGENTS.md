@@ -289,7 +289,8 @@ loads and executes.
   two for high-risk changes (review-pr) → validate and fix, with the manager
   auditing refutations and re-checking the fix commits itself → hand back in
   a fixed status block. Inside Herdr (its `herdr` skill present, `HERDR_ENV=1`)
-  the team runs as live agents in one tab (`references/herdr.md`); otherwise
+  each member runs as a live agent in its own tab of the current
+  workspace (`references/herdr.md`); otherwise
   as native subagents. Several work items run one after another. Planners
   and reviewers only read; one agent writes at a time.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
