@@ -4,8 +4,10 @@ Use this file when the host lists a `herdr` skill and its precondition holds:
 `test "${HERDR_ENV:-}" = 1 && command -v herdr`. Load the `herdr` skill
 first; it and the installed binary (`herdr <group>` with no subcommand prints
 its syntax) overrule any command below. This file is the explicit topology
-request the `herdr` skill asks for: the team gets its own tab, rooted at the
-worktree, not sibling panes beside you.
+request the `herdr` skill asks for: each team member gets its own tab in your
+current workspace, rooted at the worktree — not a sibling pane beside you, not
+a new workspace. One tab per member keeps every agent full-size and readable,
+and labels keep them grouped by work item in the tab bar.
 
 Herdr adds no roles and changes no rule in `SKILL.md`; it replaces only the
 transport. Its gain is live agents of different kinds side by side, which the
@@ -16,19 +18,18 @@ user can watch and which you can prompt again without a resume mechanism.
 1. **Pick kinds.** `herdr agent` lists the kinds this Herdr knows; use the
    ones installed here. Give planners and reviewers a kind different from the
    coordinator's.
-2. **Create the team tab** once, after the Phase 0 worktree exists:
+2. **One tab per live member**, created when that member is needed (after
+   the Phase 0 worktree exists), in your own workspace only:
    `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <worktree>
-   --label "<slug>-team" --no-focus`. Record `.result.tab.tab_id` and
-   `.result.root_pane.pane_id` in the run directory.
-3. **One pane per live member**, inside that tab only:
-   `herdr pane split --pane <a pane in the team tab> --direction right|down
-   --cwd <worktree> --no-focus`, id at `.result.pane.pane_id`. The first
-   member takes the root pane. Never `--current`, never your own pane.
-4. **Start each member** with a name prefixed by the work item, unique among
-   live agents: `herdr agent start <slug>-planner-a --kind <kind> --pane
-   <pane id>`. On `agent_not_ready`, read the pane before prompting.
+   --label "<slug>-<role>-<label>" --no-focus`. Record `.result.tab.tab_id`
+   and `.result.root_pane.pane_id` per member in the run directory. Never
+   split your own pane, never `--current`, never a new workspace.
+3. **Start each member** in its tab's root pane with the same name as the
+   tab label, unique among live agents: `herdr agent start
+   <slug>-planner-a --kind <kind> --pane <root pane id>`. On
+   `agent_not_ready`, read the pane before prompting.
 
-`tab create`, `pane split`, or `agent start` failing falls back to native
+`tab create` or `agent start` failing falls back to native
 subagents for that member, retried once as rule 8 says; record the
 degradation. Parse every id from JSON; never derive one from a listing.
 
@@ -42,9 +43,10 @@ degradation. Parse every id from JSON; never derive one from a listing.
   agent wait` each. `prompt --wait` is fine for a member working alone.
 - **The coordinator stays live** from Phase 2 to Phase 5: each later phase is
   a further `herdr agent prompt` to the same name, so it keeps its context.
-- **Planners are done after Phase 1.** Close the panes you created for them
-  once their records are saved, so reviewers get fresh panes and never share
-  a pane's scrollback with a plan.
+- **Planners are done after Phase 1.** Close the tabs you created for them
+  (`herdr tab close <recorded tab id>`) once their records are saved, so the
+  tab bar shows only live members and reviewers never share scrollback with
+  a plan.
 - **`blocked`** means an approval or a question UI. Read it with `herdr agent
   read <name> --source recent-unwrapped`; relay it to the user as rule 7 says
   and deliver the answer with `herdr agent send-keys` or `agent prompt`.
@@ -56,6 +58,7 @@ degradation. Parse every id from JSON; never derive one from a listing.
 ## Tear down
 
 At Phase 5, after the records are in the run directory: `herdr tab close
-<recorded tab id>`. Close only the tab and panes you created and recorded —
+<recorded tab id>` for every member tab still open. Close only the tabs you
+created and recorded —
 never by label, never from a listing, never a workspace, never
 `herdr server stop`.
