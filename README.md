@@ -471,7 +471,8 @@ For Git errors, use [Git access](#git-access-https-ssh-and-prerequisites).
 intended project to list available skills. Check that the installer succeeded
 and files exist in `~/.config/opencode/{agents,skills}/` for a
 global install or `.opencode/{agents,skills}/` in the project. These are
-[opencode's discovery directories](https://dev.opencode.ai/docs/config/).
+[opencode's agent directories](https://opencode.ai/docs/agents/) and
+[skill directories](https://opencode.ai/docs/skills/).
 Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above,
 then restart opencode in the intended project.
 
