@@ -18,6 +18,7 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 - [Update (Codex plugin)](#update-codex-plugin)
 - [Update (opencode)](#update-opencode)
 - [Update (Kilo Code)](#update-kilo-code)
+- [Troubleshooting](#troubleshooting)
 - [About the agents](#about-the-agents)
 - [Architect](#architect)
 - [DeadWood](#deadwood)
@@ -42,31 +43,16 @@ codex plugin add agents-library@agents-library
 Codex's in-thread plugin UI takes this repository's URL,
 `https://github.com/cleanunicorn/agents-library`, in place of the first command.
 
-If you registered the marketplace before this repo carried a Codex manifest,
-`marketplace add` is a no-op (`alreadyAdded`) and leaves you on the old pinned
-snapshot, so the second command fails:
-
-```
-Error: plugin `agents-library` was not found in marketplace `agents-library`
-```
-
-Refresh the snapshot first, then install:
-
-```
-codex plugin marketplace upgrade agents-library
-```
-
-Either way Codex records it as a Git marketplace named `agents-library` under
-`[marketplaces.agents-library]` in `~/.codex/config.toml` — that name is what
-updates it later — and `codex plugin list -m agents-library` reports whether the
-plugin itself is installed. Registering the marketplace on its own does not
-install it.
+Registering the marketplace does not install the plugin. Check installation
+with `codex plugin list -m agents-library --json`.
 
 The marketplace manifest is
 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json); the
 plugin metadata is [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 Start a new Codex thread after installing so the skills load. To pick up later
 changes, see [Update (Codex plugin)](#update-codex-plugin).
+
+Something failed? See [Troubleshooting Codex](#troubleshooting-codex).
 
 ## Install (Claude Code plugin)
 
@@ -94,7 +80,16 @@ claude plugin marketplace add cleanunicorn/agents-library
 claude plugin install agents-library@agents-library
 ```
 
+Something failed? See [Troubleshooting Claude Code](#troubleshooting-claude-code).
+
 ## Install (opencode)
+
+With Git, Bash, and `opencode` installed, first clone the library via HTTPS:
+
+```sh
+git clone https://github.com/cleanunicorn/agents-library.git
+cd agents-library
+```
 
 This repo is directly compatible with [opencode](https://opencode.ai).
 
@@ -133,7 +128,16 @@ Global installs use symlinks by default, so `git pull` in this repo updates
 every linked install. Project installs use copies for self-containment. Run
 `./scripts/install-opencode.sh --help` for all options.
 
+Something failed? See [Troubleshooting opencode](#troubleshooting-opencode).
+
 ## Install (Kilo Code)
+
+With Git, Bash, and `kilo` installed, first clone the library via HTTPS:
+
+```sh
+git clone https://github.com/cleanunicorn/agents-library.git
+cd agents-library
+```
 
 This repo is directly compatible with [Kilo Code](https://kilo.ai). Kilo
 auto-discovers a `.kilo/` config directory, so there is no marketplace or
@@ -173,6 +177,8 @@ cd /path/to/your/project
 Global installs use symlinks by default, so `git pull` in this repo updates
 every linked install. Project installs use copies for self-containment. Run
 `./scripts/install-kilo.sh --help` for all options.
+
+Something failed? See [Troubleshooting Kilo Code](#troubleshooting-kilo-code).
 
 ## Choose a skill
 
@@ -285,120 +291,214 @@ extends an installation.
 
 ## Update (Claude Code plugin)
 
-Claude Code **pins** the plugin's commit SHA; new commits on `main` do not
-reach an installed copy until you update it. One command does it:
+Update the installed plugin, then restart Claude Code to apply the changes:
 
-```
+```sh
 claude plugin update agents-library@agents-library
 ```
 
-It refreshes the marketplace itself before resolving, so a separate
-`claude plugin marketplace update agents-library` is not needed — and a
-marketplace refresh on its own is *not* enough: it updates the catalog and
-leaves the installed plugin on its old SHA.
+Check `claude plugin list --json` for the installed scope. To target a project
+install explicitly, run from that project's directory:
 
-The update reports the SHA it lands on — `updated from … to … for scope ….
-Restart to apply changes.` — or tells you it is already at the latest, in which
-case there is nothing to apply. A move never reaches a session already running:
-restart it, or update from the in-session `/plugin` manager, which points you at
-`/reload-plugins` instead. There is no `/plugin update` slash command.
-
-`claude plugin update` defaults to `--scope user`. If you installed at project
-scope, pass it explicitly from that project's directory:
-
-```
+```sh
 claude plugin update agents-library@agents-library --scope project
 ```
 
-`claude plugin list --json` shows the scope, pinned version, and install path of
-every install.
+Claude Code 2.1.286 auto-detects the update scope; older versions may differ.
 
-### Troubleshooting
-
-**`Permission denied (publickey)`.** `claude plugin install` and
-`claude plugin update` clone the plugin source over SSH (`git@github.com:…`)
-with no HTTPS fallback, so an unavailable key fails them with
-`Failed to clone repository: … git@github.com: Permission denied (publickey)`.
-The marketplace refresh does fall back to HTTPS, which is why
-`claude plugin marketplace update` can succeed while the update right after it
-fails. Check your agent: `ssh-add -l` reporting *Error connecting to agent*
-means `$SSH_AUTH_SOCK` is stale. Load your key:
-
-```
-eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
-```
-
-If you would rather not use SSH at all, `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`
-switches both clones to HTTPS for that one command — it is not in
-`claude plugin --help`, so treat it as undocumented and version-dependent:
-
-```
-CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1 claude plugin update agents-library@agents-library
-```
-
-The equivalent git-level rewrite works too, but note the blast radius: it
-rewrites **every** `git@github.com:` URL on the machine, for fetch and push, in
-every repo, and needs a credential helper for pushes that were using SSH keys.
-
-```
-git config --global url."https://github.com/".insteadOf git@github.com:
-# undo: git config --global --unset url."https://github.com/".insteadOf
-```
-
-**`Failed to update plugin …: Plugin "agents-library" is not installed at scope
-<scope>`.** The update is looking at a scope that has no install — most often
-the default `--scope user` when yours is at project or local scope. Check the
-scopes with `claude plugin list --json`. If the entry really is gone from
-`~/.claude/plugins/installed_plugins.json`, reinstall it:
-
-```
-claude plugin install agents-library@agents-library --scope user
-```
+Something failed? See [Troubleshooting Claude Code](#troubleshooting-claude-code).
 
 ## Update (Codex plugin)
 
-Codex **pins** the marketplace snapshot's revision and the copy installed from
-it; new commits on `main` do not reach either until you update it. One command
-does it:
+[Refresh the Git marketplace](https://developers.openai.com/plugins/build/plugins)
+and start a new Codex thread:
 
-```
+```sh
 codex plugin marketplace upgrade agents-library
 ```
 
-It re-points the marketplace snapshot at the latest `main` *and* refreshes the
-installed copy from it, so no reinstall is needed — and it lands new commits
-even when the plugin version is unchanged. Omit the name to refresh every
-configured Git marketplace. Codex records the revision it pinned as
-`last_revision` under `[marketplaces.agents-library]` in `~/.codex/config.toml`.
-Start a new Codex thread afterwards.
+Omit the marketplace name to refresh all configured Git marketplaces.
+
+Something failed? See [Troubleshooting Codex](#troubleshooting-codex).
 
 ## Update (opencode)
 
 The update path depends on how you installed:
 
-- **Working inside the clone** — no update step; `.opencode/` is always current.
+- **Working inside the clone** — run `git pull` in the clone; no reinstall
+  is needed for `.opencode/` discovery.
 - **Global symlink install** — `git pull` in this repo updates every linked
   install automatically (the symlinks point here).
-- **Project copy install** — re-run the installer with `--force` to refresh:
+- **Copy installs** — pull the clone first, then refresh the destination. For
+  a global copy, run `./scripts/install-opencode.sh --global --copy --force`
+  from the clone. For a project copy:
 
   ```
   cd /path/to/your/project
   /path/to/agents-library/scripts/install-opencode.sh --project --force
   ```
 
+Something failed? See [Troubleshooting opencode](#troubleshooting-opencode).
+
 ## Update (Kilo Code)
 
-The same three paths as opencode:
+As with opencode, update the source clone before refreshing copies:
 
-- **Working inside the clone** — no update step; `.kilo/` is always current.
+- **Working inside the clone** — run `git pull` in the clone; no reinstall
+  is needed for `.kilo/` discovery.
 - **Global symlink install** — `git pull` in this repo updates every linked
   install automatically (the symlinks point here).
-- **Project copy install** — re-run the installer with `--force` to refresh:
+- **Copy installs** — pull the clone first, then refresh the destination. For
+  a global copy, run `./scripts/install-kilo.sh --global --copy --force`
+  from the clone. For a project copy:
 
   ```
   cd /path/to/your/project
   /path/to/agents-library/scripts/install-kilo.sh --project --force
   ```
+
+Something failed? See [Troubleshooting Kilo Code](#troubleshooting-kilo-code).
+
+## Troubleshooting
+
+Find your host: [Claude Code](#troubleshooting-claude-code),
+[Codex](#troubleshooting-codex), [opencode](#troubleshooting-opencode),
+[Kilo Code](#troubleshooting-kilo-code).
+
+### Git access: HTTPS, SSH, and prerequisites
+
+This repository is public: **HTTPS clone, fetch, and pull need no GitHub
+account, token, or SSH key**. SSH URLs (`git@github.com:…`) require an
+[SSH key recognized by GitHub](https://docs.github.com/en/get-started/git-basics/about-remote-repositories).
+GitHub authentication is not an installation prerequisite.
+
+**Install or update fails to reach GitHub.** Check Git and anonymous HTTPS
+access before changing host settings:
+
+```sh
+git --version
+git ls-remote https://github.com/cleanunicorn/agents-library.git HEAD
+```
+
+If this fails, inspect the reported network/proxy error and Git URL rewrites
+(`git config --get-regexp '^url\..*\.insteadof$'`); no output means no matching
+rewrite. If HTTPS works but the host reports `Permission denied (publickey)`,
+it is using SSH. Choose HTTPS using the host remedy below, or fix your SSH
+configuration if you intend to use keys. `ssh-add -l` checks keys loaded in an
+agent; an agent is only one way to supply an SSH key.
+
+The plugin commands require Git and the corresponding host CLI on PATH.
+opencode/Kilo installers also need Bash and standard shell utilities
+(including `cp`, `diff`, `ln`, `mkdir`, `mv`, `readlink`, `rm`) and a complete
+local clone.
+Keep the clone if you install symlinks; copy installs can survive its removal.
+
+**opencode/Kilo installer errors (install or update):** the
+[shared installer](scripts/install-host.sh) reports the following:
+
+| Symptom | Diagnosis and remedy |
+| --- | --- |
+| `FATAL: agents/ not found` or `skills/ not found` | The script is detached from a complete clone. Invoke the script inside the clone; invoking it by absolute path from another project is supported. |
+| `CONFLICT <name>` (exit 2) | The destination differs. Inspect/back up customizations before rerunning with `--force`; pass selected names to limit replacement. |
+| `FAILED <name>` (exit 3) | Read the adjacent shell error and check the destination. Repair that failure (for example permissions or disk space), then retry. |
+| `… is a symlink — refusing to write through it` | Inspect the destination directory with `ls -ld`. Use `--project` in a real destination directory; `--copy` does not bypass this guard. |
+
+### Troubleshooting Claude Code
+
+**Install: marketplace missing or plugin not found.** Check
+`claude plugin marketplace list` and `claude plugin list --json`. Marketplace
+registration and plugin installation are
+[separate steps](https://code.claude.com/docs/en/plugin-marketplaces): run the
+two commands in [Install (Claude Code plugin)](#install-claude-code-plugin).
+
+**Install/update: `Permission denied (publickey)`.** The failing clone uses
+SSH, even if marketplace registration succeeded. For this public repository,
+prefer HTTPS for the failing command:
+
+```sh
+CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1 claude plugin install agents-library@agents-library
+CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1 claude plugin update agents-library@agents-library
+```
+
+Run the install or update command as needed; the same prefix can be used with
+`claude plugin marketplace add`. This preference was confirmed by inspecting
+Claude Code 2.1.286's GitHub URL selection; it is undocumented and
+version-dependent. Adding an HTTPS marketplace URL alone does not change this
+marketplace's separate GitHub plugin source.
+
+**Update: `Plugin "agents-library" is not installed at scope <scope>`.** Check
+`claude plugin list --json`; update with the matching `--scope` from the
+project directory for project/local installs. If absent, install at the
+intended scope instead. If commands succeed but skills remain old or missing,
+restart the session.
+
+### Troubleshooting Codex
+
+**Install: `plugin … was not found in marketplace …`.** Check
+`codex plugin marketplace list` for `agents-library`, then
+`codex plugin list -m agents-library --json` for the plugin. If the marketplace
+is absent, register it using an HTTPS URL:
+
+```sh
+codex plugin marketplace add https://github.com/cleanunicorn/agents-library.git
+```
+
+If registered but its snapshot lacks the plugin, refresh it, then install:
+
+```sh
+codex plugin marketplace upgrade agents-library
+codex plugin add agents-library@agents-library
+```
+
+**Update: skills still absent or old.** Run the marketplace upgrade above,
+check `codex plugin list -m agents-library --json`, and start a new thread.
+If the plugin is not installed, run `codex plugin add` as above; registering
+or refreshing a marketplace alone is not proof of installation. These CLI
+commands were checked with Codex 0.159.2; see the
+[official marketplace guidance](https://developers.openai.com/plugins/build/plugins).
+For Git errors, use [Git access](#git-access-https-ssh-and-prerequisites).
+
+### Troubleshooting opencode
+
+**Install: agents or skills not discovered.** Check that the installer ran
+successfully and files exist in `~/.config/opencode/{agents,skills}/` for a
+global install or `.opencode/{agents,skills}/` in the project. These are
+[opencode's discovery directories](https://dev.opencode.ai/docs/config/).
+Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above,
+then restart opencode in the intended project.
+
+**Update: old skills or broken links.** Run `git pull` in the source clone;
+for copies, rerun the matching command in [Update (opencode)](#update-opencode).
+If you moved/deleted a symlinked clone, `ls -l ~/.config/opencode/skills/` shows
+the old targets. Restore the clone or rerun the installer from its new location
+with `--force` after inspecting destination customizations. For a fresh
+destination, choose `--copy` to avoid dependence on the clone; refresh copies
+on later updates.
+
+### Troubleshooting Kilo Code
+
+**Install: global skills not discovered.** This installer targets
+`~/.config/kilo/{agents,skills}/`, but current
+[Kilo skill documentation](https://kilo.ai/docs/customize/skills) lists
+`~/.kilo/skills/` as its global skill directory. Check where your CLI version
+looks. Use the documented `.kilo/skills/` project path if the global install
+is not loaded:
+
+```sh
+cd /path/to/your/project
+/path/to/agents-library/scripts/install-kilo.sh --project
+```
+
+Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above.
+Restart the [Kilo CLI](https://kilo.ai/docs/code-with-ai/platforms/cli) in that
+project; these instructions target the CLI, not the editor extension.
+
+**Update: old skills or broken links.** Pull the source clone first and refresh
+copies using [Update (Kilo Code)](#update-kilo-code). For a global symlink
+install, inspect `ls -l ~/.config/kilo/skills/`: moving/deleting the clone breaks
+its links. Restore the clone or rerun the installer from the new clone with
+`--force` after inspecting customizations. A project copy avoids dependence on
+the clone's location; restart Kilo after refreshing it.
 
 ## About the agents
 
