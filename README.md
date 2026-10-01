@@ -467,8 +467,9 @@ For Git errors, use [Git access](#git-access-https-ssh-and-prerequisites).
 
 ### Troubleshooting opencode
 
-**Install: agents or skills not discovered.** Check that the installer ran
-successfully and files exist in `~/.config/opencode/{agents,skills}/` for a
+**Install: agents or skills not discovered.** Run `opencode debug skill` in the
+intended project to list available skills. Check that the installer succeeded
+and files exist in `~/.config/opencode/{agents,skills}/` for a
 global install or `.opencode/{agents,skills}/` in the project. These are
 [opencode's discovery directories](https://dev.opencode.ai/docs/config/).
 Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above,
@@ -487,9 +488,9 @@ on later updates.
 **Install: global skills not discovered.** This installer targets
 `~/.config/kilo/{agents,skills}/`, but current
 [Kilo skill documentation](https://kilo.ai/docs/customize/skills) lists
-`~/.kilo/skills/` as its global skill directory. Check where your CLI version
-looks. Use the documented `.kilo/skills/` project path if the global install
-is not loaded:
+`~/.kilo/skills/` as its global skill directory. Run `kilo debug skill` in the
+intended project to list available skills. If your global install is absent
+from that listing, use the documented `.kilo/skills/` project path:
 
 ```sh
 cd /path/to/your/project
