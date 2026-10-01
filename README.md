@@ -404,6 +404,7 @@ Keep the clone if you install symlinks; copy installs can survive its removal.
 
 | Symptom | Diagnosis and remedy |
 | --- | --- |
+| `install-host.sh: No such file or directory` | The wrapper was copied or symlinked out of `scripts/`. Invoke the original wrapper by its path inside the clone; it needs the adjacent `install-host.sh`. |
 | `FATAL: agents/ not found` or `skills/ not found` | The script is detached from a complete clone. Invoke the script inside the clone; invoking it by absolute path from another project is supported. |
 | `CONFLICT <name>` (exit 2) | The destination differs. Inspect/back up customizations before rerunning with `--force`; pass selected names to limit replacement. |
 | `FAILED <name>` (exit 3) | Read the adjacent shell error and check the destination. Repair that failure (for example permissions or disk space), then retry. |
