@@ -408,7 +408,7 @@ Keep the clone if you install symlinks; copy installs can survive its removal.
 | `FATAL: agents/ not found` or `skills/ not found` | The script is detached from a complete clone. Invoke the script inside the clone; invoking it by absolute path from another project is supported. |
 | `CONFLICT <name>` (exit 2) | The destination differs. Inspect/back up customizations before rerunning with `--force`; pass selected names to limit replacement. |
 | `FAILED <name>` (exit 3) | Read the adjacent shell error and check the destination. Repair that failure (for example permissions or disk space), then retry. |
-| `… is a symlink — refusing to write through it` | Inspect the destination directory with `ls -ld`. Use `--project` in a real destination directory; `--copy` does not bypass this guard. |
+| `… is a symlink — refusing to write through it` | The guard covers the global/project root and its `agents/`/`skills/` directories. Inspect the named path with `ls -ld`. For global scope, inspect/back up dotfile-managed links and targets before deliberately converting the blocked directory to a real directory; alternatively use `--project` with real directories. `--copy` does not bypass this guard. |
 
 ### Troubleshooting Claude Code
 
