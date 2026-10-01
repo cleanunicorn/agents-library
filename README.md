@@ -62,6 +62,11 @@ This repo is a Claude Code plugin marketplace. Installing it gives you the
 `/plan-feature`, `/install-agents`, and `/manager` skills plus all eight agents
 as subagents.
 
+Claude Code 2.1.286 uses SSH for this plugin by default: provide a GitHub SSH
+key **or** [opt into HTTPS](#troubleshooting-claude-code). For the in-session
+commands below, run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting
+`claude` if you want HTTPS.
+
 ```
 /plugin marketplace add cleanunicorn/agents-library
 /plugin install agents-library@agents-library
@@ -370,7 +375,8 @@ Find your host: [Claude Code](#troubleshooting-claude-code),
 This repository is public: **HTTPS clone, fetch, and pull need no GitHub
 account, token, or SSH key**. SSH URLs (`git@github.com:…`) require an
 [SSH key recognized by GitHub](https://docs.github.com/en/get-started/git-basics/about-remote-repositories).
-GitHub authentication is not an installation prerequisite.
+For Claude Code's default SSH plugin install/update, provide a GitHub SSH key
+or [opt into HTTPS](#troubleshooting-claude-code).
 
 **Install or update fails to reach GitHub.** Check Git and anonymous HTTPS
 access before changing host settings:
