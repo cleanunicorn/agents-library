@@ -257,9 +257,12 @@ loads and executes.
   `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
   also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
-  instead of narrated as prose: batch-merge-prs has `list-prs.sh` and
-  `merge-prs.sh` (which auto-names the target branch `batch/<YYYYMMDD-HHMM>`
-  when passed `auto`), review-pr has `diff-target.sh` (main-branch detection +
+  instead of narrated as prose: batch-merge-prs has `list-prs.sh` (open PRs,
+  when the user names none), `check-prs.sh` (skips PRs main already
+  contains), `merge-prs.sh` (which auto-names the target branch
+  `batch/<YYYYMMDD-HHMM>` when passed `auto`), `test-commands.sh`,
+  `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
+  test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
@@ -278,9 +281,13 @@ loads and executes.
   Phase 3. plan-feature investigates integration and verification in parallel
   when useful (locally for small changes or hosts without delegation), then
   produces an implementation plan and saves it when requested. triage-issues
-  and batch-merge-prs follow the same orient → fan out → consolidate shape and
-  then add *decide* → *act* → *summarize* phases, acting only on what was
-  approved. install-agents is a linear installer with no fan-out (orient → one
+  follows the same orient → fan out → consolidate shape and then adds
+  *decide* → *act* → *summarize* phases, acting only on what was approved.
+  batch-merge-prs takes the user's PR list as the selection: orient and
+  classify → merge onto a new local branch → test under the project's rules,
+  attributing failures → review with review-pr → report; inside Herdr its
+  reviewer and helpers run in tabs and its tests in a pane
+  (`references/herdr.md`), otherwise as native subagents and plain shell. install-agents is a linear installer with no fan-out (orient → one
   confirmation → install via script → schedule → ledger). manager is the
   delivery pipeline that composes the others. The invoking agent is the
   manager and the user's only contact; it starts at most five agents per work
@@ -343,7 +350,12 @@ loads and executes.
   action, sweep, status}` validation records for manager, defined in its
   `references/` files; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
-  install-agents.sh emits for install-agents' ledger).
+  install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
+  script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
+  `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
+  `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
+  exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
+  attribute-failure.sh).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under
