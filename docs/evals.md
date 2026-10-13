@@ -172,7 +172,7 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head` (one trivial PR, one conflicting) | batch branch exists with a `Merge PR #…` commit; conflict reported, never half-resolved; no-remote fixture exercises the Phase 0 guardrail |
-| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug; a variant whose required gate is absent | merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the hand-back block reports the team, SWOT counts, and findings; a missing gate blocks; main never touched |
+| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug; a variant whose required gate is absent | merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the hand-back block reports the team, SWOT counts, and findings; a missing gate blocks; asked to do the work itself, the manager delegates anyway and worker records appear in the run directory; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 
 The manager suite is mostly slices of the pipeline, sized to the default
@@ -184,18 +184,24 @@ purpose.
 
 `mg-h1` stops at the merged plan; `mg-h16` is the coordinator step on one
 plan — a *single-plan run* with no invented second side — and `mg-h17` the
-same step on three plans, the third given inline. `mg-h4` shows the team and
-order for two work items and starts nothing; `mg-h5` validates two reviewer
-findings, one false; `mg-h6` blocks on a missing gate.
+same step on three plans, the third given inline. `mg-h4` shows the status
+board and team for two concurrent work items and starts nothing; `mg-h5`
+validates two reviewer findings, one false; `mg-h6` blocks on a missing gate.
+`mg-h7` and `mg-h8` tell the manager to do the work itself — a one-line
+limit change, then a review — and pass only when it hands the work to a
+worker anyway (`mg-h7` carries `"timeout": 1800`).
 
 `mg-h3` is an **outcome** test, not an orchestration test. The runner keeps
 the agent's text and the names of the skills it invoked, and saves only the
 last 4,000 characters of that text; sub-agent launches, their order, and
-their prompts are discarded. So nothing in this suite verifies that planners
-and reviewers really ran in parallel and in isolation — a single agent that
-did the work itself and wrote the right summary would pass. Measuring that
-needs a persisted delegation trace per trial, which the runner does not have
-yet.
+their prompts are discarded. The delegation cases narrow that gap without
+closing it: their prompts set the run directory to `.worktrees/manager-run`
+(gitignored in every fixture), and they assert the board, the coordinator's
+setup record, the review and re-check records, and a gate log ending
+`exit: 0` exist there. A manager that did the work alone would have to forge
+every one of those files to pass. Nothing proves planners and reviewers ran
+in parallel and in isolation; that still needs a persisted delegation trace
+per trial, which the runner does not have yet.
 
 ## Adding evals for a new skill
 

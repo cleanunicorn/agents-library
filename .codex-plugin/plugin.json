@@ -1,7 +1,7 @@
 {
   "name": "agents-library",
   "version": "0.15.0",
-  "description": "Orchestrator skills for feature planning, PR review, design review, issue triage, simplification, batch merging, codebase mapping, installing periodic maintenance agents, and managing a work item end to end.",
+  "description": "Orchestrator skills for feature planning, PR review, design review, issue triage, simplification, batch merging, codebase mapping, installing periodic maintenance agents, and a manager console that delegates work items to worker agents.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Agents Library",
     "shortDescription": "Feature planning, coding review, and triage skills.",
-    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; installing the library's maintenance agents into a project on a periodic schedule; and managing one work item end to end through independent plans, a SWOT merge, implementation, parallel reviews, and verified fixes.",
+    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; batch-merging pull requests; simplifying code; mapping a codebase; installing the library's maintenance agents into a project on a periodic schedule; and turning a session into a manager console that delegates each work item to worker agents — independent plans, a SWOT merge, implementation, an independent review, and verified fixes — and tracks them on a status board without doing the work itself.",
     "developerName": "Daniel Luca",
     "category": "Developer Tools",
     "capabilities": [
