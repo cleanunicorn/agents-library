@@ -253,11 +253,15 @@ build gate; no `gh` or remote is required.
 
 ### The Batch PR Merge Skill
 
-[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
-pull requests and collects approved trivial ones onto a branch you name. Each PR
-is assessed for scope, type, correctness, CI, and mergeability before you choose
-what to include. Merges are local and abort cleanly on conflict; nothing is
-pushed or closed on GitHub. Requires the `gh` CLI.
+[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) merges the pull requests
+you name onto one new local branch (`batch/<YYYYMMDD-HHMM>` unless you name
+it), skipping each PR main already contains and showing the evidence. A
+conflicting PR is aborted with its files listed while the rest still merge. It
+then runs the tests the project's own docs and CI call for, skipping any suite
+marked as touching live or shared resources unless you authorize it. It names
+the PR behind each failure and reviews the merged branch with `review-pr`.
+Inside Herdr, agents and tests run in their own tabs and panes. Nothing is
+pushed or changed on GitHub. Requires the `gh` CLI.
 
 ### The Issue Triage Skill
 

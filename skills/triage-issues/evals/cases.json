@@ -81,7 +81,7 @@
     },
     {
       "id": "ti-n1",
-      "prompt": "Clean up the PR queue and batch-merge the trivial PRs.",
+      "prompt": "Batch-merge the open PRs onto one branch.",
       "should_trigger": false,
       "expect_skill": "batch-merge-prs",
       "fixture": "issue-backlog",
