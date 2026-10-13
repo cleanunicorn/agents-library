@@ -257,9 +257,11 @@ loads and executes.
   `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
   also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
-  instead of narrated as prose: batch-merge-prs has `list-prs.sh` and
-  `merge-prs.sh` (which auto-names the target branch `batch/<YYYYMMDD-HHMM>`
-  when passed `auto`), review-pr has `diff-target.sh` (main-branch detection +
+  instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
+  main already contains), `merge-prs.sh` (which auto-names the target branch
+  `batch/<YYYYMMDD-HHMM>` when passed `auto`), `test-commands.sh`,
+  `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
+  test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
@@ -278,21 +280,32 @@ loads and executes.
   Phase 3. plan-feature investigates integration and verification in parallel
   when useful (locally for small changes or hosts without delegation), then
   produces an implementation plan and saves it when requested. triage-issues
-  and batch-merge-prs follow the same orient → fan out → consolidate shape and
-  then add *decide* → *act* → *summarize* phases, acting only on what was
-  approved. install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger). manager is the
-  delivery pipeline that composes the others. The invoking agent is the
-  manager and the user's only contact; it starts at most five agents per work
-  item: orient and ask early → one or two planners (plan-feature, without its
-  own fan-out) → a coordinator's SWOT merge → implement → one reviewer, or
-  two for high-risk changes (review-pr) → validate and fix, with the manager
-  auditing refutations and re-checking the fix commits itself → hand back in
-  a fixed status block. Inside Herdr (its `herdr` skill present, `HERDR_ENV=1`)
-  each member runs as a live agent in its own tab of the current
-  workspace (`references/herdr.md`); otherwise
-  as native subagents. Several work items run one after another. Planners
-  and reviewers only read; one agent writes at a time.
+  follows the same orient → fan out → consolidate shape and then adds
+  *decide* → *act* → *summarize* phases, acting only on what was approved.
+  batch-merge-prs takes the user's PR list as the selection: orient and
+  classify → merge onto a new local branch → test under the project's rules,
+  attributing failures → review with review-pr → report; inside Herdr its
+  reviewer and helpers run in tabs and its tests in a pane
+  (`references/herdr.md`, self-contained for standalone installation),
+  otherwise as native subagents and plain shell.
+  install-agents is a linear installer with no fan-out (orient → one
+  confirmation → install via script → schedule → ledger). manager turns
+  the invoking session into a console that does no work itself: it reads the
+  request, project guidance, git state, and worker records, and everything
+  else — worktree setup, plans, code, reviews, gate runs, git and PR writes —
+  is a worker's. Its default playbook composes the other skills, at most five
+  workers per work item: intake and ask early → a coordinator sets up the
+  worktree and baseline → one or two planners (plan-feature, without its own
+  fan-out), or none for the `direct` playbook → the coordinator's SWOT merge →
+  implement → one reviewer, or two for high-risk changes (review-pr) →
+  validate and fix, with the raising reviewer ruling on refutations and
+  re-checking the fix commits → hand back in a fixed status block. Three
+  work items run concurrently and a fourth queues, tracked on a status board
+  (`references/console.md`). Inside Herdr (its `herdr` skill present,
+  `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
+  current workspace (`references/herdr.md`); otherwise as native subagents;
+  with neither, the manager refuses. Planners and reviewers only read; one
+  agent writes per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -336,14 +349,22 @@ loads and executes.
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; `{planner, plan, decisions}` plan records,
+  …}` verdicts for triage-issues; `{worktree, branch, gate, gate_kind,
+  baseline, conventions, remote}` setup records, `{planner, plan, decisions}` plan records,
   `{id, quadrant, claim, evidence, affects, action}` SWOT records, `{topic,
   plan_<label> per plan, chosen, rule, reason, swot_refs}` decision records,
   and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
-  action, sweep, status}` validation records for manager, defined in its
-  `references/` files; the
+  action, sweep, status}` validation records, and `{reviewer, head, gate,
+  findings, new}` re-check records for manager, defined in its
+  role briefs, with the gate-log format in `references/console.md`
+  (`command:`/`head:`/`exit:`); the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
-  install-agents.sh emits for install-agents' ledger).
+  install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
+  script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
+  `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
+  `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
+  exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
+  attribute-failure.sh).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under

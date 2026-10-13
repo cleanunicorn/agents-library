@@ -11,13 +11,16 @@
 #   - Creates <target-branch> from an up-to-date <remote>/<main-branch> if it
 #     doesn't exist; otherwise checks it out as-is.
 #   - Fetches each PR via the base-repo pull ref (pull/<n>/head — works for
-#     fork PRs), merges it with --no-ff so each PR stays a distinct,
-#     revertable merge commit.
-#   - On conflict: aborts that one merge and continues with the rest. Never
-#     leaves a half-resolved merge.
+#     fork PRs) without creating a local branch, merges it with --no-ff so
+#     each PR stays a distinct, revertable merge commit.
+#   - Skips a PR whose head the branch already contains (nothing to merge).
+#   - On conflict: records the conflicting files, aborts that one merge, and
+#     continues with the rest. Never leaves a half-resolved merge.
 #   - Prints one ledger line per PR on stdout:
-#       MERGED <n>
-#       SKIPPED <n> fetch-failed | SKIPPED <n> conflicts
+#       MERGED <n> <merge-commit-sha>
+#       SKIPPED <n> fetch-failed
+#       SKIPPED <n> already-contained
+#       SKIPPED <n> conflicts <file>[,<file>...]
 #   - Exit 0 once the loop ran; non-zero only for setup failures (dirty tree,
 #     bad args, fetch/checkout of the target failed).
 
@@ -53,17 +56,21 @@ else
 fi
 
 for n in "$@"; do
-  tmp="__batch_pr_$n"
-  if ! git fetch "$remote" "pull/$n/head:$tmp"; then
+  if ! git fetch -q "$remote" "pull/$n/head"; then
     echo "SKIPPED $n fetch-failed"
     continue
   fi
-  title=$(gh pr view "$n" --json title -q .title 2>/dev/null || echo "")
-  if git merge --no-ff "$tmp" -m "Merge PR #$n${title:+: $title}"; then
-    echo "MERGED $n"
-  else
-    git merge --abort
-    echo "SKIPPED $n conflicts"
+  head=$(git rev-parse FETCH_HEAD)
+  if git merge-base --is-ancestor "$head" HEAD; then
+    echo "SKIPPED $n already-contained"
+    continue
   fi
-  git branch -D "$tmp" >/dev/null 2>&1 || true
+  title=$(gh pr view "$n" --json title -q .title 2>/dev/null || echo "")
+  if git merge --no-ff "$head" -m "Merge PR #$n${title:+: $title}"; then
+    echo "MERGED $n $(git rev-parse HEAD)"
+  else
+    files=$(git diff --name-only --diff-filter=U | paste -sd, -)
+    git merge --abort
+    echo "SKIPPED $n conflicts ${files:-unknown}"
+  fi
 done

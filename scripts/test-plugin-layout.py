@@ -21,10 +21,10 @@ AGENT_WORD_CEILING = 1800
 # Per-skill root ceilings, keyed by name: each is the current size rounded up.
 # domains/, lenses/, references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
-    "batch-merge-prs": 1400,
+    "batch-merge-prs": 700,
     "describe-codebase": 1000,
     "install-agents": 1400,
-    "manager": 1700,
+    "manager": 1500,
     "plan-feature": 1300,
     "review-design": 1800,
     "review-pr": 2200,
@@ -165,6 +165,26 @@ class PluginLayoutTests(unittest.TestCase):
                 if is_agent:
                     self.assertRegex(header, r"(?m)^mode: subagent$")
 
+    def test_skills_are_self_contained(self):
+        """No skill file points outside its own skill directory.
+
+        Hosts can install one skill without its siblings, so a relative link
+        such as `../../manager/references/herdr.md` resolves to nothing there.
+        A skill names a sibling skill by name, never by path.
+        """
+        link = re.compile(r"\]\(([^)#\s]+)[^)]*\)|`(\.\./[^`\s]+)`")
+        for skill in sorted(path for path in (ROOT / "skills").iterdir() if path.is_dir()):
+            for path in sorted(skill.rglob("*.md")):
+                text = path.read_text(encoding="utf-8")
+                for match in link.finditer(text):
+                    target = match.group(1) or match.group(2)
+                    if re.match(r"[a-z]+:", target):
+                        continue
+                    with self.subTest(path=str(path.relative_to(ROOT)), target=target):
+                        resolved = (path.parent / target).resolve()
+                        self.assertTrue(resolved.is_relative_to(skill.resolve()),
+                                        "link leaves the skill directory")
+
     def test_definition_size_budgets(self):
         """Descriptions and definition bodies stay within a context ceiling.
 
@@ -197,18 +217,20 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
     def test_manager_team_stays_small(self):
-        """The manager keeps its pipeline and its agent budget.
+        """The manager keeps its pipeline, its agent budget, and its hands off.
 
         The skill was collapsed from a super manager over per-item managers,
         with a roster catalogue and a simplify pass and a fresh final reviewer,
-        to one manager and a capped team. This guards both halves: the stages
-        the user asked to keep (SWOT merge, implementation, independent review,
-        validated fixes) and the cap, so the removed layers do not creep back
-        one copy-edit at a time.
+        to one manager and a capped team. It was then narrowed to a console
+        that does no work itself: workers plan, implement, review, fix, and run
+        the gate. This guards all three: the stages the user asked to keep
+        (SWOT merge, implementation, independent review, validated fixes), the
+        cap, and the manager-only role, so neither the removed layers nor the
+        manager's old hands-on steps creep back one copy-edit at a time.
         """
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
-        for rule in ("Single writer.", "Independence.", "Re-run the gate yourself."):
+        for rule in ("You do no work.", "Single writer.", "Independence.", "Evidence, not reports."):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
         for stage in ("## Phase 2 — SWOT merge", "## Phase 3 — Implement",
                       "## Phase 4 — Review, validate, fix"):
@@ -224,8 +246,22 @@ class PluginLayoutTests(unittest.TestCase):
         self.assertRegex(root_text, r"\*\*A member that fails\*\*.{0,400}?review round that returned no report"
                                     r".{0,80}?PR stays a draft",
                          "a run with no review report must stay blocked")
-        self.assertRegex(root_text, r"## Phase 5 — .{0,200}?Unless the run is `blocked`.{0,200}?mark it ready",
-                         "Phase 5 marks a blocked run's PR ready")
+        self.assertRegex(root_text, r"## Phase 5 — .{0,200}?Unless the item is `blocked`.{0,200}?mark the PR ready",
+                         "Phase 5 marks a blocked item's PR ready")
+        # The manager does no work: no step may hand it the gate, a review, a
+        # fix, or a git write, and a host without delegation is refused rather
+        # than served by the manager doing the work alone.
+        self.assertIn("## Where the line sits", root_text, "SKILL.md lost the manager's boundary")
+        self.assertRegex(root_text, r"(?i)never do the work yourself", "the transport fallback lets the manager work")
+        hands_on = (r"(?i)follow the briefs yourself|re-run the gate yourself|re-check the fix commits yourself"
+                    r"|open the evidence behind every refutation yourself|mark it ready yourself"
+                    r"|run the gate (one last time|yourself)|one after another")
+        for path in (skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))):
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                found = re.search(hands_on, " ".join(path.read_text(encoding="utf-8").split()))
+                self.assertIsNone(found, f"the manager does work again — found {found and found.group(0)!r}")
+        self.assertIn("references/console.md", root_text, "SKILL.md does not hand over console.md")
+        self.assertTrue((skill / "references/console.md").is_file(), "console.md is missing")
         for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")

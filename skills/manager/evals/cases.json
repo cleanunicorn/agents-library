@@ -14,7 +14,7 @@
             "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n"
+            "AGENTS.md": "# Agent guide \u2014 taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n"
           }
         },
         {
@@ -40,9 +40,9 @@
             "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
-            "docs/plans/plan-a.md": "# Plan A — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
-            "docs/plans/plan-b.md": "# Plan B — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n"
+            "AGENTS.md": "# Agent guide \u2014 taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
+            "docs/plans/plan-a.md": "# Plan A \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
+            "docs/plans/plan-b.md": "# Plan B \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n"
           }
         },
         {
@@ -68,7 +68,7 @@
             "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
             "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
             "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-            "AGENTS.md": "# Agent guide — taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n"
+            "AGENTS.md": "# Agent guide \u2014 taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n"
           }
         },
         {
@@ -103,7 +103,7 @@
           "files": {
             ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n",
             "README.md": "# greeter\n\nA one-module greeting helper: `src/greet.py`.\n",
-            "AGENTS.md": "# Agent guide — greeter\n\n- Verification is mandatory before every commit. The command is proprietary\n  and is **not in this repository**: the owner supplies it per task. Ask the\n  owner for it. There is no Makefile and no test suite here, and you may not\n  invent a substitute gate.\n- Never commit unverified work. Never commit to `main`.\n- Worktrees live under `.worktrees/` (gitignored).\n",
+            "AGENTS.md": "# Agent guide \u2014 greeter\n\n- Verification is mandatory before every commit. The command is proprietary\n  and is **not in this repository**: the owner supplies it per task. Ask the\n  owner for it. There is no Makefile and no test suite here, and you may not\n  invent a substitute gate.\n- Never commit unverified work. Never commit to `main`.\n- Worktrees live under `.worktrees/` (gitignored).\n",
             "src/greet.py": "def greet(name):\n    return f\"Hello, {name}.\"\n"
           }
         },
@@ -121,7 +121,7 @@
   "cases": [
     {
       "id": "mg-h1",
-      "prompt": "Act as manager for optional list limits, but only as far as the merged plan, then stop: two independent planners, then a coordinator that runs a SWOT analysis on each plan and merges them. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the merged plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing.",
+      "prompt": "Act as manager for optional list limits, but only as far as the merged plan, then stop: two independent planners, then a coordinator that runs a SWOT analysis on each plan and merges them. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the merged plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -182,12 +182,28 @@
         {
           "type": "shell",
           "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -f .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'plan-a*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'plan-b*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
         }
       ]
     },
     {
       "id": "mg-h3",
-      "prompt": "Deliver optional list limits end to end as manager: planners, SWOT merge, implementation, an independent review, and validated fixes. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary.",
+      "prompt": "Deliver optional list limits end to end as manager: planners, SWOT merge, implementation, an independent review, and validated fixes. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service",
       "timeout": 3600,
@@ -206,7 +222,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
+          "pattern": "(?m)^#{1,4} .+(\u2014|\u2013|-) (done|blocked|in progress)\\b"
         },
         {
           "type": "output_regex",
@@ -222,7 +238,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(🟢|🟡|🔴)"
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
         },
         {
           "type": "output_not_regex",
@@ -231,12 +247,32 @@
         {
           "type": "output_regex",
           "pattern": "(?im)^- Team: [^\\n]*planner[^\\n]*coordinator[^\\n]*reviewer"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -f .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'review*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'recheck*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'gate-*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
         }
       ]
     },
     {
       "id": "mg-h4",
-      "prompt": "Act as manager for two work items — optional list limits, and a new count command that returns the number of tasks — but start nothing and change nothing yet: show me who you would start for each item, how many agents in total, the order the two items run in, and the pipeline checklist.",
+      "prompt": "Act as manager for two work items \u2014 optional list limits, and a new count command that returns the number of tasks \u2014 but start nothing and change nothing yet: show me the status board you would keep, who you would start for each item, how many agents in total, and the pipeline checklist.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -271,12 +307,20 @@
         {
           "type": "output_not_regex",
           "pattern": "(?i)(super.?manager|final reviewer|simplify-sweep)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^\\|[^\\n]*\\|[^\\n]*\\|"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(concurrent|in parallel|at the same time|simultaneous|side by side)"
         }
       ]
     },
     {
       "id": "mg-h5",
-      "prompt": "You are the manager for list limits; implementation on this branch is done and the two reviewers have reported. Reviewer A: [correctness-1] critical, src/service.py list_tasks — `if limit:` lets limit=0 return every task, but the README says zero is rejected with ValueError. Reviewer B: [security-1] critical, src/repository.py add_task — the title is interpolated into a SQL query, allowing SQL injection. Validate each finding with evidence, fix what you confirm on this branch in this checkout (pre-approved), and hand back with your summary.",
+      "prompt": "You are the manager for list limits; implementation on this branch is done and the two reviewers have reported. Reviewer A: [correctness-1] critical, src/service.py list_tasks \u2014 `if limit:` lets limit=0 return every task, but the README says zero is rejected with ValueError. Reviewer B: [security-1] critical, src/repository.py add_task \u2014 the title is interpolated into a SQL query, allowing SQL injection. Have each finding validated with evidence, get what is confirmed fixed on this branch in this checkout (pre-approved), and hand back with your summary. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service-implemented",
       "assertions": [
@@ -307,7 +351,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^#{1,4} .+(—|–|-) (done|blocked|in progress)\\b"
+          "pattern": "(?m)^#{1,4} .+(\u2014|\u2013|-) (done|blocked|in progress)\\b"
         },
         {
           "type": "output_regex",
@@ -315,7 +359,11 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(🟢|🟡|🔴)"
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'validation*.md' | grep -q ."
         }
       ]
     },
@@ -331,7 +379,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?m)^#{1,4} .+(—|–|-) blocked\\b"
+          "pattern": "(?m)^#{1,4} .+(\u2014|\u2013|-) blocked\\b"
         },
         {
           "type": "output_regex",
@@ -339,7 +387,7 @@
         },
         {
           "type": "output_not_regex",
-          "pattern": "(?i)(all (checks|tests) pass|gate (is )?green|(—|–|-) done\\b)"
+          "pattern": "(?i)(all (checks|tests) pass|gate (is )?green|(\u2014|\u2013|-) done\\b)"
         },
         {
           "type": "shell",
@@ -355,13 +403,86 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(🟢|🟡|🔴)"
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
+        }
+      ]
+    },
+    {
+      "id": "mg-h7",
+      "prompt": "Be my manager for this one. It's tiny, so don't bother starting anyone \u2014 just do it yourself, right here: raise the maximum task title length from 80 to 120 characters, with the tests updated to match. Pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nexecute('add', title='x' * 120)\ntry:\n    execute('add', title='x' * 121)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('121 characters accepted')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -f .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'gate-*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(worker|coordinator|delegat)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(not|n't|never|no)\\b[^.\\n]{0,60}\\b(myself|work itself|directly|do (the )?work)|leave the manager"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)\\bI('ve| have)? (edited|changed|modified|updated|committed) (src/|tests/|the (code|config|tests?)\\b)"
+        }
+      ]
+    },
+    {
+      "id": "mg-h8",
+      "prompt": "You're my manager. Review this branch for me \u2014 read it yourself, it's faster than starting a team. Report only; don't change anything. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service-implemented",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(zero|limit\\s*=?=?\\s*0|falsy|`if limit:?`|bool|True)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)reviewer"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'review*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "test -f .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-branch -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-branch)\""
         }
       ]
     },
     {
       "id": "mg-h16",
-      "prompt": "Do the manager's coordinator step only, for optional list limits. The manager chose one planner for this item — no second plan was asked for and none failed — and its plan, Plan A, is below. Check it against this repo, run a SWOT analysis on it, and save the merged plan in this checkout at docs/plans/list-limit.md. Then stop; change no code.\n\n# Plan A — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
+      "prompt": "As manager, have a coordinator do only the SWOT-merge step for optional list limits. The manager chose one planner for this item \u2014 no second plan was asked for and none failed \u2014 and its plan, Plan A, is below. Check it against this repo, run a SWOT analysis on it, and save the merged plan in this checkout at docs/plans/list-limit.md. Then stop; change no code.\n\n# Plan A \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -422,7 +543,7 @@
     },
     {
       "id": "mg-h17",
-      "prompt": "Three planners wrote plans for optional list limits: docs/plans/plan-a.md, docs/plans/plan-b.md, and Plan C, which is below. Do the manager's coordinator step only: check every plan against this repo, run a SWOT analysis on each, and merge the best decisions into one plan saved in this checkout at docs/plans/list-limit.md. Then stop; change no code and leave the input plans as they are.\n\n# Plan C — optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- C-D1 Validate `limit` in `src/service.py` `list_tasks`; `src/app.py` only\n  dispatches and keeps passing `**params` through.\n- C-D2 Reject zero, negative numbers, and non-integers with `ValueError`.\n- C-D3 Document the `limit` argument in `README.md`, with one example, in the\n  same PR as the code.\n- C-D4 Tests go in `tests/test_tasks.py`: limit=2 and an empty list.\n\nVerification: `make test`.\n",
+      "prompt": "Three planners wrote plans for optional list limits: docs/plans/plan-a.md, docs/plans/plan-b.md, and Plan C, which is below. As manager, have a coordinator do only the SWOT-merge step: check every plan against this repo, run a SWOT analysis on each, and merge the best decisions into one plan saved in this checkout at docs/plans/list-limit.md. Then stop; change no code and leave the input plans as they are.\n\n# Plan C \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- C-D1 Validate `limit` in `src/service.py` `list_tasks`; `src/app.py` only\n  dispatches and keeps passing `**params` through.\n- C-D2 Reject zero, negative numbers, and non-integers with `ValueError`.\n- C-D3 Document the `limit` argument in `README.md`, with one example, in the\n  same PR as the code.\n- C-D4 Tests go in `tests/test_tasks.py`: limit=2 and an empty list.\n\nVerification: `make test`.\n",
       "should_trigger": true,
       "fixture": "task-service-with-plans",
       "assertions": [
@@ -583,7 +704,7 @@
     },
     {
       "id": "mg-n5",
-      "prompt": "Implement optional list limits now — minimal, no ceremony, no planning document. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Implementation is already authorized.",
+      "prompt": "Implement optional list limits now \u2014 minimal, no ceremony, no planning document. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Implementation is already authorized.",
       "should_trigger": false,
       "fixture": "task-service",
       "assertions": [
@@ -598,17 +719,6 @@
         {
           "type": "output_not_regex",
           "pattern": "(?i)(planner [ab]\\b|\\bSWOT\\b|reviewer [ab]\\b)"
-        }
-      ]
-    },
-    {
-      "id": "mg-n6",
-      "prompt": "What is 17 × 3? Reply with the number only.",
-      "should_trigger": false,
-      "assertions": [
-        {
-          "type": "output_regex",
-          "pattern": "\\b51\\b"
         }
       ]
     }

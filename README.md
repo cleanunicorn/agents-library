@@ -185,24 +185,24 @@ Pick the skill that matches the job:
 
 ### The Manager Skill
 
-[`/manager`](skills/manager/SKILL.md) delivers a work item end to end by
-directing a small team of coding agents — at most five per item. The agent you
-invoke it on is the manager and your single point of contact: it asks its
-clarifying questions at the start, before any planner runs.
+[`/manager`](skills/manager/SKILL.md) turns this session into a console:
+workers do the work while it briefs them, relays questions, and maintains a
+status board. It never edits code, plans, reviews, or runs tests itself,
+even when asked. Three items run concurrently and a fourth queues, each in
+its own worktree with one PR and at most five workers.
 
-One or two planners — two when the design is contested — each write an
-independent plan with `plan-feature`. A coordinator, which wrote none of them,
-runs a SWOT analysis on each plan, merges the best decisions into one plan
-that opens with a Progress checklist, and implements it in a dedicated
-worktree as one PR. An independent reviewer — two for security, stored data,
-or a public contract — runs `review-pr`; every finding is confirmed, refuted,
-or kept open as uncertain, with evidence, before the confirmed ones are fixed,
-and the manager re-checks the fix commits itself. Planners and reviewers use a
-different agent kind (such as Claude, Codex, or opencode) from the coordinator
-when the host offers one. Inside the Herdr terminal multiplexer, with its `herdr`
-skill installed, each team member runs as a live agent in its own tab of your
-current workspace, so you can watch each one work. Several work items run one after another, each with
-its own PR. It never merges the PR.
+One or two independent `plan-feature` planners feed a coordinator's SWOT
+merge and Progress checklist. The coordinator implements; one independent
+`review-pr` reviewer (two for high risk) reviews. Findings are validated with
+evidence before fixes; the raising reviewer audits refutations and re-checks
+fix commits. Gate claims need a saved log at the branch head. The `direct`
+playbook skips planning for an obvious edit, retaining review. Planners and
+reviewers use a different agent kind from the coordinator when available.
+
+With Herdr and its skill installed, each worker has a tab in your current
+workspace; otherwise it uses native subagents. With neither, it refuses.
+Transport instructions are local to each skill so either can be installed
+alone. The manager never merges a PR.
 
 ### The Feature Planning Skill
 
@@ -243,11 +243,17 @@ build gate; no `gh` or remote is required.
 
 ### The Batch PR Merge Skill
 
-[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) triages the project's open
-pull requests and collects approved trivial ones onto a branch you name. Each PR
-is assessed for scope, type, correctness, CI, and mergeability before you choose
-what to include. Merges are local and abort cleanly on conflict; nothing is
-pushed or closed on GitHub. Requires the `gh` CLI.
+[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) merges the pull requests
+you name onto one new local branch (`batch/<YYYYMMDD-HHMM>` unless you name
+it), skipping each PR main already contains and showing the evidence. A
+conflicting PR is aborted with its files listed while the rest still merge. It
+then runs the tests the project's own docs and CI call for, skipping any suite
+marked as touching live or shared resources unless you authorize it. It names
+the PR behind each failure and reviews the merged branch with `review-pr`.
+Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
+native subagents and the shell. Its transport guide needs no manager install.
+Without a PR list it shows open PRs and waits for your selection. Nothing is
+pushed or changed on GitHub. Requires the `gh` CLI.
 
 ### The Issue Triage Skill
 

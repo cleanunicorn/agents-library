@@ -5,13 +5,18 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\nremote.git/\n.gh-calls.log\n.fixture/\nbin/\n",
-            "README.md": "# demo\n\nWelcom to the demo project.\n",
+            ".gitignore": ".claude/\nremote.git/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n",
+            "AGENTS.md": "# Agent guide\n\n## Commands\n\n- Tests: `make test` \u2014 safe to run unattended.\n",
+            "README.md": "# demo\n\nWelcom to the demo project.\n\nPasswords must be at least 8 characters long.\n",
+            "Makefile": "test:\n\tpython3 -m unittest -q\n",
             "core.py": "def add(a, b):\n    return a + b\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves canned PR data.\necho \"gh $*\" >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"pr list\") cat .fixture/pr-list.json; exit 0 ;;\n  \"pr view\")\n    n=$3\n    if printf '%s\\n' \"$@\" | grep -qx -- '.title'; then\n      python3 -c \"import json; print(json.load(open('.fixture/pr-$n-view.json'))['title'])\"\n    else\n      cat \".fixture/pr-$n-view.json\"\n    fi\n    exit 0 ;;\n  \"pr diff\") cat \".fixture/pr-$3.diff\"; exit 0 ;;\n  \"issue list\") echo \"[]\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/demo\"}'; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
-            ".fixture/pr-list.json": "[\n  {\"number\": 1, \"title\": \"docs: fix typo in README\", \"author\": {\"login\": \"alice\"}, \"headRefName\": \"pr-1\", \"baseRefName\": \"main\", \"isDraft\": false, \"mergeable\": \"MERGEABLE\", \"labels\": [], \"additions\": 1, \"deletions\": 1, \"changedFiles\": 1},\n  {\"number\": 2, \"title\": \"docs: reword README intro\", \"author\": {\"login\": \"bob\"}, \"headRefName\": \"pr-2\", \"baseRefName\": \"main\", \"isDraft\": false, \"mergeable\": \"MERGEABLE\", \"labels\": [], \"additions\": 1, \"deletions\": 1, \"changedFiles\": 1}\n]\n",
-            ".fixture/pr-1-view.json": "{\"number\": 1, \"title\": \"docs: fix typo in README\", \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n",
-            ".fixture/pr-2-view.json": "{\"number\": 2, \"title\": \"docs: reword README intro\", \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n"
+            "test_core.py": "import unittest\n\nfrom core import add\n\n\nclass AddTest(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves canned PR data.\necho \"gh $*\" >> .gh-calls.log\nq=\"\"; prev=\"\"\nfor a in \"$@\"; do\n  if [ \"$prev\" = \"-q\" ] || [ \"$prev\" = \"--jq\" ]; then q=$a; fi\n  prev=$a\ndone\n# Evaluate a simple jq path such as .title or '.mergeCommit.oid // \"\"'.\njqpath() {\n  python3 -c 'import json, sys\nv = json.load(open(sys.argv[1]))\nfor k in sys.argv[2].split(\"//\")[0].strip().lstrip(\".\").split(\".\"):\n    v = v.get(k) if isinstance(v, dict) and k else v\nprint(\"\" if v is None else str(v).lower() if isinstance(v, bool) else v)' \"$1\" \"$2\"\n}\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"pr list\") cat .fixture/pr-list.json; exit 0 ;;\n  \"pr view\")\n    f=\".fixture/pr-$3-view.json\"\n    [ -f \"$f\" ] || { echo \"no pull requests found for #$3\" >&2; exit 1; }\n    if [ -n \"$q\" ]; then jqpath \"$f\" \"$q\"; else cat \"$f\"; fi\n    exit 0 ;;\n  \"pr diff\") cat \".fixture/pr-$3.diff\"; exit 0 ;;\n  \"issue list\") echo \"[]\"; exit 0 ;;\n  \"repo view\")\n    if [ -n \"$q\" ]; then echo \"acme/demo\"; else echo '{\"nameWithOwner\":\"acme/demo\"}'; fi\n    exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/pr-list.json": "[\n  {\n    \"number\": 1,\n    \"title\": \"docs: fix typo in README\",\n    \"author\": {\n      \"login\": \"alice\"\n    },\n    \"headRefName\": \"pr-1\",\n    \"baseRefName\": \"main\",\n    \"isDraft\": false,\n    \"mergeable\": \"MERGEABLE\",\n    \"labels\": [],\n    \"additions\": 1,\n    \"deletions\": 1,\n    \"changedFiles\": 1\n  },\n  {\n    \"number\": 2,\n    \"title\": \"docs: reword README intro\",\n    \"author\": {\n      \"login\": \"bob\"\n    },\n    \"headRefName\": \"pr-2\",\n    \"baseRefName\": \"main\",\n    \"isDraft\": false,\n    \"mergeable\": \"MERGEABLE\",\n    \"labels\": [],\n    \"additions\": 1,\n    \"deletions\": 1,\n    \"changedFiles\": 1\n  },\n  {\n    \"number\": 4,\n    \"title\": \"fix: simplify add\",\n    \"author\": {\n      \"login\": \"carol\"\n    },\n    \"headRefName\": \"pr-4\",\n    \"baseRefName\": \"main\",\n    \"isDraft\": false,\n    \"mergeable\": \"MERGEABLE\",\n    \"labels\": [],\n    \"additions\": 1,\n    \"deletions\": 1,\n    \"changedFiles\": 1\n  },\n  {\n    \"number\": 5,\n    \"title\": \"feat: add password check\",\n    \"author\": {\n      \"login\": \"dave\"\n    },\n    \"headRefName\": \"pr-5\",\n    \"baseRefName\": \"main\",\n    \"isDraft\": false,\n    \"mergeable\": \"MERGEABLE\",\n    \"labels\": [],\n    \"additions\": 1,\n    \"deletions\": 1,\n    \"changedFiles\": 1\n  }\n]\n",
+            ".fixture/pr-1-view.json": "{\"number\": 1, \"title\": \"docs: fix typo in README\", \"state\": \"OPEN\", \"isDraft\": false, \"mergeCommit\": null, \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n",
+            ".fixture/pr-2-view.json": "{\"number\": 2, \"title\": \"docs: reword README intro\", \"state\": \"OPEN\", \"isDraft\": false, \"mergeCommit\": null, \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n",
+            ".fixture/pr-4-view.json": "{\"number\": 4, \"title\": \"fix: simplify add\", \"state\": \"OPEN\", \"isDraft\": false, \"mergeCommit\": null, \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n",
+            ".fixture/pr-5-view.json": "{\"number\": 5, \"title\": \"feat: add password check\", \"state\": \"OPEN\", \"isDraft\": false, \"mergeCommit\": null, \"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"statusCheckRollup\": []}\n"
           }
         },
         {
@@ -21,36 +26,115 @@
             "git commit -qm 'feat: initial'",
             "git init -q --bare remote.git",
             "git remote add origin ./remote.git",
-            "git push -q origin main",
+            "git push -q origin main"
+          ]
+        },
+        {
+          "run": [
+            "git checkout -q main",
             "git checkout -qb pr-1"
           ]
         },
         {
           "files": {
-            "README.md": "# demo\n\nWelcome to the demo project.\n"
+            "README.md": "# demo\n\nWelcome to the demo project.\n\nPasswords must be at least 8 characters long.\n"
           }
         },
         {
           "run": [
-            "git commit -qam 'docs: fix typo in README'",
-            "git push -q origin HEAD:refs/pull/1/head",
+            "git add -A",
+            "git commit -qm 'docs: fix typo in README'",
+            "git push -q origin HEAD:refs/pull/1/head"
+          ]
+        },
+        {
+          "run": [
             "git checkout -q main",
             "git checkout -qb pr-2"
           ]
         },
         {
           "files": {
-            "README.md": "# demo\n\nWelcom to the demo project — a tiny sample repository.\n"
+            "README.md": "# demo\n\nWelcom to the demo project \u2014 a tiny sample repository.\n\nPasswords must be at least 8 characters long.\n"
           }
         },
         {
           "run": [
-            "git commit -qam 'docs: reword README intro'",
-            "git push -q origin HEAD:refs/pull/2/head",
+            "git add -A",
+            "git commit -qm 'docs: reword README intro'",
+            "git push -q origin HEAD:refs/pull/2/head"
+          ]
+        },
+        {
+          "run": [
+            "git checkout -q main",
+            "git checkout -qb pr-3"
+          ]
+        },
+        {
+          "files": {
+            "CHANGES.md": "# Changes\n\n- Initial release.\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'docs: add CHANGES'",
+            "git push -q origin HEAD:refs/pull/3/head"
+          ]
+        },
+        {
+          "run": [
+            "git checkout -q main",
+            "git merge -q --no-ff pr-3 -m 'Merge pull request #3 from acme/pr-3'",
+            "git push -q origin main",
+            "printf '{\"number\": 3, \"title\": \"docs: add CHANGES\", \"state\": \"MERGED\", \"isDraft\": false, \"mergeCommit\": {\"oid\": \"%s\"}}\\n' \"$(git rev-parse HEAD)\" > .fixture/pr-3-view.json"
+          ]
+        },
+        {
+          "run": [
+            "git checkout -q main",
+            "git checkout -qb pr-4"
+          ]
+        },
+        {
+          "files": {
+            "core.py": "def add(a, b):\n    return a - b\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'fix: simplify add'",
+            "git push -q origin HEAD:refs/pull/4/head"
+          ]
+        },
+        {
+          "run": [
+            "git checkout -q main",
+            "git checkout -qb pr-5"
+          ]
+        },
+        {
+          "files": {
+            "auth.py": "def is_valid_password(password):\n    return len(password) > 8\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add password check'",
+            "git push -q origin HEAD:refs/pull/5/head"
+          ]
+        },
+        {
+          "run": [
             "git checkout -q main",
             "git fetch -q origin '+refs/pull/*/head:refs/remotes/origin/pull/*'",
             "git diff main origin/pull/1 > .fixture/pr-1.diff",
-            "git diff main origin/pull/2 > .fixture/pr-2.diff"
+            "git diff main origin/pull/2 > .fixture/pr-2.diff",
+            "git diff main origin/pull/4 > .fixture/pr-4.diff",
+            "git diff main origin/pull/5 > .fixture/pr-5.diff"
           ]
         }
       ]
@@ -76,53 +160,171 @@
   "cases": [
     {
       "id": "bm-h1",
-      "prompt": "Clean up the PR queue: triage the open PRs and merge the trivial ones onto a branch called batch-1. Pre-approved: take all PRs you judge trivial, in ascending order, without asking me.",
+      "prompt": "Batch-merge PRs 1, 2 and https://github.com/acme/demo/pull/3 onto a branch called batch-1. Don't ask me anything; just do it and report.",
       "should_trigger": true,
       "fixture": "pr-queue",
+      "timeout": 2400,
       "assertions": [
-        {"type": "shell", "cmd": "git rev-parse --verify -q batch-1"},
-        {"type": "shell", "cmd": "git log batch-1 --oneline | grep -qiE 'Merge PR #(1|2)'"},
-        {"type": "output_regex", "pattern": "(?i)(conflict|skip)"}
+        {
+          "type": "shell",
+          "cmd": "git log batch-1 --oneline | grep -q 'Merge PR #1'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git log batch-1 --oneline | grep -qE 'Merge PR #(2|3)'"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)(#2|PR 2).{0,300}conflict|conflict.{0,300}(#2|PR 2)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)(#3|PR 3).{0,300}(already|in main|merged)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git ls-remote ./remote.git 'refs/heads/*' | wc -l)\" -eq 1"
+        }
       ]
     },
     {
       "id": "bm-h2",
-      "prompt": "Sweep the open pull requests and tell me which are safe to batch-merge. Don't merge anything.",
+      "prompt": "Batch-merge some PRs for me.",
       "should_trigger": true,
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(typo|reword)"},
-        {"type": "shell", "cmd": "! git log main --merges --oneline | grep -q ."}
-      ]
-    },
-    {
-      "id": "bm-h3",
-      "prompt": "Bulk-merge the low-risk open PRs onto a local integration branch named combined. Take all the trivial ones without asking.",
-      "should_trigger": true,
-      "fixture": "pr-queue",
-      "assertions": [
-        {"type": "shell", "cmd": "git rev-parse --verify -q combined"},
-        {"type": "shell", "cmd": "git log combined --oneline | grep -qiE 'Merge PR #(1|2)'"}
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(typo|reword|password|simplify)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(which|choose|pick|select|list)"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git branch --list 'batch*' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
+        }
       ]
     },
     {
       "id": "bm-h4",
-      "prompt": "Which of our open PRs are trivial enough to batch together? Report only.",
+      "prompt": "Merge PRs 1 and 4 onto batch-t, run the tests, and tell me which PR broke anything. Don't ask me anything.",
       "should_trigger": true,
       "fixture": "pr-queue",
+      "timeout": 2400,
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(include|trivial)"},
-        {"type": "shell", "cmd": "! git log main --merges --oneline | grep -q ."}
+        {
+          "type": "shell",
+          "cmd": "git log batch-t --oneline | grep -q 'Merge PR #1' && git log batch-t --oneline | grep -q 'Merge PR #4'"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)make test"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)(#4|PR 4).{0,300}(fail|broke|break|culprit|caus)|(fail|broke|break|culprit).{0,300}(#4|PR 4)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git rev-parse --abbrev-ref HEAD)\" = batch-t"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git ls-remote ./remote.git 'refs/heads/*' | wc -l)\" -eq 1"
+        }
       ]
     },
     {
       "id": "bm-h5",
-      "prompt": "Batch the trivial open PRs onto a branch called batch-1.",
+      "prompt": "Batch-merge PRs 1 and 2 onto a branch called batch-1.",
       "should_trigger": true,
       "fixture": "no-remote",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(gh|github)"},
-        {"type": "output_regex", "pattern": "(?i)(auth|remote|unable|cannot|can't|fail|missing|error|no open)"}
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(gh|github|remote)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(auth|remote|unable|cannot|can't|fail|missing|error|not found)"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git rev-parse --verify -q batch-1"
+        }
+      ]
+    },
+    {
+      "id": "bm-h6",
+      "prompt": "Merge PR 5 onto batch-r and review the merged branch. Report only, don't ask me anything.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "timeout": 2400,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "git log batch-r --oneline | grep -q 'Merge PR #5'"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(>\\s*8|>=\\s*8|at least 8|off.by.one|boundary)"
+        },
+        {
+          "type": "file_regex",
+          "path": "auth.py",
+          "pattern": "> 8"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git ls-remote ./remote.git 'refs/heads/*' | wc -l)\" -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bm-h7",
+      "prompt": "Batch-merge PR 1. Pick the branch name yourself and don't ask me anything.",
+      "should_trigger": true,
+      "fixture": "pr-queue",
+      "timeout": 2400,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "git branch --list 'batch/*' | grep -qE 'batch/[0-9]{8}-[0-9]{4}'"
+        },
+        {
+          "type": "shell",
+          "cmd": "git log \"$(git branch --list 'batch/*' --format='%(refname:short)' | head -1)\" --oneline | grep -q 'Merge PR #1'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git ls-remote ./remote.git 'refs/heads/*' | wc -l)\" -eq 1"
+        }
       ]
     },
     {
@@ -132,8 +334,14 @@
       "expect_skill": "triage-issues",
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(no (open )?issues|nothing to triage|zero issues|empty)"},
-        {"type": "shell", "cmd": "! git rev-parse --verify -q batch-1"}
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(no (open )?issues|nothing to triage|zero issues|empty)"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git rev-parse --verify -q batch-1"
+        }
       ]
     },
     {
@@ -143,7 +351,10 @@
       "expect_skill": "review-pr",
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"}
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"
+        }
       ]
     },
     {
@@ -153,7 +364,10 @@
       "expect_skill": null,
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "shell", "cmd": "git merge-base --is-ancestor pr-1 main"}
+        {
+          "type": "shell",
+          "cmd": "git merge-base --is-ancestor pr-1 main"
+        }
       ]
     },
     {
@@ -163,8 +377,14 @@
       "expect_skill": "describe-codebase",
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "output_regex", "pattern": "(core|README)"},
-        {"type": "shell", "cmd": "test -z \"$(git status --porcelain)\""}
+        {
+          "type": "output_regex",
+          "pattern": "(core|README)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\""
+        }
       ]
     },
     {
@@ -174,7 +394,10 @@
       "expect_skill": null,
       "fixture": "pr-queue",
       "assertions": [
-        {"type": "output_regex", "pattern": "(?i)initial"}
+        {
+          "type": "output_regex",
+          "pattern": "(?i)initial"
+        }
       ]
     }
   ]
