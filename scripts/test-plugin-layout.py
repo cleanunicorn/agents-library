@@ -165,6 +165,26 @@ class PluginLayoutTests(unittest.TestCase):
                 if is_agent:
                     self.assertRegex(header, r"(?m)^mode: subagent$")
 
+    def test_skills_are_self_contained(self):
+        """No skill file points outside its own skill directory.
+
+        Hosts can install one skill without its siblings, so a relative link
+        such as `../../manager/references/herdr.md` resolves to nothing there.
+        A skill names a sibling skill by name, never by path.
+        """
+        link = re.compile(r"\]\(([^)#\s]+)[^)]*\)|`(\.\./[^`\s]+)`")
+        for skill in sorted(path for path in (ROOT / "skills").iterdir() if path.is_dir()):
+            for path in sorted(skill.rglob("*.md")):
+                text = path.read_text(encoding="utf-8")
+                for match in link.finditer(text):
+                    target = match.group(1) or match.group(2)
+                    if re.match(r"[a-z]+:", target):
+                        continue
+                    with self.subTest(path=str(path.relative_to(ROOT)), target=target):
+                        resolved = (path.parent / target).resolve()
+                        self.assertTrue(resolved.is_relative_to(skill.resolve()),
+                                        "link leaves the skill directory")
+
     def test_definition_size_budgets(self):
         """Descriptions and definition bodies stay within a context ceiling.
 

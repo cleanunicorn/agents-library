@@ -30,8 +30,8 @@ Script paths below are relative to this skill; run from the target repository.
 ## Phase 0 — Orient
 
 1. Take PR numbers or GitHub PR URLs from the request. Without a list, run
-   `bash <skill>/scripts/list-prs.sh`, show number, title, author, and draft
-   status, and ask which to merge. Wait for the answer; never select for them.
+   `gh pr list --state open --json number,title,author,isDraft`, show them,
+   and ask which to merge. Wait for the answer; never select for them.
 2. Read `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING`, and `README` for branch,
    merge, and test rules, including suites safe to run unattended.
 3. Identify the GitHub remote (usually `origin`) and classify:

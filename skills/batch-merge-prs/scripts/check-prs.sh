@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
-# Classify the named PRs against remote/main; fetch only, no checkout or GitHub writes.
+# Resolve the user's PR list and classify each PR against <remote>/<main>.
+# Read-only: fetches, never checks out, merges, or writes to GitHub.
+#
 # Usage: check-prs.sh <remote> <pr-number|pr-url>...
-# Ledger starts MAIN <branch>, REPO <owner/name>, then one line per unique PR:
-# IN_MAIN <n> merged-on-github <merge-sha>|head-reachable <head-sha>|
-#             patch-equivalent <head-sha> (including squash/rebase merges);
-# TODO <n> <head-sha> <state> (OPEN|DRAFT|CLOSED, UNKNOWN if unavailable);
-# SKIPPED <n> fetch-failed; SKIPPED <arg> other-repo <owner/name>|bad-ref.
-# Preserve input order. FATAL/nonzero if gh is missing/unauthenticated, remote
-# fetch fails, or no main branch can be detected.
+#
+# Prints, in order:
+#   MAIN <branch>                      the detected main branch of <remote>
+#   REPO <owner/name>                  the repository gh resolves here
+# then one line per listed PR, in the order given:
+#   IN_MAIN <n> merged-on-github <merge-sha>   GitHub merged it into main
+#   IN_MAIN <n> head-reachable <head-sha>      its head commit is in main
+#   IN_MAIN <n> patch-equivalent <head-sha>    every commit is already in main
+#                                              as an equivalent patch (squash
+#                                              or rebase merge)
+#   TODO <n> <head-sha> <state>                merge it (state OPEN|DRAFT|CLOSED)
+#   SKIPPED <n> fetch-failed                   pull/<n>/head could not be fetched
+#   SKIPPED <arg> other-repo <owner/name>      a URL for a different repository
+#   SKIPPED <arg> bad-ref                      neither a number nor a PR URL
+#
+# A PR number listed twice is reported once. Exit non-zero with FATAL on
+# stderr when gh is missing/unauthenticated, the remote cannot be fetched, or
+# no main branch can be detected.
 
 set -u
 
@@ -75,13 +88,11 @@ for arg in "$@"; do
     continue
   fi
 
-  tmp="__batch_check_$n"
-  if ! git fetch -q "$remote" "+pull/$n/head:$tmp" 2>/dev/null; then
+  if ! git fetch -q "$remote" "pull/$n/head" 2>/dev/null; then
     echo "SKIPPED $n fetch-failed"
     continue
   fi
-  head=$(git rev-parse "$tmp")
-  git branch -D "$tmp" >/dev/null 2>&1 || true
+  head=$(git rev-parse FETCH_HEAD)
 
   if git merge-base --is-ancestor "$head" "$base"; then
     echo "IN_MAIN $n head-reachable $head"

@@ -257,9 +257,8 @@ loads and executes.
   `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
   also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
-  instead of narrated as prose: batch-merge-prs has `list-prs.sh` (open PRs,
-  when the user names none), `check-prs.sh` (skips PRs main already
-  contains), `merge-prs.sh` (which auto-names the target branch
+  instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
+  main already contains), `merge-prs.sh` (which auto-names the target branch
   `batch/<YYYYMMDD-HHMM>` when passed `auto`), `test-commands.sh`,
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
