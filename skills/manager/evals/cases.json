@@ -116,6 +116,52 @@
           ]
         }
       ]
+    },
+    "task-service-pr": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\nremote.git/\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "AGENTS.md": "# Agent guide \u2014 taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- The remote is `origin`; the terminal state is a ready pull request whose\n  required CI checks pass. Never commit to `main`.\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call to the main checkout, serves draft\n# PR #12 for the pushed branch, and reports one required check failing for a\n# reason no commit can fix (a missing secret).\ntop=$(cd \"$(git rev-parse --git-common-dir)/..\" && pwd)\necho \"gh $*\" >> \"$top/.gh-calls.log\"\nhead=$(git -C \"$top\" ls-remote origin refs/heads/feat/list-limit | cut -f1)\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/taskbox\"}'; exit 0 ;;\n  \"pr view\")\n    python3 - \"$head\" \"$@\" <<'PY'\nimport json, sys\npr = {\"number\": 12, \"url\": \"https://github.com/acme/taskbox/pull/12\", \"state\": \"OPEN\",\n      \"isDraft\": True, \"headRefName\": \"feat/list-limit\", \"headRefOid\": sys.argv[1]}\nargs = sys.argv[2:]\nq = next((args[i + 1] for i, a in enumerate(args[:-1]) if a in (\"-q\", \"--jq\")), \"\")\nv = pr.get(q.lstrip(\".\"), \"\")\nprint((json.dumps(v) if isinstance(v, bool) else v) if q else json.dumps(pr))\nPY\n    exit 0 ;;\n  \"pr checks\")\n    printf 'unit\\tpass\\t41s\\thttps://ci.example.invalid/acme/taskbox/runs/7\\n'\n    printf 'integration\\tfail\\t12s\\thttps://ci.example.invalid/acme/taskbox/runs/8\\n'\n    echo \"integration: Error: required secret TASKBOX_API_TOKEN is not set for this repository\" >&2\n    exit 1 ;;\n  \"pr ready\") echo \"\u2713 Pull request acme/taskbox#12 is marked as \\\"ready for review\\\"\"; exit 0 ;;\n  \"pr edit\"|\"pr comment\") echo \"https://github.com/acme/taskbox/pull/12\"; exit 0 ;;\n  \"pr create\") echo \"a pull request for branch \\\"feat/list-limit\\\" already exists: https://github.com/acme/taskbox/pull/12\" >&2; exit 1 ;;\n  \"pr list\") echo '[{\"number\": 12, \"headRefName\": \"feat/list-limit\", \"isDraft\": true}]'; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag eval-baseline",
+            "git checkout -qb feat/list-limit"
+          ]
+        },
+        {
+          "files": {
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(limit=None), titles(limit=None). Lists return\ntasks in insertion order. A limit returns the first N; omitting it returns\neverything. Zero, negative numbers, booleans, strings, and floats are rejected\nwith ValueError.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    if command == \"titles\":\n        return service.list_titles(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks(limit=None):\n    tasks = repository.list_tasks()\n    if limit:\n        if not isinstance(limit, int) or limit < 0:\n            raise ValueError(\"limit must be a positive integer\")\n        return tasks[:limit]\n    return tasks\n\n\ndef list_titles(limit=None):\n    titles = [task[\"title\"] for task in repository.list_tasks()]\n    if limit:\n        if not isinstance(limit, int) or limit < 0:\n            raise ValueError(\"limit must be a positive integer\")\n        return titles[:limit]\n    return titles\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n    def test_list_limit(self):\n        for title in (\"first\", \"second\", \"third\"):\n            execute(\"add\", title=title)\n        self.assertEqual(len(execute(\"list\", limit=2)), 2)\n        self.assertEqual(execute(\"titles\", limit=2), [\"first\", \"second\"])\n\n    def test_negative_limit(self):\n        with self.assertRaises(ValueError):\n            execute(\"list\", limit=-1)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add list limits and a titles command'",
+            "git tag eval-branch",
+            "git init -q --bare remote.git",
+            "git remote add origin ./remote.git",
+            "git push -q origin main feat/list-limit"
+          ]
+        }
+      ]
     }
   },
   "cases": [
@@ -226,7 +272,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_regex",
@@ -267,6 +313,10 @@
         {
           "type": "shell",
           "cmd": "find .worktrees/manager-run -name 'gate-*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- CI:[^\\n]*(none|no (ci|remote)|branch)"
         }
       ]
     },
@@ -355,7 +405,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_regex",
@@ -383,7 +433,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_not_regex",
@@ -444,7 +494,7 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?s)- Shipped:.*- Gate:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
         },
         {
           "type": "output_not_regex",
@@ -615,6 +665,63 @@
         {
           "type": "shell",
           "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h18",
+      "prompt": "You are the manager for list limits (slug list-limit). Implementation on this branch is done, pushed to origin, and tracked by draft PR #12 (https://github.com/acme/taskbox/pull/12). Reviewer A has reported: [correctness-1] critical, src/service.py list_tasks \u2014 `if limit:` lets limit=0 return every task, but the README says zero is rejected with ValueError. Take the item through hand-back in this checkout: validate and fix the finding, have it re-checked, push, wait for the PR's CI, and mark the PR ready only if your rules allow it. Everything reversible is pre-approved; nobody is available to answer questions. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service-pr",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test && python3 - <<'PYTEST'\nfrom src.app import execute\ntry:\n    execute('list', limit=0)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('limit=0 accepted')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git ls-remote origin refs/heads/feat/list-limit | cut -f1)\" = \"$(git rev-parse HEAD)\" && test \"$(git rev-list --count eval-branch..HEAD)\" -ge 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -q '^gh pr checks' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -q '^gh pr ready' .gh-calls.log"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'ci-*.log' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'recheck*.md' | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?m)^#{1,4} .+(\u2014|\u2013|-) (blocked|in progress)\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?m)^#{1,4} .+(\u2014|\u2013|-) done\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- CI:[^\\n]*(integration|fail)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)draft"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
         }
       ]
     },

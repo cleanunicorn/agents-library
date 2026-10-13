@@ -299,7 +299,11 @@ loads and executes.
   fan-out), or none for the `direct` playbook → the coordinator's SWOT merge →
   implement → one reviewer, or two for high-risk changes (review-pr) →
   validate and fix, with the raising reviewer ruling on refutations and
-  re-checking the fix commits → hand back in a fixed status block. Three
+  re-checking the fix commits → final push, PR evidence body and CI wait,
+  where a failing check is one more finding → mark ready only when gate, PR
+  head and CI share one SHA, every required check passed, and nothing is
+  open → hand back in a fixed status block whose `done` means that ready
+  PR. Three
   work items run concurrently and a fourth queues, tracked on a status board
   (`references/console.md`). Inside Herdr (its `herdr` skill present,
   `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
@@ -356,8 +360,9 @@ loads and executes.
   and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
   action, sweep, status}` validation records, and `{reviewer, head, gate,
   findings, new}` re-check records for manager, defined in its
-  role briefs, with the gate-log format in `references/console.md`
-  (`command:`/`head:`/`exit:`); the
+  role briefs, with the gate-log and CI-log format in `references/console.md`
+  (`command:`/`head:`/`exit:`) and the PR evidence body in its coordinator
+  brief; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
