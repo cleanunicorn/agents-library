@@ -11,7 +11,8 @@ The phase numbers below match the manager's.
 
 Save every gate run to `gate-coordinator-<short-sha>.log` in the run
 directory: `command: <exact command>`, `head: <full SHA>`, raw output,
-`exit: <code>`. Only a log at the branch head supports a gate claim.
+`exit: <code>`. Only a log at the branch head supports a gate claim. CI
+waits are saved the same way as `ci-coordinator-<short-sha>.log`.
 
 ## Phase 0 — Intake
 
@@ -34,7 +35,7 @@ The manager gives you the work item and its acceptance criteria. Set it up:
    gate_kind:     assertions | syntax-only | none
    baseline:      gate log path · exit code · N passed, N failed
    conventions:   commit format · PR-title format · ask-first list
-   remote:        name and URL | none
+   remote:        name and URL | none · gh: authenticated | missing
    ```
 
 With no usable gate, stop after the record: edit nothing until the manager
@@ -132,11 +133,25 @@ Work in the worktree from your setup record, following the project's guidance.
   milestone lands, and keep the PR body in step with it when a PR exists.
 - When the plan proves wrong, change the plan and log the deviation with its
   reason. Never drift silently.
-- With a usable remote, push and open a **draft** PR in the project's title
-  convention, with Progress as its body. Only you open it; only the manager
-  authorizes ready status. Never merge. Push after each later phase adding
-  commits so the PR matches the branch at hand-back. Without a usable
-  remote, deliver the committed branch.
+- With a usable remote and `gh`, push and open a **draft** PR in the
+  project's title convention, its body the **PR evidence** below. Only you
+  open it; only the manager authorizes ready status. Never merge. Push after
+  each later phase adding commits so the PR matches the branch at hand-back.
+  Without them, commit the branch and report `pr: none — branch only`; the
+  manager decides whether that delivery is accepted.
+
+The **PR evidence** body lets a reader see the PR is tested and reviewed
+without the console. Keep it current at every push:
+
+```
+## Progress
+- [x] / - [ ] the merged plan's checklist
+## Evidence
+- Gate: `<exact command>` → exit <code> · N passed, N failed · at <full SHA>
+- CI: N of N required checks passed at <full SHA> | failing: <names> | none — no CI checks
+- Findings:
+  | id | severity | verdict | fix commit, or refutation evidence |
+```
 
 Return an **implementation report**, one row per milestone:
 
@@ -158,7 +173,7 @@ hunk and reviewer's confidence cannot substitute for this. Write one
 
 ```
 source_ids:  [A:correctness-1, B:testing-2]
-raised_by:   any reviewer label — e.g. [A], [A,B]
+raised_by:   any reviewer label, or CI — e.g. [A], [A,B], [CI]
 severity:    critical | important | nice-to-have — the higher one when merged
 verdict:     confirmed | refuted | uncertain
 evidence:    what the code, a test, or the project rule shows — required for every verdict
@@ -174,7 +189,8 @@ attached to its record.
 
 Because you wrote the code, reviewers audit every refutation; disputed 🔴 or
 security findings go through the manager to the user. Unsettled findings are
-`uncertain`: neither apply nor drop them.
+`uncertain`: neither apply nor drop them. A confirmed in-scope finding that
+ends `reverted` or `unresolved`, or an `uncertain` one, keeps the PR a draft.
 
 ## Phase 4 — Fix what was confirmed
 
@@ -201,9 +217,22 @@ corrected once, the same way.
 
 ## Phase 5 — Hand back
 
-On the manager's word: run the gate at the branch head and save its log;
-push; mark the draft PR ready (`gh pr ready`) unless the manager says the
-item is `blocked`; confirm the worktree is clean. Never merge. A failed push
-or PR command is reported with the exact command and its error.
+On the manager's word:
+
+1. **Gate** at the branch head; save its log.
+2. **Update the PR evidence** body (`gh pr edit <pr> --body-file`) and push.
+3. **Wait for CI** at that head: `gh pr checks <pr> --watch --required`, or
+   poll it; when the repo marks no check required, every check counts. Save
+   the CI log with `head:` from `gh pr view <pr> --json headRefOid`. Record
+   `none — no CI checks` only when none have registered five minutes after
+   the push.
+4. **A failing check is a finding.** Write its validation record
+   (`raised_by: [CI]`), fix it as in Phase 4, and return to step 1; the
+   reviewer re-checks the commits. A check you cannot fix from the
+   repository (a missing secret, an outage) is reported, not retried.
+5. **Report** the gate log, CI log and PR head SHA. Mark the PR ready
+   (`gh pr ready`) only when the manager says so; confirm the worktree is
+   clean. Never merge. A failed push or PR command is reported with the
+   exact command and its error.
 
 End every report with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

@@ -14,11 +14,15 @@ the briefs you compose.
 | `<slug>/brief-<role>-<label>.md` | you — the exact text sent |
 | `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `merged-plan`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
 | `<slug>/gate-<role>-<short-sha>.log` | the worker that ran the gate |
+| `<slug>/ci-coordinator-<short-sha>.log` | the coordinator, waiting on the PR's checks |
 
 **A gate log** starts with `command: <exact command>` and `head: <full SHA>`,
 then the raw output, then `exit: <code>`. Accept a gate claim only
 when the log exists, `head` equals `git rev-parse <branch>`, and `exit: 0` —
 or, at a red baseline, no test fails that the baseline log did not.
+**A CI log** has the same shape: `command:` is the `gh pr checks` call,
+`head:` the PR head it watched. Accept a CI claim only when that head equals
+the gate log's and `gh pr view <pr> --json headRefOid`.
 
 ## The loop
 

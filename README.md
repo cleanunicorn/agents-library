@@ -195,7 +195,16 @@ One or two independent `plan-feature` planners feed a coordinator's SWOT
 merge and Progress checklist. The coordinator implements; one independent
 `review-pr` reviewer (two for high risk) reviews. Findings are validated with
 evidence before fixes; the raising reviewer audits refutations and re-checks
-fix commits. Gate claims need a saved log at the branch head. The `direct`
+fix commits. Gate claims need a saved log at the branch head.
+
+The deliverable is a PR that is fully tested and fully reviewed. It stays a
+draft until the gate log, the PR head, and the CI log share one SHA, the
+gate exits 0, every required CI check passes, and the last re-check leaves
+no finding open. A failing check is fixed and re-checked like any other
+finding. The PR body carries the evidence: Progress, the gate result, CI
+status, and a findings table. With no remote or `gh`, the manager asks
+whether a branch is acceptable; unattended, the item ends `blocked: no
+remote`. The `direct`
 playbook skips planning for an obvious edit, retaining review. Planners and
 reviewers use a different agent kind from the coordinator when available.
 

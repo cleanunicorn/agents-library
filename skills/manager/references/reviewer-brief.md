@@ -62,6 +62,9 @@ new:         problems the fix commits introduced — same schema as a finding �
 ```
 
 The re-check is not a second review round: judge the fix commits against
-your findings, not the whole branch again.
+your findings, not the whole branch again. A fix for a failing CI check
+comes to you the same way; re-check it against that check's record, from
+the head you last checked. Mark nothing `fixed` you could not verify: the
+PR stays a draft while any finding is `not-fixed` or `partial`.
 
 End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.
