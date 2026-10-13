@@ -1,9 +1,5 @@
 # Running the console
 
-`SKILL.md` says what the manager may and may never do. This file is how the
-console runs: where records live, how you wait, what the board shows, and how
-native subagents stand in for Herdr.
-
 ## Run directory
 
 One per session, outside every repository so nothing lands in a PR: the one
@@ -20,9 +16,7 @@ the briefs you compose.
 | `<slug>/gate-<role>-<short-sha>.log` | the worker that ran the gate |
 
 **A gate log** starts with `command: <exact command>` and `head: <full SHA>`,
-then the raw output, then `exit: <code>`. A worker writes it in one go, for
-example `{ echo "command: make test"; echo "head: $(git rev-parse HEAD)";
-make test 2>&1; echo "exit: $?"; } > <log>`. You accept a gate claim only
+then the raw output, then `exit: <code>`. Accept a gate claim only
 when the log exists, `head` equals `git rev-parse <branch>`, and `exit: 0` —
 or, at a red baseline, no test fails that the baseline log did not.
 
@@ -38,12 +32,10 @@ Each turn, in this order:
    record, check it against its gate in `SKILL.md`, start the next phase.
 3. **The board**, then a short reply: what moved, what waits on the user.
 
-**Never block the user on a worker.** Where the host can wait in the
-background and wake you when it ends — a background shell command such as
-`herdr agent wait <name>`, or a background subagent — use it, and return to
-the user at once. Where it can only block, wait with a timeout, report, and
-check again next turn. A wait that timed out is not a failed worker: read it
-before prompting again.
+**Keep the console responsive.** Use background waits with wake-up when
+available (`herdr agent wait <name>` or a background subagent), returning
+to the user immediately. Otherwise wait with a timeout, report and check
+next turn. Timeouts are not failures; read the worker before re-prompting.
 
 ## The board
 
@@ -64,18 +56,14 @@ independent, and the hand-back names the file so the user merges in order.
 
 ## Concurrency
 
-Items run concurrently because the session is a control window: the user
-hands over work as it comes and should not wait for one PR to finish before
-the next starts. Isolation makes it safe — each item has its own worktree,
-branch, PR, and workers, and the single-writer rule holds per worktree. The
-cap of three active items (at most fifteen agents) keeps the board readable
-and the host's capacity sane; the user may raise or lower it. One item
-`blocked` never stops another.
+Isolation makes concurrent items safe: each owns a worktree, branch, PR and
+workers, with one writer per worktree. Three active items (at most fifteen
+agents) keep the board readable and host capacity sane; the user may change
+the cap. A blocked item never stops another.
 
 ## Native subagents
 
-Without Herdr, workers are the host's own subagents, with the same roles,
-briefs, budget, and rules.
+Native workers use the same roles, briefs, budget and rules.
 
 - **Start same-role workers in one message** so they run in parallel, and in
   the background where the host allows, so the console stays free.
@@ -86,8 +74,8 @@ briefs, budget, and rules.
   findings and the commits since the frozen SHA). That is the same member
   continuing, not a new one: it does not count against the budget and is not
   a second review round.
-- **Subagents cannot ask the user.** Their briefs tell them to return the
-  question; you relay it (rule 7) and resume them with the answer.
+- **Subagents cannot ask the user.** Return their questions to the
+  user under SKILL.md rule 7 and resume them with the answer.
 
 ## Error handling
 
@@ -100,9 +88,6 @@ briefs, budget, and rules.
   change touches.
 - **The coordinator dies:** a new one gets the setup record, merged plan,
   Progress, and `git log`; ticked boxes count only after a fresh gate log.
-- **The user tries to hand the work back to you** ("just do it yourself"):
-  decline, start the worker, and say that leaving the manager session is how
-  to get this agent to do it.
 
 ## Ending the session
 

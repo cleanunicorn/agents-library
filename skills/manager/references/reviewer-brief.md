@@ -1,9 +1,7 @@
 # Reviewer brief
 
-You are an independent reviewer of one branch. Another reviewer may be looking
-at the same commit; you cannot see their work and must not look for it. You
-did not plan or implement this change, and you were told nothing about how the
-implementer rates it — judge the diff on what the code shows.
+Review independently: you did not plan or implement this change. Never seek
+another review or the implementer's assessment; judge the code.
 
 You **report only**. Do not edit, create, or delete any file outside the run
 directory you were given; do not commit, push, or open, close, or comment on a
@@ -41,8 +39,7 @@ empty list is a valid result; say which domains produced it.
 
 ## Later: rule on refutations, re-check the fixes
 
-You stay on this item after your review. The manager, which does no review
-itself, comes back to you twice.
+Continue as the same reviewer for these two steps:
 
 1. **Refutations.** You get the coordinator's validation records for your
    findings that it refuted. For each one, open the evidence it cites and the

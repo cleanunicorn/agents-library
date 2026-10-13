@@ -1,27 +1,14 @@
 #!/usr/bin/env bash
-# Find which merged PR first makes a failing test command fail. Re-runs the
-# command at <base> and then at each batch merge commit in order, and stops
-# at the first failure. Returns to the starting branch when done.
-#
+# Run the failing command at the batch base, then each merge in order.
+# Stop at the first failure and restore the starting branch (or detached HEAD).
 # Usage: attribute-failure.sh <log-dir> <base> <command> <pr>=<merge-sha>...
-#
-#   <base>      the commit the batch was cut from, e.g. origin/main
-#   <command>   the failing gate command, one string
-#   <pr>=<sha>  each MERGED ledger entry, in merge order
-#
-# Prints:
-#   BASELINE pass|fail                 the command at <base>
-#   AT <pr> <sha> pass|fail            the command at each merge commit
-#   CULPRIT <pr>                       first merge where it fails; when earlier
-#                                      PRs are present this may be an
-#                                      interaction, not <pr> alone
-#   CULPRIT pre-existing               it already fails at <base>
-#   CULPRIT none                       it passes at every merge (flaky, or
-#                                      depends on state outside the tree)
+# <command> is one shell string; entries are MERGED ledger pairs in merge order.
+# Ledger: BASELINE pass|fail; AT <pr> <sha> pass|fail;
+# CULPRIT <pr>|pre-existing|none. A PR culprit may interact with earlier merges;
+# none means every revision passed (flakiness or state outside the tree).
 # Logs land in <log-dir>/attr-<step>.log.
-#
-# Exit non-zero with FATAL when the tree is dirty before or after a run
-# (tests must not leave tracked changes behind) or a checkout fails.
+# FATAL/nonzero on checkout failure or tracked changes before/after a run:
+# tests must not leave tracked side effects behind.
 
 set -u
 
@@ -64,23 +51,20 @@ run_at() {
 
 run_at "$base" baseline
 echo "BASELINE $result"
-if [ "$result" = fail ]; then
-  git checkout -q "$start"
-  echo "CULPRIT pre-existing"
-  exit 0
+culprit=pre-existing
+if [ "$result" = pass ]; then
+  culprit=none
+  for entry in "$@"; do
+    pr=${entry%%=*}
+    sha=${entry#*=}
+    run_at "$sha" "pr-$pr"
+    echo "AT $pr $sha $result"
+    if [ "$result" = fail ]; then
+      culprit=$pr
+      break
+    fi
+  done
 fi
 
-for entry in "$@"; do
-  pr=${entry%%=*}
-  sha=${entry#*=}
-  run_at "$sha" "pr-$pr"
-  echo "AT $pr $sha $result"
-  if [ "$result" = fail ]; then
-    git checkout -q "$start"
-    echo "CULPRIT $pr"
-    exit 0
-  fi
-done
-
 git checkout -q "$start"
-echo "CULPRIT none"
+echo "CULPRIT $culprit"

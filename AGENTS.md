@@ -287,7 +287,8 @@ loads and executes.
   classify → merge onto a new local branch → test under the project's rules,
   attributing failures → review with review-pr → report; inside Herdr its
   reviewer and helpers run in tabs and its tests in a pane
-  (`references/herdr.md`), otherwise as native subagents and plain shell.
+  (`references/herdr.md`, self-contained for standalone installation),
+  otherwise as native subagents and plain shell.
   install-agents is a linear installer with no fan-out (orient → one
   confirmation → install via script → schedule → ledger). manager turns
   the invoking session into a console that does no work itself: it reads the
@@ -356,7 +357,8 @@ loads and executes.
   and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
   action, sweep, status}` validation records, and `{reviewer, head, gate,
   findings, new}` re-check records for manager, defined in its
-  `references/` files, plus its `command:`/`head:`/`exit:` gate logs; the
+  role briefs, with the gate-log format in `references/console.md`
+  (`command:`/`head:`/`exit:`); the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,

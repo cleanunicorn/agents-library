@@ -21,10 +21,10 @@ AGENT_WORD_CEILING = 1800
 # Per-skill root ceilings, keyed by name: each is the current size rounded up.
 # domains/, lenses/, references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
-    "batch-merge-prs": 1000,
+    "batch-merge-prs": 700,
     "describe-codebase": 1000,
     "install-agents": 1400,
-    "manager": 1700,
+    "manager": 1500,
     "plan-feature": 1300,
     "review-design": 1800,
     "review-pr": 2200,

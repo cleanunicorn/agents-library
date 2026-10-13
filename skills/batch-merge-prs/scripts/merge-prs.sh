@@ -1,28 +1,14 @@
 #!/usr/bin/env bash
-# Locally batch-merge GitHub PR heads onto a target branch. Never pushes,
-# never writes to GitHub.
-#
+# Merge GitHub PR heads locally; never push or write to GitHub.
 # Usage: merge-prs.sh <remote> <main-branch> <target-branch>|auto <pr-number>...
-#
-# Behavior:
-#   - A target of `auto` generates the branch name batch/<YYYYMMDD-HHMM> from
-#     the current date/time (the default when the user didn't name a branch).
-#   - Refuses to run on a dirty working tree.
-#   - Creates <target-branch> from an up-to-date <remote>/<main-branch> if it
-#     doesn't exist; otherwise checks it out as-is.
-#   - Fetches each PR via the base-repo pull ref (pull/<n>/head — works for
-#     fork PRs), merges it with --no-ff so each PR stays a distinct,
-#     revertable merge commit.
-#   - Skips a PR whose head the branch already contains (nothing to merge).
-#   - On conflict: records the conflicting files, aborts that one merge, and
-#     continues with the rest. Never leaves a half-resolved merge.
-#   - Prints one ledger line per PR on stdout:
-#       MERGED <n> <merge-commit-sha>
-#       SKIPPED <n> fetch-failed
-#       SKIPPED <n> already-contained
-#       SKIPPED <n> conflicts <file>[,<file>...]
-#   - Exit 0 once the loop ran; non-zero only for setup failures (dirty tree,
-#     bad args, fetch/checkout of the target failed).
+# auto names batch/<YYYYMMDD-HHMM>. Refuse a dirty tree; fetch the remote,
+# then create the target from remote/main or check out an existing target as-is.
+# Fetch pull/<n>/head (including forks); --no-ff keeps each merge revertable.
+# Abort conflicts and continue; skip heads already contained in the target.
+# Ledger: TARGET <branch> existing|created-from <remote/main>;
+# MERGED <n> <sha>; SKIPPED <n> fetch-failed|already-contained|conflicts <files>.
+# Conflicting files are comma-separated. Exit 0 after the loop; nonzero on
+# setup failures (arguments, dirty tree, remote fetch, or target checkout).
 
 set -u
 

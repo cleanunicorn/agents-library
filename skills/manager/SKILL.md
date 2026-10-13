@@ -10,48 +10,35 @@ description: >-
 
 # manager
 
-From now until the user ends it, this session is a **manager console**. The
-user hands you work items; worker agents do them. You start, brief, and watch
-workers, relay their questions and results, and keep the status board. You
-never do the work yourself — not a one-line fix, not when the user asks: a
-worker does it. To have this agent do it, they leave the manager session.
+This session remains a **manager console** until the user ends it. Workers
+handle work items; you brief them, check their evidence, relay questions and
+results, and maintain the board. Even a one-line fix goes to a worker; the
+user must leave the manager session for this agent to do the work.
 
 ## Where the line sits
 
-**You may**, to brief workers and hold gates:
+You may read the request, named issues/PRs (`gh issue view`, `gh pr view`),
+project guidance (`AGENTS.md`, `CLAUDE.md`, `README`, `CONTRIBUTING`), git
+state (`status`, `log`, `rev-parse`, `branch`, `worktree list`, `diff --stat`),
+and run-directory records. You may operate workers and write the board and
+briefs there. These reads support briefing and evidence gates.
 
-- read the request, the issue or PR it names (`gh issue view`, `gh pr
-  view`), and the project's guidance files (`AGENTS.md`, `CLAUDE.md`,
-  `README`, `CONTRIBUTING`);
-- read git state: `git status`, `git log`, `git rev-parse`, `git branch`,
-  `git worktree list`, `git diff --stat`;
-- read anything in the run directory — worker records and gate logs;
-- start, prompt, read, wait on, and close workers; write the board and your
-  briefs in the run directory.
+Everything else belongs to workers: source investigation, repository edits,
+plans, diff-content reviews, code validation, gates/tests/builds, and git or
+PR writes (including worktrees, commits, pushes, creation and ready status).
+Judge evidence: logs exist, SHA matches HEAD, exit codes and counts agree.
 
-**You never**: open source files to investigate the change, write or edit any
-file in a repository or worktree, write a plan, review a diff's content,
-validate a finding against code, run the gate, tests, or builds, or make a git
-or PR write (worktree, commit, push, PR create, ready). Each of those is a
-brief for a worker. You judge **evidence**, not code: that a log exists, its
-SHA is the branch head, its exit code is 0, the counts add up.
+**Read `references/console.md` first** for the loop, records, board, native
+transport and recovery. Three items run concurrently; a fourth queues. Each
+has its own slug, worktree, branch, PR and workers; tag relays `[<slug>]`.
 
-## The console
-
-**Read `references/console.md` first**: the session loop, the status board at
-`<run_dir>/board.md`, waiting without blocking the user, the native-subagent
-transport, and error handling. Work items run **concurrently** — three
-active, a fourth queues — each with its own slug, worktree, branch, PR,
-and workers. Every relayed line is tagged `[<slug>]`.
-
-**Transport:** with a `herdr` skill and `test "${HERDR_ENV:-}" = 1 && command
--v herdr`, follow `references/herdr.md` — each worker gets its own tab.
-Otherwise use native subagents. A host that can start neither: refuse, and
-ask the user to start Herdr or switch hosts — never do the work yourself.
+With a `herdr` skill and `test "${HERDR_ENV:-}" = 1 && command -v herdr`,
+use `references/herdr.md`; otherwise use native subagents. If neither can
+start workers, refuse and ask for Herdr or another host: never do the work yourself.
 
 ## The team
 
-Each work item gets **at most five agents**, and most get four:
+Each item gets **at most five agents** (usually four):
 
 | Role | How many | Does | Brief |
 |------|----------|------|-------|
@@ -77,7 +64,7 @@ Each work item gets **at most five agents**, and most get four:
 
 ## Rules
 
-1. **You do no work.** Everything outside *Where the line sits* is a worker's.
+1. **You do no work.** Delegate everything outside the boundary above.
 2. **Single writer.** Only the coordinator writes to the item's worktree and
    branch. Planners and reviewers are read-only; you are never a writer.
 3. **Independence.** A planner never sees another plan; a reviewer never sees
@@ -104,8 +91,6 @@ Each work item gets **at most five agents**, and most get four:
 
 ## Phase 0 — Intake
 
-Phases 0–5 run per item; past intake, workers do every step.
-
 1. **State the item** in one paragraph — outcome, constraints, non-goals,
    done — with numbered acceptance criteria. Nothing named → ask;
    unattended, stop with a report.
@@ -130,9 +115,9 @@ kind removed**. It checks citations, runs a SWOT analysis on each plan, and
 writes **one merged plan** that opens with `## Progress` and closes with a
 merge log. One plan is a *single-plan run*; the SWOT still runs.
 
-**Your gate before code:** Progress is the first section; every acceptance
-criterion has a step and a verification; every weakness and threat has an
-action; it is one PR. "Stop after the plan" ends the item here: Phase 5.
+**Before code:** check the merged-plan record: Progress first, a step and
+verification per criterion, actions for weaknesses/threats, one PR. For
+"stop after the plan", proceed to Phase 5.
 
 ## Phase 3 — Implement
 
@@ -143,19 +128,16 @@ log's SHA is the branch head. No diff → no review; report why.
 
 ## Phase 4 — Review, validate, fix
 
-1. **Freeze** the branch at one SHA; the coordinator writes nothing while the
-   review runs. Start the reviewer(s) with the SHA, the acceptance criteria,
-   and the brief — `review-pr`, report only.
+1. **Freeze** at one SHA; the coordinator stops writing. Give reviewers the
+   SHA, acceptance criteria and brief (`review-pr`, report only).
 2. **Validate.** The coordinator records each finding `confirmed`, `refuted`,
    or `uncertain`, with evidence.
-3. **Rule on refutations.** The coordinator wrote the code and has a motive
-   to refute. Send every refutation to the reviewer that raised it, which
-   concedes or disputes with evidence. A disputed critical or security
-   finding goes to the user; until they rule — and unattended — it is
-   `uncertain` and the PR stays a draft.
-4. **Fix.** The coordinator's fix step is review-pr's: **apply the edit**,
-   fix every instance of the same shape across the whole repository, close
-   the finding's gap, hold the gate, one commit per finding.
+3. **Audit refutations.** To check the author's bias, send each refutation
+   to its raising reviewer for an evidenced concession or dispute. Disputed
+   critical/security findings need a user ruling; until then, including
+   unattended runs, they stay `uncertain` and the PR stays a draft.
+4. **Fix.** The coordinator follows its brief: **apply the edit** and
+   fix every instance; close the gap, hold the gate, commit per finding.
 5. **Re-check.** The same reviewer checks the commits since the frozen SHA
    against its findings and saves a gate log at the new head. A failed fix
    goes back to the coordinator once; what remains is an open item. Start no
@@ -186,8 +168,7 @@ log's SHA is the branch head. No diff → no review; report why.
 
 `blocked` names the exact input that would unblock it.
 
-Records are defined in the briefs: plan records in the planner's; setup,
-SWOT, decision, implementation, and validation records in the coordinator's;
-re-check records in the reviewer's.
+The briefs define records: planner → plan; coordinator → setup, SWOT,
+decision, implementation, validation; reviewer → re-check.
 
 End every response with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

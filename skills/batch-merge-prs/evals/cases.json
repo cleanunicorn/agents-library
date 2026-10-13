@@ -160,7 +160,7 @@
   "cases": [
     {
       "id": "bm-h1",
-      "prompt": "Batch-merge PRs 1, 2 and 3 onto a branch called batch-1. Don't ask me anything; just do it and report.",
+      "prompt": "Batch-merge PRs 1, 2 and https://github.com/acme/demo/pull/3 onto a branch called batch-1. Don't ask me anything; just do it and report.",
       "should_trigger": true,
       "fixture": "pr-queue",
       "timeout": 2400,
@@ -216,35 +216,6 @@
         {
           "type": "shell",
           "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
-        }
-      ]
-    },
-    {
-      "id": "bm-h3",
-      "prompt": "Combine https://github.com/acme/demo/pull/1 and https://github.com/acme/demo/pull/3 onto a local branch named combined. No questions.",
-      "should_trigger": true,
-      "fixture": "pr-queue",
-      "timeout": 2400,
-      "assertions": [
-        {
-          "type": "shell",
-          "cmd": "git log combined --oneline | grep -q 'Merge PR #1'"
-        },
-        {
-          "type": "shell",
-          "cmd": "! git log combined --oneline | grep -q 'Merge PR #3'"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?is)(#3|PR 3).{0,300}(already|in main|merged)"
-        },
-        {
-          "type": "shell",
-          "cmd": "! grep -qE '^gh (pr (merge|close|comment|edit)|api)' .gh-calls.log"
-        },
-        {
-          "type": "shell",
-          "cmd": "test \"$(git ls-remote ./remote.git 'refs/heads/*' | wc -l)\" -eq 1"
         }
       ]
     },

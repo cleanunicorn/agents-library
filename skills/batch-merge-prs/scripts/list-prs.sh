@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# Deterministic Phase 0 data gathering for batch-merge-prs.
-#
+# Discover open PRs when the user names none.
 # Usage: list-prs.sh
-#
-# Prints delimited sections:
-#   == main ==     the detected main branch name
-#   == prs ==      the open-PR list as JSON (the work list)
-#
-# Exit non-zero with FATAL on stderr when gh is missing/unauthenticated or the
-# PR list cannot be fetched — the skill cannot run without either.
+# Output: == main == then the main branch; == prs == then the open-PR JSON.
+# FATAL/nonzero if gh is missing/unauthenticated, main is undetectable, or the
+# PR list cannot be fetched: these are required inputs.
 
 set -u
 

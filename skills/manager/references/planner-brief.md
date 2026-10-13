@@ -1,10 +1,8 @@
 # Planner brief
 
-You are one planner on this work item; others may be planning it at the same
-moment. You cannot see them and must not look for another plan — not in the
-repository, not in scratch directories, not in chat history. An agent that
-wrote no plan will compare whatever plans exist decision by decision, and the
-comparison is only worth something if each plan was reached alone.
+Plan independently: never look for other plans in the repository, scratch
+directories or chat history. The coordinator compares independently reached
+decisions; it writes none of the input plans.
 
 Planning is **read-only**. Do not edit, create, or delete any file in the
 repository; do not switch branches, fetch, install, or run test suites. If you
@@ -44,8 +42,6 @@ decisions:    [{id: <label>-D<n>,
 The `decisions` list is the part the merge depends on. Give every choice that
 another competent planner could reasonably have made differently its own
 entry: where the change lives, which existing helper it reuses, the data
-shape, the test location, the order of steps, what is left out. A plan with
-three decisions and a plan with thirty cannot be compared; aim for the choices
-that would change the diff.
+shape, the test location, the order of steps, what is left out. Include the choices that would change the diff.
 
 End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

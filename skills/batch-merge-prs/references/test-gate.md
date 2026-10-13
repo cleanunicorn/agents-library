@@ -1,83 +1,62 @@
-# Testing the merged branch
+# Project test gate
 
-The batch branch is tested the way the target project says to test a change —
-not the way you would. Every command, safety rule, and setup step comes from
-the project's own sources.
+## Discover
 
-## 1. Find the commands
+From the repository root, run `bash <skill>/scripts/test-commands.sh`:
 
-Run `bash scripts/test-commands.sh` from the repository root. It prints, in
-priority order:
+- `SOURCE <path>`: guidance or CI prose to read.
+- `CANDIDATE <source> <command>`: commands from CI `run:` lines or manifests
+  (package.json, Makefile/justfile, pytest, cargo, go).
+- `CAUTION <path>:<line> <text>`: possible live/shared resources, credentials,
+  or authorization requirements; a hint to inspect, not a verdict.
+- `NONE`: no sources found.
 
-- `SOURCE <path>` — prose to read: the `AGENTS.md`/`CLAUDE.md` project
-  section, `CONTRIBUTING`, and CI configs it can't parse line by line.
-- `CANDIDATE <source> <command>` — commands lifted from CI workflow `run:`
-  lines and build manifests (`package.json` scripts, `Makefile`/`justfile`
-  targets, pytest, cargo, go).
-- `CAUTION <path>:<line> <text>` — a guide line that ties a suite to live,
-  shared, or production resources, credentials, or authorization.
-- `NONE` — nothing anywhere.
+Read every `SOURCE` and `CAUTION`. Resolve commands in priority order:
+AGENTS.md/CLAUDE.md project section → CONTRIBUTING → CI → manifests. Run
+what the project requires before a change like this batch merges, including
+lint and type checks. Install only documented testing setup (`npm ci`,
+`uv sync`), never an inferred dependency.
 
-Read every `SOURCE`. An earlier source overrules a later one: a command the
-project's agent guide names wins over a CI line, which wins over a manifest
-script. The final list is what the project expects to pass before a change
-like this batch merges — usually its lint, type-check, and test commands, the
-same set its CI runs on a pull request. Include a documented setup step
-(`npm ci`, `uv sync`) only when the project names it as part of testing;
-never install anything it doesn't name.
+No commands or contradictory sources → ask; unattended, report `untested`
+and why. Do not guess a gate.
 
-On `NONE`, or when the sources contradict each other, ask the user for the
-commands; unattended, report that the branch is untested and why. Never
-report a branch as tested on a guess.
+## Authorize and run
 
-## 2. Respect the project's safety rules
+Live/shared suites (staging databases, real APIs, paid services, deploys) need
+authorization because they affect external resources. A request naming the
+suite or explicitly including live suites authorizes it; otherwise record
+`skipped — needs authorization (<path>:<line>)`.
 
-A suite the project marks as touching a shared or live resource — a staging
-database, a real API, paid services, a deploy — needs authorization. The
-request is that authorization only when it names the suite or says to run
-everything including live suites. Without it, skip that suite and list it in
-the report as `skipped — needs authorization (<path>:<line>)`. Read every
-`CAUTION` line before deciding; it is a hint, not a verdict.
-
-## 3. Run each command
-
-Run each command from the repository root with the batch branch checked out:
+With the batch tip checked out, run each authorized command sequentially
+from the repository root; suites may share build output:
 
 ```
 bash <skill>/scripts/run-gate.sh <label> <run-dir>/<label>.log '<command>'
 ```
 
-`<label>` is short and unique (`lint`, `test`, `test-e2e`); `<run-dir>` is a
-scratch directory outside the repository. The last line is `GATE <label>
-exit=<status> log=<path>`. In Herdr, run it in the test pane
-(`references/herdr.md`) so the user watches it live; otherwise run it in your
-own shell. Run commands one after another — suites often share build output.
+Use unique labels and a scratch directory outside the repository. The ledger
+is `GATE <label> exit=<status> log=<path>`. Use the Herdr test pane when
+available. Record command, source, exit status, and counts from the log;
+write `counts not printed` when absent.
 
-For each command record: the command, its source, the exit status, and the
-passed and failed counts read from the log. When the runner prints no counts,
-write `counts not printed`, not a guess.
+## Attribute failures
 
-## 4. Attribute each failure
-
-For each command that exits non-zero, after the reviewer has finished:
+After the reviewer finishes, for each failed command pass **every** `MERGED`
+entry in merge order:
 
 ```
 bash <skill>/scripts/attribute-failure.sh <run-dir> <remote>/<main> '<command>' <n>=<merge-sha>...
 ```
 
-Pass every `MERGED` ledger entry in merge order. It runs the command at
-`<remote>/<main>` (`BASELINE`), then at each merge commit (`AT`), stops at the
-first failure, returns to the batch branch, and prints `CULPRIT <n>`,
-`CULPRIT pre-existing`, or `CULPRIT none`. Report it with the caveat it
-carries: a culprit found with earlier PRs already merged may be an
-interaction, so name both when the failing test touches what an earlier PR
-changed. `CULPRIT none` means the failure didn't reproduce — re-run once and
-report it as flaky or environment-dependent.
+The script tests `BASELINE`, then each `AT` merge commit until failure,
+returns to the batch branch, and prints `CULPRIT <n>`, `CULPRIT pre-existing`,
+or `CULPRIT none`. An attributed failure may be an interaction with earlier
+PRs; name both when the failing test touches an earlier change. For `none`,
+re-run once and report a flaky or environment-dependent failure.
 
-When the culprit is clear but the cause is not, you may start one
-investigator agent (read-only; through Herdr when available) to read the log
-and the PR's diff and explain the failure. It does not fix anything — fixing
-a PR is the user's decision.
+If the culprit is clear but the cause isn't, start at most one read-only
+investigator per culprit to inspect the log and diff. It uses the same agent
+transport and never fixes code: the user decides what to change.
 
-A `FATAL` from the script means a test run left tracked files changed; report
-it and skip attribution for that command rather than cleaning up yourself.
+A `FATAL` indicating tracked files changed stops attribution for that
+command; report it rather than cleaning up the user's files.

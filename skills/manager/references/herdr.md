@@ -5,16 +5,10 @@ Use this file when the host lists a `herdr` skill and its precondition holds:
 first; it and the installed binary (`herdr <group>` with no subcommand prints
 its syntax) overrule any command below.
 
-Your own pane is the **console**: the user talks to you there, and you never
-run work in it. This file is the explicit topology request the `herdr` skill
-asks for: each worker gets its own tab in your current workspace — not a
-sibling pane beside you, not a new workspace. One tab per worker keeps every
-agent full-size and watchable, and the `<slug>-` label prefix groups each
-work item's tabs in the tab bar.
-
-Herdr adds no roles and changes no rule in `SKILL.md`; it is the transport.
-Its gain is live agents of different kinds side by side, which the user can
-watch and which you can prompt again without a resume mechanism.
+Your pane stays the console. This is the explicit topology request required
+by the Herdr skill: one full-size, watchable tab per worker in the current
+workspace, grouped by `<slug>-` labels. Herdr supplies transport and live
+context, with the same roles and rules as native workers.
 
 ## Start a worker
 
@@ -34,8 +28,8 @@ watch and which you can prompt again without a resume mechanism.
    prompting.
 
 `tab create` or `agent start` failing falls back to a native subagent for
-that worker, retried once as rule 8 says; record the degradation on the
-board. Parse every id from JSON; never derive one from a listing.
+that worker, retried once under SKILL.md rule 8; record the degradation on
+the board. Parse every id from JSON; never derive one from a listing.
 
 ## Drive
 
@@ -58,9 +52,9 @@ board. Parse every id from JSON; never derive one from a listing.
   plan and the tab bar shows only live workers.
 - **`blocked`** means an approval or a question UI. Read it with `herdr agent
   read <name> --source recent-unwrapped`; relay it to the user tagged
-  `[<slug>]` as rule 7 says, and deliver the answer with `herdr agent
+  `[<slug>]` as SKILL.md rule 7 says, and deliver the answer with `herdr agent
   send-keys` or `agent prompt`. Never answer an approval for the user;
-  unattended, that worker has failed (rule 8).
+  unattended, that worker has failed (SKILL.md rule 8).
 - **A timeout is not a failure to deliver.** Read the agent before sending
   anything again.
 

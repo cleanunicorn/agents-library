@@ -1,20 +1,11 @@
 #!/usr/bin/env bash
-# List where the current repository says how to test it, in the order the
-# skill trusts those sources. Read-only; runs nothing it finds.
-#
+# Discover test guidance in trust order; read only, never run candidates.
 # Usage: test-commands.sh
-#
-# Prints, in priority order (an earlier source overrules a later one):
-#   SOURCE <path>                 a prose source to read: AGENTS.md, CLAUDE.md,
-#                                 CONTRIBUTING*, then CI configs it can't parse
-#   CANDIDATE <source> <command>  a command lifted mechanically from a CI
-#                                 workflow `run:` line or a build manifest
-#   CAUTION <path>:<line> <text>  a docs line pairing tests with live, shared,
-#                                 or production resources — check it before
-#                                 running the suite it names
-#   NONE                          nothing found anywhere
-#
-# Exit 0 always: an empty result is an answer, not an error.
+# SOURCE <path>: prose guidance or CI requiring manual reading;
+# CANDIDATE <source> <command>: mechanically extracted CI/manifest command;
+# CAUTION <path>:<line> <text>: tests paired with live/shared resources or
+# authorization — inspect before running that suite. Earlier sources overrule
+# later ones. NONE means nothing found. Exit 0 even for an empty result.
 
 set -u
 

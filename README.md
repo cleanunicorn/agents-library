@@ -185,34 +185,24 @@ Pick the skill that matches the job:
 
 ### The Manager Skill
 
-[`/manager`](skills/manager/SKILL.md) turns the session you invoke it in into
-a manager console: you hand it work items, and worker agents do them. The
-manager never edits code, writes plans, runs reviews, or runs the tests itself
-— it states each item, asks its clarifying questions up front, starts and
-briefs the workers, relays their questions and results, and keeps a status
-board you can ask for at any time. Ask it to "just do it yourself" and it
-still hands the work to a worker. Three work items run at once and a fourth
-queues; each has its own worktree, PR, and team of at most five agents.
+[`/manager`](skills/manager/SKILL.md) turns this session into a console:
+workers do the work while it briefs them, relays questions, and maintains a
+status board. It never edits code, plans, reviews, or runs tests itself,
+even when asked. Three items run concurrently and a fourth queues, each in
+its own worktree with one PR and at most five workers.
 
-The default playbook runs entirely inside workers. One or two planners — two
-when the design is contested — each write an
-independent plan with `plan-feature`. A coordinator, which wrote none of them,
-runs a SWOT analysis on each plan, merges the best decisions into one plan
-that opens with a Progress checklist, and implements it in a dedicated
-worktree as one PR. An independent reviewer — two for security, stored data,
-or a public contract — runs `review-pr`; every finding is confirmed, refuted,
-or kept open as uncertain, with evidence, before the confirmed ones are fixed.
-The reviewer rules on every refutation of its findings and re-checks the fix
-commits, and the manager accepts a "tests pass" claim only from a saved gate
-log at the branch head. A one-edit item can skip planning (the `direct`
-playbook) but is still reviewed. Planners and reviewers use a
-different agent kind (such as Claude, Codex, or opencode) from the coordinator
-when the host offers one. Inside the Herdr terminal multiplexer, with its `herdr`
-skill installed, each worker runs as a live agent in its own tab of your
-current workspace, so you can watch each one work while you keep talking to
-the manager in yours. Elsewhere workers are the host's native subagents; on a
-host that has neither, the manager refuses rather than doing the work. It
-never merges a PR.
+One or two independent `plan-feature` planners feed a coordinator's SWOT
+merge and Progress checklist. The coordinator implements; one independent
+`review-pr` reviewer (two for high risk) reviews. Findings are validated with
+evidence before fixes; the raising reviewer audits refutations and re-checks
+fix commits. Gate claims need a saved log at the branch head. The `direct`
+playbook skips planning for an obvious edit, retaining review. Planners and
+reviewers use a different agent kind from the coordinator when available.
+
+With Herdr and its skill installed, each worker has a tab in your current
+workspace; otherwise it uses native subagents. With neither, it refuses.
+Transport instructions are local to each skill so either can be installed
+alone. The manager never merges a PR.
 
 ### The Feature Planning Skill
 
@@ -260,7 +250,9 @@ conflicting PR is aborted with its files listed while the rest still merge. It
 then runs the tests the project's own docs and CI call for, skipping any suite
 marked as touching live or shared resources unless you authorize it. It names
 the PR behind each failure and reviews the merged branch with `review-pr`.
-Inside Herdr, agents and tests run in their own tabs and panes. Nothing is
+Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
+native subagents and the shell. Its transport guide needs no manager install.
+Without a PR list it shows open PRs and waits for your selection. Nothing is
 pushed or changed on GitHub. Requires the `gh` CLI.
 
 ### The Issue Triage Skill

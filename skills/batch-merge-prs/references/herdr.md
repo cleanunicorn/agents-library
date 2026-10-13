@@ -1,51 +1,53 @@
-# Running agents and tests in Herdr
+# Herdr transport
 
-Use this file when the host lists a `herdr` skill and `test "${HERDR_ENV:-}"
-= 1 && command -v herdr` passes. Load the `herdr` skill first; it and the
-installed binary (`herdr <group>` with no subcommand prints its syntax)
-overrule any command below. Herdr changes only the transport — every rule in
-`SKILL.md` still holds.
+Load the `herdr` skill when its precondition in SKILL.md holds. Its guidance
+and installed CLI syntax (`herdr <group>`) override these examples. This
+reference is self-contained so batch-merge works without the manager skill.
 
-## Agents: one tab each
+## Agents
 
-Agents follow the manager skill's tab pattern —
-[`../../manager/references/herdr.md`](../../manager/references/herdr.md),
-sections *Set up*, *Drive*, and *Tear down* — with these specifics:
+Use one tab per read-only reviewer or investigator in the current workspace:
 
-- **Names:** `bmp-<YYYYMMDD-HHMM>-<role>`, e.g. `bmp-20261013-1405-review`
-  and `bmp-20261013-1405-investigate-42`. The same string labels the tab and
-  names the agent, unique among live agents.
-- **Roles:** one `review` agent (Phase 3) and at most one `investigate-<n>`
-  agent per culprit PR (Phase 2). Both only read.
-- **Kind:** any kind `herdr agent` lists that has the review-pr skill
-  installed; prefer one different from your own so the review is independent.
-- **Cwd:** the repository root, with the batch branch checked out.
-- **Records:** tell each agent to write its full report to
-  `<run-dir>/<role>.md` and reply with the path only; read the file.
+1. Choose an installed kind from `herdr agent`, with review-pr available for
+   the reviewer; prefer a kind different from yours for independent review.
+2. Create: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
+   <repo-root> --label <name> --no-focus`. Use unique
+   `bmp-<YYYYMMDD-HHMM>-review` or `bmp-<YYYYMMDD-HHMM>-investigate-<n>` names.
+   Record `.result.tab.tab_id` and `.result.root_pane.pane_id` from JSON;
+   never infer IDs from a listing or create another workspace.
+3. Start: `herdr agent start <name> --kind <kind> --pane <root-pane-id>`.
+   On `agent_not_ready`, read the pane before prompting.
+4. Prompt with the brief and `<run-dir>/<role>.md` for the full report;
+   request a path-only reply because scrollback can truncate records.
+   Prompt parallel workers before waiting; use background waits where
+   supported. Read the saved report when finished.
 
-## Tests: one pane
+A blocked agent needs its UI read with `herdr agent read <name> --source
+recent-unwrapped`; relay any question or approval to the user and send back
+the answer with `agent send-keys` or `agent prompt`. Never approve for them.
+A timeout is not failure: read the agent before retrying.
 
-Tests are plain processes, not agents, so they get a pane, not a tab:
+After reports are saved, close only recorded tabs you created with
+`herdr tab close <tab-id>`, never a workspace or server.
 
-1. Once, before the first command: `herdr pane split --current --direction
-   right|down --cwd <repo-root> --no-focus` (split a wide pane right, a tall
-   one down). Record `.result.pane.pane_id`.
-2. Per command: `herdr pane run <pane> "bash <skill>/scripts/run-gate.sh
-   <label> <run-dir>/<label>.log '<command>'"`, then `herdr pane wait-output
+## Tests
+
+Plain processes share one pane, separate from agent tabs:
+
+1. Create once: `herdr pane split --current --direction right|down --cwd
+   <repo-root> --no-focus` (right for a wide pane, down for a tall one).
+   Record `.result.pane.pane_id`.
+2. Run: `herdr pane run <pane> "bash <skill>/scripts/run-gate.sh <label>
+   <run-dir>/<label>.log '<command>'"`. Wait with `herdr pane wait-output
    <pane> --regex 'GATE <label> exit=[0-9]+' --source recent-unwrapped
-   --timeout <ms>`. Read the result from the log file, not from scrollback,
-   which may not hold it.
-3. Run `attribute-failure.sh` in the same pane the same way, waiting on
-   `CULPRIT `.
-4. At the end, `herdr pane close <recorded pane id>` — only the pane you
-   created.
+   --timeout <ms>`. Read results from the log, not scrollback.
+3. Run failure attribution in this pane too, waiting for `CULPRIT `.
+4. Close only this recorded pane with `herdr pane close <pane-id>`.
 
-A timeout is not a failure: read the pane before running anything again.
+On timeout, read the pane before running anything again.
 
 ## Fallback
 
-When the precondition fails, or `tab create`, `agent start`, or `pane split`
-fails, use native subagents for agents and your own shell for tests — the
-same scripts, the same records — and note the fallback in the report. This
-plugin also ships to Codex, opencode, and Kilo, which have no Herdr; the
-fallback is their normal path, not a degraded one.
+If Herdr is absent, or tab/agent/pane creation fails, use native subagents
+and your shell with the same scripts and records. Note the fallback in the
+report; absence is the normal path on hosts without Herdr.

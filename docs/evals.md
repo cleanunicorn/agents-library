@@ -175,6 +175,13 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug; a variant whose required gate is absent | merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the hand-back block reports the team, SWOT counts, and findings; a missing gate blocks; asked to do the work itself, the manager delegates anyway and worker records appear in the run directory; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 
+The condensed suites retain 11 batch-merge cases (6 positive / 5 negative)
+and 14 manager cases (9 positive / 5 negative). `bm-h1` covers numeric and URL
+inputs together, including a conflict and an already-merged PR; `bm-h4`
+checks attribution and branch restoration, and `bm-h6` checks review without
+fixing. Manager implementation and review delegation cases stay separate
+because they guard different forbidden actions.
+
 The manager suite is mostly slices of the pipeline, sized to the default
 900-second trial. Its one end-to-end case, `mg-h3`, nests a `plan-feature`
 run per planner and a `review-pr` run per reviewer, so it carries its own

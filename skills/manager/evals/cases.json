@@ -721,17 +721,6 @@
           "pattern": "(?i)(planner [ab]\\b|\\bSWOT\\b|reviewer [ab]\\b)"
         }
       ]
-    },
-    {
-      "id": "mg-n6",
-      "prompt": "What is 17 \u00d7 3? Reply with the number only.",
-      "should_trigger": false,
-      "assertions": [
-        {
-          "type": "output_regex",
-          "pattern": "\\b51\\b"
-        }
-      ]
     }
   ]
 }

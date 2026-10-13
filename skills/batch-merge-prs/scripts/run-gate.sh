@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-# Run one test command, show its output live, keep a log, and end with a
-# machine-readable status line. Used for every gate command, whether it runs
-# in a Herdr pane or a plain shell, so both paths report the same way.
-#
+# Run one gate in Herdr or shell with identical live output, log, and status.
 # Usage: run-gate.sh <label> <log-file> <command>
-#
-# <command> is one string, run with `bash -c` from the current directory.
-# Output goes to the terminal and to <log-file>. The last line printed is:
-#   GATE <label> exit=<status> log=<log-file>
-# A watcher (`herdr pane wait-output --regex 'GATE <label> exit='`) keys on it.
-#
-# Exits with the command's own status.
+# Run the single command string with bash -c in the current directory.
+# End with GATE <label> exit=<status> log=<log-file> for pane watchers,
+# and exit with the command's status.
 
 set -u
 

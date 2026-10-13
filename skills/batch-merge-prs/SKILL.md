@@ -10,121 +10,90 @@ description: >-
 
 # batch-merge-prs
 
-You are the **orchestrator** of a batch merge. The user names the pull
-requests; you merge every one that main doesn't already contain onto a new
-local branch, run the tests that branch needs under the project's own rules,
-review the result, and report what landed, what was skipped, what failed, and
-which PR broke it.
+Merge the user's PR list locally, test under the project's rules, review,
+and report. These boundaries apply throughout:
 
-Three guardrails frame everything below:
+- **The user's list is the selection.** Never add or drop a PR based on your
+  quality judgement; tests and review assess quality after merging.
+- **No GitHub writes:** never push, merge, close, or comment on remote PRs.
+  Leave the local branch for the user.
+- **Scripts own deterministic steps.** Run the scripts below and retain their
+  ledgers rather than improvising classification, merges, or attribution.
+  A `FATAL` stops that step: relay the error without destructive cleanup.
+- **Herdr first:** when the host lists a `herdr` skill and
+  `test "${HERDR_ENV:-}" = 1 && command -v herdr` passes, follow
+  `references/herdr.md` for all agents and test commands. Otherwise use
+  native subagents and your shell; the same contracts hold.
 
-- **The user's list is the selection.** Merge every listed PR that isn't
-  already in main. Never add a PR, and never drop one on your own judgement of
-  its quality — the tests and the review are where quality shows up.
-- **You never touch the remote.** All merging is local. You do not push, and
-  you do not merge, close, or comment on PRs on GitHub. The branch is left for
-  the user.
-- **Scripts own the deterministic steps.** Classifying PRs, merging, finding
-  test commands, running them, and attributing failures each have a script in
-  `scripts/`; run it and relay its ledger lines instead of improvising.
-
-**Herdr.** When the host lists a `herdr` skill and `test "${HERDR_ENV:-}" = 1
-&& command -v herdr` passes, every agent this skill starts and every test
-command it runs goes through Herdr — follow `references/herdr.md`. Otherwise
-start agents as native subagents and run tests in your own shell; every other
-rule is the same.
+Script paths below are relative to this skill; run from the target repository.
 
 ## Phase 0 — Orient
 
-1. **Get the list.** The PRs are numbers or GitHub PR URLs in the request. If
-   none were given, run `bash scripts/list-prs.sh`, show the open PRs (number,
-   title, author, draft), and ask which to merge. Do not pick for the user;
-   stop here until they answer. A `FATAL` line from any script means `gh` is
-   missing or unauthenticated, or the remote is unreachable — relay it and
-   stop.
-2. **Read the project's guidance** — `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING`,
-   `README` — for the test commands, which suites are safe to run unattended,
-   and any rule about branches or merges.
-3. **Classify the list.** Note which remote points at GitHub (usually
-   `origin`), then run:
+1. Take PR numbers or GitHub PR URLs from the request. Without a list, run
+   `bash <skill>/scripts/list-prs.sh`, show number, title, author, and draft
+   status, and ask which to merge. Wait for the answer; never select for them.
+2. Read `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING`, and `README` for branch,
+   merge, and test rules, including suites safe to run unattended.
+3. Identify the GitHub remote (usually `origin`) and classify:
 
    ```
-   bash scripts/check-prs.sh <remote> <pr-or-url>...
+   bash <skill>/scripts/check-prs.sh <remote> <pr-or-url>...
    ```
 
-   It prints `MAIN <main>`, then one line per PR: `IN_MAIN` with its evidence
-   (`merged-on-github <sha>`, `head-reachable <sha>`, or `patch-equivalent
-   <sha>`), `TODO <n> <head> <state>`, or `SKIPPED` (fetch failed, other
-   repository, unparseable). The `TODO` PRs, in the order the user gave, are
-   the merge list. Mention a `DRAFT` or `CLOSED` state in the report, but
-   merge it — the user listed it.
+   Retain `MAIN <main>` and each PR's ledger: `IN_MAIN` with
+   `merged-on-github <sha>`, `head-reachable <sha>`, or `patch-equivalent
+   <sha>` evidence; `TODO <n> <head> <state>`; or `SKIPPED` with its reason
+   (fetch failure, other repository, unparseable). Merge `TODO`s in user
+   order, including `DRAFT` or `CLOSED` PRs, whose state belongs in the report.
 
-If nothing is `TODO`, report the ledger and stop: there is nothing to merge.
+No `TODO`s → report the ledger and stop.
 
-## Phase 1 — Merge onto a new branch
+## Phase 1 — Merge onto a local branch
 
-The branch name is the user's if they gave one, otherwise `auto`, which the
-script turns into `batch/<YYYYMMDD-HHMM>`. A named branch that already exists
-is merged onto as-is; say so.
+Use the requested name, else `auto` for `batch/<YYYYMMDD-HHMM>`. Tell the
+user if a named branch already exists: the script uses it as-is.
 
 ```
-bash scripts/merge-prs.sh <remote> <main> <target>|auto <n>...
+bash <skill>/scripts/merge-prs.sh <remote> <main> <target>|auto <n>...
 ```
 
-It refuses a dirty working tree (ask the user to commit or stash), creates the
-branch from a freshly fetched `<remote>/<main>`, and merges each PR `--no-ff`
-so each stays one revertable merge commit. Capture its ledger: `TARGET`,
+The script requires a clean tree; if dirty, ask the user to commit or stash.
+It creates a new branch from freshly fetched `<remote>/<main>` and merges
+`--no-ff`, keeping each PR separately revertable. Retain `TARGET`,
 `MERGED <n> <merge-sha>`, and `SKIPPED <n> <reason>`.
 
-**Conflict policy:** a PR that conflicts is aborted, never half-resolved; its
-conflicting files are recorded (`SKIPPED <n> conflicts <files>`) and the
-remaining PRs still merge. The PRs are independent changes, so one conflict
-is no reason to withhold the rest; a later PR that needed the skipped one
-shows up in the Phase 2 tests. Never resolve a conflict yourself.
+Conflicts are aborted and recorded as `SKIPPED <n> conflicts <files>`;
+never resolve them yourself. Continue with the rest: independent PRs can
+still land, and tests expose a dependency on a skipped PR.
 
-If nothing merged, report and stop.
+Nothing merged → report and stop.
 
-## Phase 2 — Test the merged branch
+## Phase 2 — Test
 
-Read `references/test-gate.md` and follow it. In short:
-`scripts/test-commands.sh` lists the project's test sources in the order you
-trust them — `AGENTS.md`/`CLAUDE.md` project section, `CONTRIBUTING`, CI
-workflows, then build manifests — and flags lines that tie a suite to live or
-shared resources. Run every suite the project expects for a change like this
-batch through `scripts/run-gate.sh`; skip, and report as skipped, any suite
-that needs an authorization the request didn't give. When a command fails,
-`scripts/attribute-failure.sh` re-runs it at `<remote>/<main>` and at each
-merge commit to name the PR that broke it.
+Follow `references/test-gate.md`: discover commands from project guidance,
+CI, then manifests; run authorized suites sequentially, log results, and
+attribute failures to merge commits. Report unauthorized suites as skipped.
 
-## Phase 3 — Review the merged branch
+## Phase 3 — Review
 
-Start one reviewer agent on the batch branch and have it run the
-**review-pr** skill, report-only (its Phase 4 path *d*), on the batch
-branch's diff from `<remote>/<main>`. review-pr's `diff-target.sh` diffs
-against the local `<main>`; if that is behind `<remote>/<main>`, tell the
-reviewer to diff against `<remote>/<main>` so work already merged upstream
-isn't reviewed as part of the batch. The reviewer only reads; review-pr's own
-domain fan-out is its business.
+Start one read-only reviewer using **review-pr**, report-only (Phase 4 path
+*d*), against `<remote>/<main>`. Supply that base explicitly if local
+`<main>` is behind: review-pr's `diff-target.sh` otherwise includes upstream
+work in the batch diff. Its domain fan-out remains review-pr's responsibility.
 
-Start it while the Phase 2 suites run on the branch tip — neither writes —
-but run `attribute-failure.sh` only after the reviewer finishes, because it
-checks out other commits. If the reviewer fails, say so; do not substitute
-your own review for its verified findings.
+Review and tip tests may run together because neither writes. Wait for the
+reviewer before failure attribution, which checks out other commits. Report
+a failed reviewer; never replace its verified findings with your own review.
 
 ## Phase 4 — Report
 
-One ledger:
+Return one ledger:
 
-- **Branch:** the `TARGET` name, cut from `<remote>/<main>` at `<sha>`, local
-  and unpushed.
-- **Merged:** each `#<n> — <title>` with its merge commit.
-- **Skipped — already in main:** each PR with the `check-prs.sh` evidence.
-- **Skipped — conflicts or fetch:** each PR with its reason and conflicting
-  files.
-- **Tests:** a table — command, source, exit status, passed/failed counts —
-  then every suite skipped and why, and for each failure the culprit
-  `attribute-failure.sh` named (`#<n>`, `pre-existing`, or `none`).
-- **Review:** review-pr's verified findings, ranked, with its filtered-out
-  tally.
-- **Next steps:** inspect the branch, drop or fix a culprit PR, push it, or
-  open a combined PR — the user's call. Nothing on GitHub was changed.
+- **Branch:** `TARGET`, base `<remote>/<main>` and SHA, local and unpushed.
+- **Merged:** each PR's number, title, and merge commit.
+- **Skipped:** already-in-main evidence, or fetch/conflict reason and files.
+- **Tests:** command, source, exit status, passed/failed counts; skipped suites
+  and reasons; each failure's culprit PR, `pre-existing`, or `none`.
+- **Review:** ranked verified findings and review-pr's filtered-out tally.
+- **Next steps:** the user may inspect, fix or drop a culprit, push, or open
+  a combined PR. Nothing on GitHub was changed.
