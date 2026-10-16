@@ -49,13 +49,13 @@ after the coordinator creates it, so only later workers start there.
 | opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
 
-claude's `auto` mode lets a classifier approve pushes to any branch,
-including the main one, and denies what it blocks without a prompt; an ask
-rule still forces one, and `--settings` loads it for that session only.
-opencode and kilo allow every tool by default (`opencode debug agent build`
-shows `"*": allow`), so their ask rules come in through the environment,
-which lasts for that agent only. The claude deny rules repeat per other
-active item's worktree, or are dropped when there is none. codex has no ask rule for a command, and
+claude's `auto` mode lets a classifier approve pushes to any branch, including
+the main one, and denies what it blocks without a prompt; an ask rule still
+forces one, and `--settings` loads it for that session only. opencode and kilo
+allow every tool by default (`opencode debug agent build` shows `"*": allow`),
+so their ask rules come in through the environment, which lasts for that agent
+only. The claude deny rules repeat per other active item's worktree, or are
+dropped when there is none. codex has no ask rule for a command, and
 `-a on-request` leaves asking to the model, so its sandbox is the prompt
 surface: without network access a remote write cannot run unasked, and you
 answer the routine ones for the session. `<main>` is the main branch:
@@ -112,8 +112,9 @@ the board. Parse every id from JSON; never derive one from a listing.
     <name>` until it is no longer `blocked`.
   - **An escalation case, or a question:** relay it to the user tagged
     `[<slug>]`, verbatim with its options and any secret redacted, and
-    send exactly the option the user names with `send-keys`. Unattended, answer an
-    escalation with reject and mark it `assumed`; the worker continues.
+    send exactly the option the user names with `send-keys`. Unattended,
+    answer an escalation with reject and mark it `assumed`; the worker
+    continues.
 - **A timeout is not a failure to deliver.** Read the agent before sending
   anything again.
 

@@ -57,12 +57,12 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   settings, or a settings file outside the item's worktree: claude's "don't
   ask again" saves to `.claude/settings.local.json` under the session's
   directory, which for a coordinator is the user's checkout. Where only such
-  an option persists, take the session or once option. Routine is whatever the role's job needs: files and folders
-  (worktree, run directory, the repository and its `.git`, other paths the
-  job reads), shell commands, git commits and pushes of the item's branch,
-  `gh` for the item's draft PR, the gate — for a planner or reviewer, only
-  one that writes nowhere but the run directory — installs, and network
-  fetches.
+  an option persists, take the session or once option. Routine is whatever the
+  role's job needs: files and folders (worktree, run directory, the repository
+  and its `.git`, other paths the job reads), shell commands, git commits and
+  pushes of the item's branch, `gh` for the item's draft PR, the gate — for a
+  planner or reviewer, only one that writes nowhere but the run directory —
+  installs, and network fetches.
 - **Log each answer** in the board's **auto-approved** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
@@ -116,6 +116,7 @@ on every rewrite so the user can audit them later:
 ```
 auto-approved
 | time  | item       | worker=kind        | asked (action · target)                     | option       |
+|-------|------------|--------------------|---------------------------------------------|--------------|
 | 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
 | 14:07 | count-cmd  | plan-b=opencode    | read external dir <run_dir>/count-cmd/*     | Allow always |
 | 14:09 | count-cmd  | plan-b=opencode    | edit src/count.py                           | rejected — read-only role |
@@ -128,13 +129,13 @@ independent, and the hand-back names the file so the user merges in order.
 ## Concurrency
 
 Isolation makes concurrent items safe: each owns a worktree, branch, PR and
-workers, with one writer per worktree. A coordinator's grant covers the
-whole repository, so an edit to a sibling's worktree would not prompt: give
-a claude coordinator the active items' other worktrees as deny rules
+workers, with one writer per worktree. A coordinator's grant covers the whole
+repository, so an edit to a sibling's worktree would not prompt: give a claude
+coordinator the active items' other worktrees as deny rules
 (`references/herdr.md` § Pre-grants per kind). An item started later, and a
-host without path rules, rely on the coordinator brief alone. Three active items (at most fifteen
-agents) keep the board readable and host capacity sane; the user may change
-the cap. A blocked item never stops another.
+host without path rules, rely on the coordinator brief alone. Three active
+items (at most fifteen agents) keep the board readable and host capacity sane;
+the user may change the cap. A blocked item never stops another.
 
 ## Native subagents
 
@@ -156,9 +157,9 @@ Native workers use the same roles, briefs, budget and rules.
   `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings
   <claude ask>`; for other hosts the coordinator row of `references/herdr.md`
   § Pre-grants per kind, which defines `<claude ask>` — here without its
-  deny rules, since every item's coordinator shares this session. If it was not, tell the
-  user the one relaunch line once; never edit their global settings to get
-  it.
+  deny rules, since every item's coordinator shares this session. If it
+  was not, tell the user the one relaunch line once; never edit their
+  global settings to get it.
 - **Subagents cannot ask the user.** Return their questions to the user
   under SKILL.md rule 7 and resume them with the answer. Their permission
   prompts follow § Approvals when they reach you; a host that shows them to

@@ -214,6 +214,16 @@ class ManagerApprovalTests(unittest.TestCase):
                     r"(?i)verbatim with its options.{0,120}exactly the option the user names",
                     "a blocked Herdr escalation is relayed without its options")
 
+    def test_board_samples_are_tables(self):
+        # The manager copies these samples into board.md; without a delimiter
+        # row a pipe table renders as raw text.
+        board = section(self.read("references/console.md"), "The board")
+        for fence in re.findall(r"(?s)```\n(.*?)```", board):
+            rows = [line for line in fence.splitlines() if line.startswith("|")]
+            if rows:
+                with self.subTest(header=rows[0][:30]):
+                    self.assertRegex(rows[1], r"^\|[-| ]+\|$", "a board sample table has no delimiter row")
+
     def test_the_loop_answers_a_blocked_worker(self):
         loop = section(self.read("references/console.md"), "The loop")
         self.expect("console.md § The loop", loop, r"(?i)worker that blocked: classify and answer its prompt per § Approvals",
