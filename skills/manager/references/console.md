@@ -88,8 +88,20 @@ prompt nor a rejected one is a failed member (SKILL.md rule 8).
 | export     | queued   | — | — | a free slot | 13:55 three items active |
 ```
 
-Below the table: open questions to the user, each tagged `[<slug>]`, and
-**overlaps** — two items whose merged plans or diffs (`git diff --stat`) touch
+Below the table: open questions to the user, each tagged `[<slug>]` —
+escalated approvals among them — then the **auto-approved** list, one row per
+approval you answered, appended and kept on every rewrite so the user can
+audit them later (redact any secret the prompt showed):
+
+```
+auto-approved
+| time  | item       | worker=kind        | asked (action · target)                     | option       |
+| 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
+| 14:07 | count-cmd  | plan-b=opencode    | read external dir <run_dir>/count-cmd/*     | Allow always |
+| 14:09 | count-cmd  | plan-b=opencode    | edit src/count.py                           | rejected — read-only role |
+```
+
+Then **overlaps** — two items whose merged plans or diffs (`git diff --stat`) touch
 the same file. An overlap is flagged, not serialized: both PRs stay
 independent, and the hand-back names the file so the user merges in order.
 
@@ -113,8 +125,22 @@ Native workers use the same roles, briefs, budget and rules.
   findings and the commits since the frozen SHA). That is the same member
   continuing, not a new one: it does not count against the budget and is not
   a second review round.
-- **Subagents cannot ask the user.** Return their questions to the
-  user under SKILL.md rule 7 and resume them with the answer.
+- **Pre-grant through the manager's own session.** Native workers inherit
+  its permissions, and the spawn call has no permission fields of its own.
+  At intake, check the session was started with a broad, guarded mode and
+  the item's directories — for Claude Code `--permission-mode auto
+  --add-dir <run_dir> --add-dir <repo>`; for other hosts the coordinator row
+  of `references/herdr.md` § Pre-grants per kind. If it was not, tell the
+  user the one relaunch line once; never edit their global settings to get
+  it.
+- **Subagents cannot ask the user.** Return their questions to the user
+  under SKILL.md rule 7 and resume them with the answer. Their permission
+  prompts follow § Approvals when they reach you; a host that shows them to
+  the user directly is noted once on the board rather than claimed as
+  auto-approved.
+- **Read-only roles stay read-only** by their briefs; a host-level grant
+  for the whole session cannot narrow a planner or reviewer, so check
+  `git status --porcelain` in the worktree after each of them returns.
 
 ## Error handling
 
