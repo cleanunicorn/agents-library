@@ -64,7 +64,7 @@ Continue as the same reviewer for these two steps:
 ```
 reviewer:    <label>
 head:        full SHA you checked
-gate:        log path → exit code · N passed, N failed
+gate:        log path → exit code · N passed, N failed — or not run — <reason> → <coordinator's log>
 findings:    [{id, status: fixed | not-fixed | partial, evidence: path:line or the log}]
 new:         problems the fix commits introduced — same schema as a finding — or none
 ```

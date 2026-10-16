@@ -58,7 +58,9 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   an option persists, take the session or once option. Routine is whatever the role's job needs: files and folders
   (worktree, run directory, the repository and its `.git`, other paths the
   job reads), shell commands, git commits and pushes of the item's branch,
-  `gh` for the item's draft PR, the gate, installs, and network fetches.
+  `gh` for the item's draft PR, the gate — for a planner or reviewer, only
+  one that writes nowhere but the run directory — installs, and network
+  fetches.
 - **Log each answer** in the board's **auto-approved** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
@@ -175,6 +177,10 @@ Native workers use the same roles, briefs, budget and rules.
 - **The main branch moved, or the worktree already exists:** the coordinator
   fetches and rebases as the project allows, then re-checks the citations the
   change touches.
+- **A reviewer's gate must write into the repository:** the reviewer
+  reports it and does not run it, the one exception to its re-check gate
+  log in SKILL.md. The coordinator runs that gate at the same head, and the
+  re-check record's `gate:` reads `not run — <reason> → <coordinator's log>`.
 - **The coordinator dies:** a new one gets the setup record, merged plan,
   Progress, and `git log`; ticked boxes count only after a fresh gate log.
 

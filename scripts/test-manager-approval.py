@@ -188,6 +188,22 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(where=label):
                 self.expect(label, text, pattern, f"the escalation list has {count} cases")
 
+    def test_a_repository_writing_gate_has_one_ruling(self):
+        # The reviewer brief says report it; the launch table and the routine
+        # list must not approve it, and someone must still run it.
+        codex_role = launch_rows(self.read("references/herdr.md"))["codex"][1]
+        self.expect("herdr.md codex", codex_role, r"(?i)gate that writes only to the run directory",
+                    "a reviewer's repository-writing gate is approved for the session")
+        console = self.read("references/console.md")
+        self.expect("console.md § Approvals", section(console, "Approvals"),
+                    r"(?i)the gate — for a planner or reviewer, only one that writes nowhere but the run directory",
+                    "the routine list approves a reviewer's repository-writing gate")
+        self.expect("console.md § Error handling", section(console, "Error handling"),
+                    r"(?i)reviewer's gate must write into the repository.{0,300}coordinator runs that gate",
+                    "nobody runs a gate the reviewer may not")
+        self.expect("reviewer brief", self.read("references/reviewer-brief.md"), r"(?i)gate: .*not run —",
+                    "the re-check record has no value for a gate that was not run")
+
     def test_every_brief_states_its_access(self):
         # The heading alone survives a gutted paragraph; pin what each worker is told.
         promises = {
