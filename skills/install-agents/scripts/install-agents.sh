@@ -12,10 +12,11 @@
 #   CONFLICT <name>    destination exists and differs; left untouched (no --force)
 #   UPDATED <name>     destination overwritten (--force only)
 #   JOURNAL <name>     journal newly seeded (existing journals never touched)
+#   FAILED <name>      invalid definition destination or failed write (reason on stderr)
 #
 # Exits 1 with FATAL on stderr when the source dir is missing, empty, or a
-# named agent has no file; exits 2 when any CONFLICT was printed so the
-# caller knows to resolve it.
+# named agent has no file, or destination setup fails. Exits 2 for CONFLICT,
+# 3 for any FAILED (takes precedence over CONFLICT). Other agents still run.
 
 set -u
 
@@ -36,7 +37,7 @@ done
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || root=$PWD
 dest="$root/.claude/agents"
-mkdir -p "$dest/journals"
+mkdir -p "$dest/journals" || { echo "FATAL cannot create directory: $dest/journals" >&2; exit 1; }
 
 if [ ${#agents[@]} -eq 0 ]; then
   for f in "$src"/*.md; do
@@ -47,26 +48,48 @@ fi
 [ ${#agents[@]} -gt 0 ] || { echo "FATAL no agent files (*.md) in $src" >&2; exit 1; }
 
 status=0
+bump_status() { [ "$1" -gt "$status" ] && status=$1; }
+
+failed() {
+  echo "FAILED $name"
+  echo "install-agents: $1" >&2
+  bump_status 3
+}
+
 for name in "${agents[@]}"; do
   srcfile="$src/$name.md"
   [ -f "$srcfile" ] || { echo "FATAL no such agent: $srcfile" >&2; exit 1; }
   destfile="$dest/$name.md"
+  if { [ -e "$destfile" ] || [ -L "$destfile" ]; } && [ ! -f "$destfile" ]; then
+    failed "definition destination is not a regular file: $destfile"
+    continue
+  fi
+  copy_status=
   if [ ! -f "$destfile" ]; then
-    cp "$srcfile" "$destfile"
-    echo "INSTALLED $name"
+    copy_status=INSTALLED
   elif cmp -s "$srcfile" "$destfile"; then
     echo "IDENTICAL $name"
   elif [ "$force" -eq 1 ]; then
-    cp "$srcfile" "$destfile"
-    echo "UPDATED $name"
+    copy_status=UPDATED
   else
     echo "CONFLICT $name"
-    status=2
+    bump_status 2
+  fi
+  if [ -n "$copy_status" ]; then
+    if cp "$srcfile" "$destfile"; then
+      echo "$copy_status $name"
+    else
+      failed "cannot copy definition to: $destfile"
+      continue
+    fi
   fi
   journal="$dest/journals/$name.md"
   if [ ! -f "$journal" ]; then
-    printf '# %s journal — durable, codebase-specific learnings\n' "$name" > "$journal"
-    echo "JOURNAL $name"
+    if printf '# %s journal — durable, codebase-specific learnings\n' "$name" > "$journal"; then
+      echo "JOURNAL $name"
+    else
+      failed "cannot seed journal: $journal"
+    fi
   fi
 done
 exit "$status"

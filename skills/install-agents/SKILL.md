@@ -85,6 +85,11 @@ per agent:
 - `CONFLICT <name>` — destination exists and **differs**; left untouched.
 - `UPDATED <name>` — destination overwritten (only with `--force`).
 - `JOURNAL <name>` — journal newly seeded (existing journals are never touched).
+- `FAILED <name>` — invalid definition destination or failed write; show the stderr reason and do not schedule that agent.
+
+Exit 1 means fatal setup/input failure, 2 means conflicts, and 3 means any
+`FAILED` (takes precedence over conflicts). Write success records follow
+successful writes; a journal failure can follow a successful definition copy.
 
 On `CONFLICT`, show the user the diff between their copy and the source — a
 differing file usually means local customization. Overwrite (re-run with
@@ -145,7 +150,7 @@ rewriting, and never duplicate an agent's schedule.
 End with one compact report:
 
 - **Installed** — each agent's status from Phase 2 (installed / updated /
-  identical / kept local version), and the journals seeded.
+  identical / kept local version / failed), and the journals seeded.
 - **Scheduled** — the mechanism, and each agent's slot (day + cron), or
   "not scheduled" for an install-only run.
 - **Before the first run** — anything the schedule still needs from the user
