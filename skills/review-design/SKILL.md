@@ -49,8 +49,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
 4. **Resolve the target.** From the user's request:
    - a named view/component or a path/glob → just those files;
    - "diff" / "my changes" / `--diff` → the current branch diff
-     (`git diff <main>...HEAD`) plus working-tree changes (`git diff`,
-     `git status`);
+     (`git diff <main>...HEAD`) plus staged and unstaged changes
+     (`git diff --cached`, then `git diff`) and untracked files (`git status`);
    - nothing specified → ask which UI to review (a screen, a component, a
      directory, or the diff). Don't scan the whole repo blindly — design review
      needs a focused surface.

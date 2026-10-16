@@ -386,7 +386,8 @@ loads and executes.
   (`scripts/test-manager-approval.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer smoke tests for both hosts
-  (`scripts/test-install-host.sh`), and eval case validation (`--dry-run`).
+  (`scripts/test-install-host.sh`), review-pr target regression tests
+  (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
   Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML

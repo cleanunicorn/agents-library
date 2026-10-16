@@ -75,8 +75,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
 6. **Resolve the target.** From the user's request:
    - a named screen/flow or a path/glob → just those files;
    - "diff" / "my changes" / `--diff` → the current branch diff
-     (`git diff <main>...HEAD`) plus working-tree changes (`git diff`,
-     `git status`);
+     (`git diff <main>...HEAD`) plus staged and unstaged changes
+     (`git diff --cached`, then `git diff`) and untracked files (`git status`);
    - nothing specified → ask which flow to review. Don't scan the whole repo
      blindly — a psychology review needs a focused flow to reason about.
    Capture the resolved file list and the **user-journey order** (the sequence of
