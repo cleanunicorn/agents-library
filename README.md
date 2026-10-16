@@ -187,7 +187,13 @@ Pick the skill that matches the job:
 
 [`/manager`](skills/manager/SKILL.md) turns this session into a console:
 workers do the work while it briefs them, relays questions, and maintains a
-status board. It never edits code, plans, reviews, or runs tests itself,
+status board. It pre-grants each worker the access its role needs at launch
+and answers routine permission prompts itself with the host's persistent
+option, logging each on the board. Only five kinds go to you: actions the
+skill forbids such as merging or force-pushing, destruction outside the item,
+secrets or global settings, the project's ask-first list, and prompts it
+cannot classify. Planners and reviewers still write only to the run
+directory. It never edits code, plans, reviews, or runs tests itself,
 even when asked. Three items run concurrently and a fourth queues, each in
 its own worktree with one PR and at most five workers.
 
