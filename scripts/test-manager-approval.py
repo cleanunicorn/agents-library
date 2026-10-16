@@ -429,9 +429,10 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(evidence=evidence):
                 self.expect("console.md native", native, evidence,
                             "a read-only native worker's write can go unseen")
-        self.expect("console.md board", text, r"(?i)approvals answered",
+        board = section(text, "The board")
+        self.expect("console.md board", board, r"(?i)approvals answered",
                     "the board has no audit list")
-        self.expect("console.md board", text, r"(?i)kept on every rewrite",
+        self.expect("console.md board", board, r"(?i)kept on every rewrite",
                     "the audit list can be lost when the board is rewritten")
 
 
