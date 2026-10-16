@@ -408,6 +408,16 @@ class ManagerApprovalTests(unittest.TestCase):
                 for wrong in wrongs:
                     self.assertFalse(board_passes(commands, wrong), f"{case_id} passes a wrong board")
 
+    def test_agents_md_lists_the_audit_row_schema(self):
+        # AGENTS.md's Schemas bullet inventories every manager record shape.
+        agents = " ".join((ROOT / "AGENTS.md").read_text(encoding="utf-8").split())
+        self.assertIn("`{time, item, worker=kind, asked, option}` approvals-answered", agents,
+                      "AGENTS.md's schema inventory omits the board's audit row")
+        header = re.search(r"(?m)^\| time .*\|$", section(self.read("references/console.md"), "The board"))
+        columns = [cell.strip().split(" (")[0] for cell in header.group(0).strip("|").split("|")]
+        self.assertEqual(columns, ["time", "item", "worker=kind", "asked", "option"],
+                         "the audit row's columns drifted from AGENTS.md's schema")
+
     def test_readme_describes_the_approval_default(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         manager = re.search(r"(?s)### The Manager Skill\n.*?(?=\n### )", readme)

@@ -361,8 +361,9 @@ loads and executes.
   action, sweep, status}` validation records, and `{reviewer, head, gate,
   findings, new}` re-check records for manager, defined in its
   role briefs, with the gate-log and CI-log format in `references/console.md`
-  (`command:`/`head:`/`exit:`) and the PR evidence body in its coordinator
-  brief; the
+  (`command:`/`head:`/`exit:`), the board's `{time, item, worker=kind, asked,
+  option}` approvals-answered rows there too, and the PR evidence body in its
+  coordinator brief; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
