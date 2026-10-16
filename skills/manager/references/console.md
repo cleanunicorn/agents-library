@@ -76,6 +76,13 @@ Unattended, an escalation case is answered with reject — that action only —
 labelled `assumed` and listed; the worker continues. Neither a routine
 prompt nor a rejected one is a failed member (SKILL.md rule 8).
 
+**Check afterwards** what launch rules cannot promise, since they match a
+command as written: at each coordinator event, the PR is still an open
+draft (`gh pr view <pr> --json state,isDraft`), the remote branch head is an
+ancestor of the local one (`git merge-base --is-ancestor`), and the main
+branch's remote head is the one recorded at intake. A mismatch is case 1,
+relayed at once.
+
 ## The board
 
 `<run_dir>/board.md`, rewritten after every event and shown on request:

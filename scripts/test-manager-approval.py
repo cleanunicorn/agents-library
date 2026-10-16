@@ -11,6 +11,7 @@ The patterns match load-bearing words, not prose ornament, so a copy-edit
 that keeps the rule keeps these green.
 """
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -32,7 +33,13 @@ ESCALATIONS = {
 
 # Launch flags that remove every prompt, so no escalation case can surface.
 BYPASS = re.compile(r"--dangerously-skip-permissions|bypassPermissions"
-                    r"|--dangerously-bypass-approvals-and-sandbox|-a never\b")
+                    r"|--dangerously-bypass-approvals-and-sandbox|-a never\b|--auto\b")
+
+# The escalation commands every launch recipe must keep prompting for, as each
+# host's ask rule writes them. A host default that allows everything (opencode,
+# kilo) otherwise lets these run silently even with no bypass flag.
+ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "gh pr merge*", "gh pr ready*",
+                       "git branch -D*", "git worktree remove*", "rm -rf*")
 
 
 def rule(text, number):
@@ -132,6 +139,24 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(row=line[:40]):
                 self.assertIsNone(BYPASS.search(" ".join(cell)),
                                   "a launch recipe removes the escalation surface")
+
+    def test_opencode_and_kilo_ask_for_every_escalation_command(self):
+        text = self.read("references/herdr.md")
+        row = next(line for line in text.splitlines() if line.startswith("| opencode, kilo"))
+        for variable in ("OPENCODE_CONFIG_CONTENT", "KILO_CONFIG_CONTENT"):
+            with self.subTest(variable=variable):
+                self.assertIn(variable, row, "opencode/kilo launch without their ask rules")
+        rules = re.search(r"<opencode ask> = '(\{.*\})'", text)
+        self.assertIsNotNone(rules, "herdr.md: no <opencode ask> rule block")
+        bash = json.loads(rules.group(1))["permission"]["bash"]
+        for command in ESCALATION_COMMANDS:
+            with self.subTest(command=command):
+                self.assertEqual(bash.get(command), "ask", f"opencode/kilo run {command} unasked")
+
+    def test_approvals_check_afterwards_what_rules_miss(self):
+        policy = section(self.read("references/console.md"), "Approvals")
+        self.expect("console.md § Approvals", policy, r"(?i)check afterwards.{0,400}is-ancestor",
+                    "nothing catches an escalation command that slipped past an ask rule")
 
     def test_native_path_pre_grants_and_board_keeps_the_audit(self):
         text = self.read("references/console.md")

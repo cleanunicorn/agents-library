@@ -19,7 +19,8 @@ context, with the same roles and rules as native workers.
    workspace only: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
    <dir> --label "<slug>-<role>-<label>" --no-focus`. The coordinator's
    `<dir>` is the repository root, since it creates the worktree; every later
-   worker's is that worktree. Record `.result.tab.tab_id` and
+   worker's is that worktree. Add the kind's `--env` from § Pre-grants per
+   kind, if any, to this command. Record `.result.tab.tab_id` and
    `.result.root_pane.pane_id` per worker in `<run_dir>/<slug>/tabs.md`. Never
    split your own pane, never `--current`, never a new workspace.
 3. **Start the agent** in that tab's root pane under the tab's label, unique
@@ -32,23 +33,38 @@ context, with the same roles and rules as native workers.
 
 The args give each role what its job needs (`references/console.md`
 § Approvals) so prompts rarely appear, while every escalation case still
-surfaces as a prompt. `<repo>` is the repository root: a worktree's commits
-land in `<repo>/.git` (`git rev-parse --git-common-dir`), outside the
-worktree.
+surfaces as a prompt. A host's own default can approve silently what no flag
+names, so each recipe also adds **ask rules** for the escalation commands —
+`git push` with `--force`, `-f` or the main branch, `gh pr merge`, `gh pr
+ready`, `git branch -D`, `git worktree remove`, `rm -rf` — that fire even
+where routine work runs without a prompt. `<repo>` is the repository root: a
+worktree's commits land in `<repo>/.git` (`git rev-parse --git-common-dir`),
+outside the worktree.
 
 | kind | coordinator | planner, reviewer — writes only to the run directory |
 |------|-------------|------------------------------------------------------|
 | claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` |
 | codex | `-C <worktree> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git -c sandbox_workspace_write.network_access=true` | `-C <worktree> -s read-only -a on-request`; its record write and a reviewer's gate then ask once, and you answer for the session |
-| opencode, kilo | `--auto` | none — answer the run directory's external-directory prompt with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
+| opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
+
+opencode and kilo allow every tool by default (`opencode debug agent
+build` shows `"*": allow`), so their ask rules come in through the
+environment, which lasts for that agent only; `<main>` is the main branch:
+
+```
+<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask"}}}'
+```
 
 `<run_dir>` is absolute, so claude's rule reads `Edit(//tmp/…/**)`. Never
 launch with `--dangerously-skip-permissions`, `--permission-mode
-bypassPermissions`, `--dangerously-bypass-approvals-and-sandbox`, or codex
-`-a never`: the first three remove every prompt and `-a never` fails the
-action silently, so no escalation case could reach you. Never pass args that
-write a host's global settings.
+bypassPermissions`, `--dangerously-bypass-approvals-and-sandbox`, codex
+`-a never`, or opencode or kilo `--auto`: `-a never` fails the action
+silently and the others approve it silently — `--auto` even approves an ask
+rule, since it passes everything not explicitly denied — so no escalation
+case could reach you. Ask rules match a command as written, so a variant can
+slip past them; `references/console.md` § Approvals checks afterwards. Never
+pass args that write a host's global settings.
 
 `tab create` or `agent start` failing falls back to a native subagent for
 that worker, retried once under SKILL.md rule 8; record the degradation on
