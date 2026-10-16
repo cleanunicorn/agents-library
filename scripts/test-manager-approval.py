@@ -192,6 +192,16 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIn(f"Bash({command})".replace(" ", ""), asked,
                               f"claude runs {command} unasked")
 
+    def test_coordinator_starts_where_it_exists(self):
+        # The coordinator creates the worktree, so it cannot be launched inside one.
+        text = self.read("references/herdr.md")
+        self.expect("herdr.md", text, r"`<worktree>` is the item's worktree",
+                    "the table uses <worktree> without defining it")
+        for kind, (coordinator, _) in launch_rows(text).items():
+            with self.subTest(kind=kind):
+                self.assertNotIn("<worktree>", coordinator,
+                                 f"{kind} coordinator starts in a worktree it has not created")
+
     def test_codex_coordinator_keeps_remote_writes_behind_the_sandbox(self):
         # -a on-request lets the model skip asking; only the sandbox's network
         # block makes a merge or force-push surface as a prompt.

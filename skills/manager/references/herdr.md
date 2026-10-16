@@ -39,12 +39,13 @@ names, so each recipe also adds **ask rules** for the escalation commands —
 ready`, `git branch -D`, `git worktree remove`, `rm -rf` — that fire even
 where routine work runs without a prompt. `<repo>` is the repository root: a
 worktree's commits land in `<repo>/.git` (`git rev-parse --git-common-dir`),
-outside the worktree.
+outside the worktree. `<worktree>` is the item's worktree, which exists only
+after the coordinator creates it, so only later workers start there.
 
 | kind | coordinator | planner, reviewer — writes only to the run directory |
 |------|-------------|------------------------------------------------------|
 | claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` |
-| codex | `-C <worktree> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks | `-C <worktree> -s read-only -a on-request`; its record write and a reviewer's gate then ask once, and you answer for the session |
+| codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write and a reviewer's gate then ask once, and you answer for the session |
 | opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
 
