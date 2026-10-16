@@ -58,6 +58,16 @@ def section(text, heading):
     return found.group(0)
 
 
+def launch_rows(text):
+    """Return herdr.md's pre-grant table as {kind: (coordinator cell, planner/reviewer cell)}."""
+    rows = {}
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.split("|")[1:-1]]
+        if len(cells) == 3 and cells[0] not in ("kind", "") and not set(cells[0]) <= set("-"):
+            rows[cells[0]] = (cells[1], cells[2])
+    return rows
+
+
 class ManagerApprovalTests(unittest.TestCase):
     def read(self, relative):
         return (MANAGER / relative).read_text(encoding="utf-8")
@@ -120,7 +130,7 @@ class ManagerApprovalTests(unittest.TestCase):
         text = self.read("references/herdr.md")
         self.expect("herdr.md", text, r"herdr agent start [^\n]*--pane[^\n]*\n?[^\n]*-- <",
                     "agent start no longer forwards pre-grant args after --")
-        rows = {line.split("|")[1].strip() for line in text.splitlines() if line.startswith("| ")}
+        rows = launch_rows(text)
         for kind in ("claude", "codex", "opencode, kilo"):
             with self.subTest(kind=kind):
                 self.assertIn(kind, rows, f"herdr.md: no launch row for {kind}")
@@ -132,13 +142,30 @@ class ManagerApprovalTests(unittest.TestCase):
                     "auto-answers are not logged")
 
     def test_no_launch_recipe_bypasses_every_prompt(self):
-        text = self.read("references/herdr.md")
-        recipes = [line for line in text.splitlines() if line.startswith("| ")]
-        for line in recipes:
-            cell = line.split("|")[2:4]
-            with self.subTest(row=line[:40]):
-                self.assertIsNone(BYPASS.search(" ".join(cell)),
+        for kind, cells in launch_rows(self.read("references/herdr.md")).items():
+            with self.subTest(kind=kind):
+                self.assertIsNone(BYPASS.search(" ".join(cells)),
                                   "a launch recipe removes the escalation surface")
+
+    def test_each_kind_launches_with_its_grant(self):
+        # The mechanism, not the briefs' wording: these cells are what the host enforces.
+        rows = launch_rows(self.read("references/herdr.md"))
+        expected = {
+            "claude": (r"--permission-mode auto", r"--permission-mode dontAsk"),
+            "codex": (r"-s workspace-write -a on-request", r"-s read-only -a on-request"),
+            "opencode, kilo": (r"OPENCODE_CONFIG_CONTENT", r'"edit":"ask"'),
+        }
+        for kind, (coordinator, role) in expected.items():
+            with self.subTest(kind=kind, role="coordinator"):
+                self.assertRegex(rows[kind][0], coordinator, f"{kind} coordinator grant changed")
+            with self.subTest(kind=kind, role="planner, reviewer"):
+                self.assertRegex(rows[kind][1], role, f"{kind} read-only grant changed")
+
+    def test_read_only_grants_write_only_to_the_run_directory(self):
+        role = launch_rows(self.read("references/herdr.md"))["claude"][1]
+        writes = re.findall(r"(?:Edit|Write)\(([^)]*)\)", role)
+        self.assertEqual(sorted(writes), ["/<run_dir>/**", "/<run_dir>/**"],
+                         "a claude planner/reviewer may write outside the run directory")
 
     def test_opencode_and_kilo_ask_for_every_escalation_command(self):
         text = self.read("references/herdr.md")
