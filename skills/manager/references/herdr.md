@@ -49,16 +49,14 @@ after the coordinator creates it, so only later workers start there.
 | opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
 
-claude's `auto` mode lets a classifier approve pushes to any branch, including
-the main one, and denies what it blocks without a prompt; an ask rule still
-forces one, and `--settings` loads it for that session only. opencode and kilo
-allow every tool by default (`opencode debug agent build` shows `"*": allow`),
-so their ask rules come in through the environment, which lasts for that agent
-only. The claude deny rules repeat per other active item's worktree, or are
-dropped when there is none. codex has no ask rule for a command, and
-`-a on-request` leaves asking to the model, so its sandbox is the prompt
-surface: without network access a remote write cannot run unasked, and you
-answer the routine ones for the session. `<main>` is the main branch:
+Why: claude's `auto` mode would approve a push to the main branch, so an ask
+rule forces the prompt, loaded for that session only by `--settings`; its
+deny rules repeat per other active item's worktree, or drop when there is
+none. opencode and kilo allow every tool by default, so their ask rules come
+in through the environment, for that agent only. codex has no per-command ask
+rule and `-a on-request` leaves asking to the model, so its sandbox is the
+prompt surface: without network, a remote write cannot run unasked.
+`<main>` is the main branch:
 
 ```
 <claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'
@@ -84,10 +82,12 @@ a listing.
 
 ## Drive
 
-- **Prompt** with the verbatim brief and the path its record goes to:
-  `<run_dir>/<slug>/<role>-<label>.md`. Records are long and scrollback may
-  not hold them, so tell the worker to reply with the path only, then read
-  the file.
+- **Prompt** with the verbatim brief, the path its record goes to —
+  `<run_dir>/<slug>/<role>-<label>.md` — and its result path beside it,
+  `<role>-<label>.result`. Tell the worker to save its result block
+  (`references/console.md` § Results) there and reply with that path. Read
+  only that file: never the record, and never the pane's scrollback for a
+  result.
 - **Do not block the console.** Prompt without `--wait`, then wait in the
   background where the host can — `herdr agent wait <name>` as a background
   command that wakes you when it exits — and return to the user. Same-role
@@ -101,8 +101,8 @@ a listing.
 - **Planners are done after Phase 1.** Close the tabs you recorded for them
   once their records are saved, so reviewers never share scrollback with a
   plan and the tab bar shows only live workers.
-- **`blocked`** means an approval or a question UI. Read it with `herdr agent
-  read <name> --source recent-unwrapped` and classify it — role, action,
+- **`blocked`** means an approval or a question UI. Read just the prompt with
+  `herdr agent read <name> --source recent-unwrapped --lines 40` and classify it — role, action,
   target — against `references/console.md` § Approvals:
   - **Routine:** choose the persistent option the menu offers ("Allow
     always", "don't ask again", "for this session") that writes no settings
