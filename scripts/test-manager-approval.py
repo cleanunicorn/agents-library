@@ -204,6 +204,11 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("reviewer brief", self.read("references/reviewer-brief.md"), r"(?i)gate: .*not run —",
                     "the re-check record has no value for a gate that was not run")
 
+    def test_the_loop_answers_a_blocked_worker(self):
+        loop = section(self.read("references/console.md"), "The loop")
+        self.expect("console.md § The loop", loop, r"(?i)worker that blocked: classify and answer its prompt per § Approvals",
+                    "the loop advances a worker stalled on a prompt to its next phase")
+
     def test_every_brief_states_its_access(self):
         # The heading alone survives a gutted paragraph; pin what each worker is told.
         promises = {

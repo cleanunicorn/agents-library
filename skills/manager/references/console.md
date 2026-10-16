@@ -32,8 +32,10 @@ Each turn, in this order:
    when three are active. An answer → deliver it to the worker that asked.
    "Status" → the board. A change to a running item → brief its coordinator
    and log the change on the board.
-2. **Worker events.** For each worker that finished or blocked: read its
-   record, check it against its gate in `SKILL.md`, start the next phase.
+2. **Worker events.** A worker that finished: read its record, check it
+   against its gate in `SKILL.md`, start the next phase. A worker that
+   blocked: classify and answer its prompt per § Approvals; it keeps its
+   phase.
 3. **The board**, then a short reply: what moved, what waits on the user.
 
 **Keep the console responsive.** Use background waits with wake-up when
