@@ -44,7 +44,7 @@ outside the worktree.
 | kind | coordinator | planner, reviewer — writes only to the run directory |
 |------|-------------|------------------------------------------------------|
 | claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` |
-| codex | `-C <worktree> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git -c sandbox_workspace_write.network_access=true` | `-C <worktree> -s read-only -a on-request`; its record write and a reviewer's gate then ask once, and you answer for the session |
+| codex | `-C <worktree> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks | `-C <worktree> -s read-only -a on-request`; its record write and a reviewer's gate then ask once, and you answer for the session |
 | opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
 
@@ -53,7 +53,10 @@ including the main one, and denies what it blocks without a prompt; an ask
 rule still forces one, and `--settings` loads it for that session only.
 opencode and kilo allow every tool by default (`opencode debug agent build`
 shows `"*": allow`), so their ask rules come in through the environment,
-which lasts for that agent only. `<main>` is the main branch:
+which lasts for that agent only. codex has no ask rule for a command, and
+`-a on-request` leaves asking to the model, so its sandbox is the prompt
+surface: without network access a remote write cannot run unasked, and you
+answer the routine ones for the session. `<main>` is the main branch:
 
 ```
 <claude ask> = '{"permissions":{"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'

@@ -192,6 +192,13 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIn(f"Bash({command})".replace(" ", ""), asked,
                               f"claude runs {command} unasked")
 
+    def test_codex_coordinator_keeps_remote_writes_behind_the_sandbox(self):
+        # -a on-request lets the model skip asking; only the sandbox's network
+        # block makes a merge or force-push surface as a prompt.
+        coordinator = launch_rows(self.read("references/herdr.md"))["codex"][0]
+        self.assertNotRegex(coordinator, r"network_access\s*=\s*true",
+                            "codex merges and force-pushes without a prompt")
+
     def test_approvals_check_afterwards_what_rules_miss(self):
         policy = section(self.read("references/console.md"), "Approvals")
         self.expect("console.md § Approvals", policy, r"(?i)check afterwards.{0,400}is-ancestor",
