@@ -101,7 +101,9 @@ the board. Parse every id from JSON; never derive one from a listing.
   read <name> --source recent-unwrapped` and classify it — role, action,
   target — against `references/console.md` § Approvals:
   - **Routine:** choose the persistent option the menu offers ("Allow
-    always", "don't ask again", "for this session") with `herdr agent
+    always", "don't ask again", "for this session") that writes no settings
+    file outside the item's worktree (`references/console.md` § Approvals)
+    with `herdr agent
     send-keys <name> <keys>` — `agent prompt` is refused while blocked — and
     confirm any follow-up dialog. In opencode 1.19.0 that is `right`,
     `enter`, then `enter` on "Always allow … until OpenCode is restarted".

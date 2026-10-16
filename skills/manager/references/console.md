@@ -52,7 +52,10 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
 - **Answer every worker approval** that still appears yourself, with the
   broadest persistent option the host offers — "Allow always", "don't ask
   again", session-wide — but never one that writes the user's global host
-  settings. Routine is whatever the role's job needs: files and folders
+  settings, or a settings file outside the item's worktree: claude's "don't
+  ask again" saves to `.claude/settings.local.json` under the session's
+  directory, which for a coordinator is the user's checkout. Where only such
+  an option persists, take the session or once option. Routine is whatever the role's job needs: files and folders
   (worktree, run directory, the repository and its `.git`, other paths the
   job reads), shell commands, git commits and pushes of the item's branch,
   `gh` for the item's draft PR, the gate, installs, and network fetches.

@@ -141,6 +141,8 @@ class ManagerApprovalTests(unittest.TestCase):
                     "answers are not persistent, so the same prompt returns")
         self.expect(label, policy, r"(?i)never one that writes the user's global",
                     "a persistent answer could rewrite global host settings")
+        self.expect(label, policy, r"(?i)settings file outside the item's worktree",
+                    "a persistent answer could write settings into the user's checkout")
         self.expect(label, policy, r"(?i)auto-approved",
                     "auto-answers are not logged for the user to audit")
         self.expect(label, policy, r"(?i)never authori[sz]es",
@@ -191,6 +193,8 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIn(kind, rows, f"herdr.md: no launch row for {kind}")
         self.expect("herdr.md", text, r"(?i)always allow",
                     "a blocked prompt is not answered with the persistent option")
+        self.expect("herdr.md", text, r"(?i)no settings file outside the item's worktree",
+                    "a blocked prompt's persistent answer could write the user's checkout")
         self.expect("herdr.md", text, r"(?i)send-keys",
                     "no way to answer a blocked prompt is named")
         self.expect("herdr.md", text, r"(?i)auto-approved",
