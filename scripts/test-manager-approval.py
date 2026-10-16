@@ -173,6 +173,21 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("herdr.md", self.read("references/herdr.md"), r"(?i)relay it to the user[^.]*secret redacted",
                     "a blocked Herdr prompt is relayed with its secret")
 
+    def test_every_quoted_escalation_count_matches_the_list(self):
+        # The list is single-sourced in console.md; its count is quoted in three places.
+        policy = section(self.read("references/console.md"), "Approvals")
+        relay = re.search(r"(?ms)^- \*\*Relay to the user only\*\*.*?(?=^\S)", policy).group(0)
+        count = len(re.findall(r"(?m)^  \d+\. ", relay))
+        word = ("zero one two three four five six seven eight nine ten").split()[count]
+        quotes = {
+            "console.md": (relay, rf"(?i)these {word} cases"),
+            "SKILL.md rule 7": (rule(self.read("SKILL.md"), 7), rf"(?i)relaying only the {word} cases"),
+            "README.md": ((ROOT / "README.md").read_text(encoding="utf-8"), rf"(?i)only {word} kinds go to you"),
+        }
+        for label, (text, pattern) in quotes.items():
+            with self.subTest(where=label):
+                self.expect(label, text, pattern, f"the escalation list has {count} cases")
+
     def test_every_brief_states_its_access(self):
         # The heading alone survives a gutted paragraph; pin what each worker is told.
         promises = {
