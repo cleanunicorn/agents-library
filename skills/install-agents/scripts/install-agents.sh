@@ -64,25 +64,24 @@ for name in "${agents[@]}"; do
     failed "definition destination is not a regular file: $destfile"
     continue
   fi
+  copy_status=
   if [ ! -f "$destfile" ]; then
-    if cp "$srcfile" "$destfile"; then
-      echo "INSTALLED $name"
-    else
-      failed "cannot copy definition to: $destfile"
-      continue
-    fi
+    copy_status=INSTALLED
   elif cmp -s "$srcfile" "$destfile"; then
     echo "IDENTICAL $name"
   elif [ "$force" -eq 1 ]; then
+    copy_status=UPDATED
+  else
+    echo "CONFLICT $name"
+    bump_status 2
+  fi
+  if [ -n "$copy_status" ]; then
     if cp "$srcfile" "$destfile"; then
-      echo "UPDATED $name"
+      echo "$copy_status $name"
     else
       failed "cannot copy definition to: $destfile"
       continue
     fi
-  else
-    echo "CONFLICT $name"
-    bump_status 2
   fi
   journal="$dest/journals/$name.md"
   if [ ! -f "$journal" ]; then
