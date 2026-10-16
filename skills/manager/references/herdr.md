@@ -77,7 +77,10 @@ pass args that write a host's global settings.
 
 `tab create` or `agent start` failing falls back to a native subagent for
 that worker, retried once under SKILL.md rule 8; record the degradation on
-the board. Parse every id from JSON; never derive one from a listing.
+the board. That worker loses its pre-grant args and runs on your session's
+permissions, so `references/console.md` § Native subagents' rules and its
+worktree check apply to it. Parse every id from JSON; never derive one from
+a listing.
 
 ## Drive
 

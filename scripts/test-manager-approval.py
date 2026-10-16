@@ -304,6 +304,11 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIsNone(BYPASS.search(" ".join(cells)),
                                   "a launch recipe removes the escalation surface")
 
+    def test_a_fallback_worker_follows_the_native_rules(self):
+        self.expect("herdr.md", self.read("references/herdr.md"),
+                    r"(?i)falls back to a native subagent.{0,200}loses its pre-grant.{0,160}Native subagents",
+                    "a degraded read-only worker silently runs on the session's wider grant")
+
     def test_herdr_names_every_banned_flag(self):
         # The table check cannot see the prose ban; anchor it on its reason
         # and require it to name each flag BYPASS rejects.
