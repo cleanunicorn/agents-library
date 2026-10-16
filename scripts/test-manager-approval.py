@@ -214,6 +214,12 @@ class ManagerApprovalTests(unittest.TestCase):
                     r"(?i)verbatim with its options.{0,120}exactly the option the user names",
                     "a blocked Herdr escalation is relayed without its options")
 
+    def test_audit_cells_are_the_managers_summary(self):
+        # A worker shapes the prompt text; pasted verbatim, a pipe forges a row.
+        self.expect("console.md § The board", section(self.read("references/console.md"), "The board"),
+                    r"(?i)pipes and newlines stripped",
+                    "a prompt's own text can break or forge an audit row")
+
     def test_board_samples_are_tables(self):
         # The manager copies these samples into board.md; without a delimiter
         # row a pipe table renders as raw text.

@@ -111,7 +111,9 @@ relayed at once.
 Below the table, every secret a prompt showed redacted: open questions to
 the user, each tagged `[<slug>]` — escalated approvals among them — then the
 **auto-approved** list, one row per approval you answered, appended and kept
-on every rewrite so the user can audit them later:
+on every rewrite so the user can audit them later. Its `asked` cell is your
+own one-line summary of the action and target, with pipes and newlines
+stripped, never the prompt's text pasted in:
 
 ```
 auto-approved
