@@ -196,7 +196,9 @@ skill forbids such as merging or force-pushing, destruction outside the item,
 secrets or global settings, the project's ask-first list, and prompts it
 cannot classify. Planners and reviewers still write only to the run
 directory. It never edits code, plans, reviews, or runs tests itself,
-even when asked. Three items run concurrently and a fourth queues, each in
+even when asked. To keep its own context small, it reads only each worker's
+few-line result block — status, record path, head SHA, gate exit, counts —
+and hands full plans and reviews between workers by path. Three items run concurrently and a fourth queues, each in
 its own worktree with one PR and at most five workers.
 
 One or two independent `plan-feature` planners feed a coordinator's SWOT
