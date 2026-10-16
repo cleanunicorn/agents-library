@@ -66,7 +66,9 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
 - **Log each answer** in the board's **auto-approved** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
-- **Relay to the user only** these five cases, tagged `[<slug>]`:
+- **Relay to the user only** these five cases, tagged `[<slug>]`, verbatim
+  with the host's options, and deliver exactly the option the user names —
+  once, session or always — never the broadest-persistent default:
   1. an action SKILL.md forbids or reserves — merging, force-push, a commit
      to the main branch, marking ready outside Phase 5;
   2. irreversible destruction outside the item's worktree and run directory

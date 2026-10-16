@@ -204,6 +204,16 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("reviewer brief", self.read("references/reviewer-brief.md"), r"(?i)gate: .*not run —",
                     "the re-check record has no value for a gate that was not run")
 
+    def test_an_escalation_reaches_the_user_with_its_options(self):
+        # The user must see "Allow always" was on offer, and get the scope they chose.
+        policy = section(self.read("references/console.md"), "Approvals")
+        self.expect("console.md § Approvals", policy,
+                    r"(?i)verbatim with the host's options.{0,80}exactly the option the user names",
+                    "an escalated prompt loses its menu, or the user's answer is widened")
+        self.expect("herdr.md", self.read("references/herdr.md"),
+                    r"(?i)verbatim with its options.{0,120}exactly the option the user names",
+                    "a blocked Herdr escalation is relayed without its options")
+
     def test_the_loop_answers_a_blocked_worker(self):
         loop = section(self.read("references/console.md"), "The loop")
         self.expect("console.md § The loop", loop, r"(?i)worker that blocked: classify and answer its prompt per § Approvals",

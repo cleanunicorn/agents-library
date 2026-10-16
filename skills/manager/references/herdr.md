@@ -111,7 +111,8 @@ the board. Parse every id from JSON; never derive one from a listing.
     Add the row to the board's **auto-approved** list, then `herdr agent get
     <name>` until it is no longer `blocked`.
   - **An escalation case, or a question:** relay it to the user tagged
-    `[<slug>]`, any secret redacted, and deliver the answer the same way. Unattended, answer an
+    `[<slug>]`, verbatim with its options and any secret redacted, and
+    send exactly the option the user names with `send-keys`. Unattended, answer an
     escalation with reject and mark it `assumed`; the worker continues.
 - **A timeout is not a failure to deliver.** Read the agent before sending
   anything again.
