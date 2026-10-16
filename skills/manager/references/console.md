@@ -41,6 +41,41 @@ available (`herdr agent wait <name>` or a background subagent), returning
 to the user immediately. Otherwise wait with a timeout, report and check
 next turn. Timeouts are not failures; read the worker before re-prompting.
 
+## Approvals
+
+A worker waiting on a permission prompt is stalled work, and almost none of
+those prompts need the user. SKILL.md rule 7 makes them yours:
+
+- **Pre-grant at launch** each worker's access, so prompts rarely appear —
+  the transport says how (`references/herdr.md` per agent kind, *Native
+  subagents* below).
+- **Answer every worker approval** that still appears yourself, with the
+  broadest persistent option the host offers — "Allow always", "don't ask
+  again", session-wide — but never one that writes the user's global host
+  settings. Routine is whatever the role's job needs: files and folders
+  (worktree, run directory, the repository and its `.git`, other paths the
+  job reads), shell commands, git commits and pushes of the item's branch,
+  `gh` for the item's draft PR, the gate, installs, and network fetches.
+- **Log each answer** in the board's **auto-approved** list.
+- **Relay to the user only** these five cases, tagged `[<slug>]`:
+  1. an action SKILL.md forbids or reserves — merging, force-push, a commit
+     to the main branch, marking ready outside Phase 5;
+  2. irreversible destruction outside the item's worktree and run directory
+     — deleting other paths, dropping data, deleting branches or worktrees
+     this run did not create;
+  3. anything touching secrets or credentials, or the user's global host
+     settings;
+  4. the project's ask-first list — a public contract, stored data;
+  5. a prompt you cannot classify confidently.
+
+A host prompt never authorizes what SKILL.md forbids: "Allow" on a merge is
+still a rule 6 breach. Approving a prompt never widens a role either —
+host permission is not role permission, so a planner's or reviewer's prompt
+to write outside the run directory is rejected and logged, not approved.
+Unattended, an escalation case is answered with reject — that action only —
+labelled `assumed` and listed; the worker continues. Neither a routine
+prompt nor a rejected one is a failed member (SKILL.md rule 8).
+
 ## The board
 
 `<run_dir>/board.md`, rewritten after every event and shown on request:
