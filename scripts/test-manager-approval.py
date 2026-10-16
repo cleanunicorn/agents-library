@@ -153,6 +153,19 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(case=case):
                 self.expect(label, policy, pattern.pattern, f"escalation case missing: {case}")
 
+    def test_secrets_are_redacted_on_every_path(self):
+        # Escalation case 3 is exactly the prompt that shows a secret, and it is
+        # relayed and listed among the open questions, not only the approvals.
+        text = self.read("references/console.md")
+        self.expect("console.md § Approvals", section(text, "Approvals"),
+                    r"(?i)redact any secret.{0,120}board.{0,40}relay",
+                    "an escalated prompt's secret reaches the user or the board")
+        self.expect("console.md § The board", section(text, "The board"),
+                    r"(?i)secret.{0,60}redacted: open questions",
+                    "the board's open questions keep a prompt's secret")
+        self.expect("herdr.md", self.read("references/herdr.md"), r"(?i)relay it to the user[^.]*secret redacted",
+                    "a blocked Herdr prompt is relayed with its secret")
+
     def test_every_brief_states_its_access(self):
         for role in ("coordinator", "planner", "reviewer"):
             with self.subTest(role=role):

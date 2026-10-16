@@ -57,6 +57,8 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   job reads), shell commands, git commits and pushes of the item's branch,
   `gh` for the item's draft PR, the gate, installs, and network fetches.
 - **Log each answer** in the board's **auto-approved** list.
+- **Redact any secret** a prompt shows — a token, key or password — before
+  it goes anywhere: the board, a relay to the user, a brief.
 - **Relay to the user only** these five cases, tagged `[<slug>]`:
   1. an action SKILL.md forbids or reserves — merging, force-push, a commit
      to the main branch, marking ready outside Phase 5;
@@ -97,10 +99,10 @@ relayed at once.
 | export     | queued   | — | — | a free slot | 13:55 three items active |
 ```
 
-Below the table: open questions to the user, each tagged `[<slug>]` —
-escalated approvals among them — then the **auto-approved** list, one row per
-approval you answered, appended and kept on every rewrite so the user can
-audit them later (redact any secret the prompt showed):
+Below the table, every secret a prompt showed redacted: open questions to
+the user, each tagged `[<slug>]` — escalated approvals among them — then the
+**auto-approved** list, one row per approval you answered, appended and kept
+on every rewrite so the user can audit them later:
 
 ```
 auto-approved
