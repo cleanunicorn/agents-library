@@ -410,6 +410,8 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("README manager", manager.group(0),
                     r"(?i)answers routine permission prompts itself.{0,80}persistent option",
                     "README no longer says the manager answers approvals")
+        self.expect("README manager", manager.group(0), r"(?i)native subagents.{0,120}share its session",
+                    "README claims a per-worker grant the native path cannot give")
         self.expect("README manager", manager.group(0), r"(?i)write only to the run directory",
                     "README no longer says planners and reviewers stay read-only")
 

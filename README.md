@@ -187,8 +187,10 @@ Pick the skill that matches the job:
 
 [`/manager`](skills/manager/SKILL.md) turns this session into a console:
 workers do the work while it briefs them, relays questions, and maintains a
-status board. It pre-grants each worker the access its role needs at launch
-and answers routine permission prompts itself with the host's persistent
+status board. In Herdr it pre-grants each worker the access its role needs
+at launch; as native subagents, which share its session's permissions, it
+checks that session at intake and each read-only worker's worktree after
+it. It answers routine permission prompts itself with the host's persistent
 option, logging each on the board. Only five kinds go to you: actions the
 skill forbids such as merging or force-pushing, destruction outside the item,
 secrets or global settings, the project's ask-first list, and prompts it
