@@ -31,7 +31,7 @@ python3 scripts/test-manager-approval.py
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
 bash scripts/test-install-host.sh
-bash scripts/test-diff-target.sh
+./scripts/test-diff-target.sh
 python3 run_evals.py --dry-run
 
 echo "All local checks passed."
