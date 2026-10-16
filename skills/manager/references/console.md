@@ -161,7 +161,8 @@ Native workers use the same roles, briefs, budget and rules.
   § Pre-grants per kind, which defines `<claude ask>` — here without its
   deny rules, since every item's coordinator shares this session. If it
   was not, tell the user the one relaunch line once; never edit their
-  global settings to get it.
+  global settings to get it. Unattended, note the missing pre-grant once on
+  the board as `assumed` and continue with the session's permissions.
 - **Subagents cannot ask the user.** Return their questions to the user
   under SKILL.md rule 7 and resume them with the answer. Their permission
   prompts follow § Approvals when they reach you; a host that shows them to

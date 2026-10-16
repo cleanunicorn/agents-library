@@ -431,6 +431,8 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(evidence=evidence):
                 self.expect("console.md native", native, evidence,
                             "a read-only native worker's write can go unseen")
+        self.expect("console.md native", native, r"(?i)relaunch line once.{0,160}unattended.{0,120}continue",
+                    "an unattended run has no default when the session lacks the pre-grant")
         board = section(text, "The board")
         self.expect("console.md board", board, r"(?i)approvals answered",
                     "the board has no audit list")
