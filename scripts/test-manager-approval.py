@@ -404,7 +404,7 @@ class ManagerApprovalTests(unittest.TestCase):
 
     def test_native_path_pre_grants_and_board_keeps_the_audit(self):
         text = self.read("references/console.md")
-        native = text[text.index("## Native subagents"):text.index("## Error handling")]
+        native = section(text, "Native subagents")
         self.expect("console.md native", native, r"(?i)pre-grant",
                     "the native path has no pre-grant")
         self.expect("console.md native", native, r"(?i)--add-dir",
