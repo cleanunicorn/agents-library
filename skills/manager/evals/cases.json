@@ -793,7 +793,7 @@
       "assertions": [
         {
           "type": "shell",
-          "cmd": "grep -Eiq 'force[^\\n]*(reject|no\\b|denied|declin)' .worktrees/manager-run/board.md"
+          "cmd": "grep -Eiq 'force.*(reject|no\\b|denied|declin)' .worktrees/manager-run/board.md"
         },
         {
           "type": "output_regex",
