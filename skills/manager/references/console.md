@@ -32,14 +32,69 @@ Each turn, in this order:
    when three are active. An answer → deliver it to the worker that asked.
    "Status" → the board. A change to a running item → brief its coordinator
    and log the change on the board.
-2. **Worker events.** For each worker that finished or blocked: read its
-   record, check it against its gate in `SKILL.md`, start the next phase.
+2. **Worker events.** A worker that finished: read its record, check it
+   against its gate in `SKILL.md`, start the next phase. A worker that
+   blocked: classify and answer its prompt per § Approvals; it keeps its
+   phase.
 3. **The board**, then a short reply: what moved, what waits on the user.
 
 **Keep the console responsive.** Use background waits with wake-up when
 available (`herdr agent wait <name>` or a background subagent), returning
 to the user immediately. Otherwise wait with a timeout, report and check
 next turn. Timeouts are not failures; read the worker before re-prompting.
+
+## Approvals
+
+A worker waiting on a permission prompt is stalled work, and almost none of
+those prompts need the user. SKILL.md rule 7 makes them yours:
+
+- **Pre-grant at launch** each worker's access, so prompts rarely appear —
+  the transport says how (`references/herdr.md` per agent kind, *Native
+  subagents* below).
+- **Answer every worker approval** that still appears yourself, with the
+  broadest persistent option the host offers — "Allow always", "don't ask
+  again", session-wide — but never one that writes the user's global host
+  settings, or a settings file outside the item's worktree: claude's "don't
+  ask again" saves to `.claude/settings.local.json` under the session's
+  directory, which for a coordinator is the user's checkout. Where only such
+  an option persists, take the session or once option. Routine is whatever the
+  role's job needs: files and folders (worktree, run directory, the repository
+  and its `.git`, other paths the job reads), shell commands, git commits and
+  pushes of the item's branch, `gh` for the item's draft PR, the gate — for a
+  planner or reviewer, only one that writes nowhere but the run directory —
+  installs, and network fetches.
+- **Log each answer** in the board's **approvals answered** list.
+- **Redact any secret** a prompt shows — a token, key or password — before
+  it goes anywhere: the board, a relay to the user, a brief.
+- **Relay to the user only** these five cases, tagged `[<slug>]`, verbatim
+  with the host's options, and deliver exactly the option the user names —
+  once, session or always — never the broadest-persistent default:
+  1. an action SKILL.md forbids or reserves — merging, force-push, a commit
+     to the main branch, marking ready outside Phase 5;
+  2. irreversible destruction outside the item's worktree and run directory
+     — deleting other paths, dropping data, deleting branches or worktrees
+     this run did not create;
+  3. anything touching secrets or credentials, or the user's global host
+     settings;
+  4. the project's ask-first list — a public contract, stored data;
+  5. a prompt you cannot classify confidently.
+
+A host prompt never authorizes what SKILL.md forbids: "Allow" on a merge is
+still a rule 6 breach. Approving a prompt never widens a role either —
+host permission is not role permission, so a planner's or reviewer's prompt
+to write outside the run directory is rejected and logged, not approved.
+A host that denies an out-of-role action itself — claude `dontAsk` — has
+already rejected it; there is no prompt to log.
+Unattended, an escalation case is answered with reject — that action only —
+labelled `assumed` and listed; the worker continues. Neither a routine
+prompt nor a rejected one is a failed member (SKILL.md rule 8).
+
+**Check afterwards** what launch rules cannot promise, since they match a
+command as written: at each coordinator event, the PR is still an open
+draft (`gh pr view <pr> --json state,isDraft`), the remote branch head is an
+ancestor of the local one (`git merge-base --is-ancestor`), and the main
+branch's remote head is the one recorded at intake. A mismatch is case 1,
+relayed at once.
 
 ## The board
 
@@ -53,17 +108,36 @@ next turn. Timeouts are not failures; read the worker before re-prompting.
 | export     | queued   | — | — | a free slot | 13:55 three items active |
 ```
 
-Below the table: open questions to the user, each tagged `[<slug>]`, and
-**overlaps** — two items whose merged plans or diffs (`git diff --stat`) touch
+Below the table, every secret a prompt showed redacted: open questions to
+the user, each tagged `[<slug>]` — escalated approvals among them — then the
+**approvals answered** list, one row per approval you answered, appended and kept
+on every rewrite so the user can audit them later. Its `asked` cell is your
+own one-line summary of the action and target, with pipes and newlines
+stripped, never the prompt's text pasted in:
+
+```
+approvals answered
+| time  | item       | worker=kind        | asked (action · target)                     | option       |
+|-------|------------|--------------------|---------------------------------------------|--------------|
+| 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
+| 14:07 | count-cmd  | plan-b=opencode    | read external dir <run_dir>/count-cmd/*     | Allow always |
+| 14:09 | count-cmd  | plan-b=opencode    | edit src/count.py                           | rejected — read-only role |
+```
+
+Then **overlaps** — two items whose merged plans or diffs (`git diff --stat`) touch
 the same file. An overlap is flagged, not serialized: both PRs stay
 independent, and the hand-back names the file so the user merges in order.
 
 ## Concurrency
 
 Isolation makes concurrent items safe: each owns a worktree, branch, PR and
-workers, with one writer per worktree. Three active items (at most fifteen
-agents) keep the board readable and host capacity sane; the user may change
-the cap. A blocked item never stops another.
+workers, with one writer per worktree. A coordinator's grant covers the whole
+repository, so an edit to a sibling's worktree would not prompt: give a claude
+coordinator the active items' other worktrees as deny rules
+(`references/herdr.md` § Pre-grants per kind). An item started later, and a
+host without path rules, rely on the coordinator brief alone. Three active
+items (at most fifteen agents) keep the board readable and host capacity sane;
+the user may change the cap. A blocked item never stops another.
 
 ## Native subagents
 
@@ -78,8 +152,29 @@ Native workers use the same roles, briefs, budget and rules.
   findings and the commits since the frozen SHA). That is the same member
   continuing, not a new one: it does not count against the budget and is not
   a second review round.
-- **Subagents cannot ask the user.** Return their questions to the
-  user under SKILL.md rule 7 and resume them with the answer.
+- **Pre-grant through the manager's own session.** Native workers inherit
+  its permissions, and the spawn call has no permission fields of its own.
+  At intake, check the session was started with a broad, guarded mode and
+  the item's directories and the escalation ask rules — for Claude Code
+  `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings
+  <claude ask>`; for other hosts the coordinator row of `references/herdr.md`
+  § Pre-grants per kind, which defines `<claude ask>` — here without its
+  deny rules, since every item's coordinator shares this session. If it
+  was not, tell the user the one relaunch line once; never edit their
+  global settings to get it. Unattended, note the missing pre-grant once on
+  the board as `assumed` and continue with the session's permissions.
+- **Subagents cannot ask the user.** Return their questions to the user
+  under SKILL.md rule 7 and resume them with the answer. Their permission
+  prompts follow § Approvals when they reach you; a host that shows them to
+  the user directly is noted once on the board rather than listed as
+  answered by you.
+- **Read-only roles stay read-only** by their briefs; a host-level grant
+  for the whole session cannot narrow a planner or reviewer. Before each
+  starts, record the worktree's `git rev-parse HEAD`, branch and `git stash
+  list | wc -l`; when it returns, compare them and require an empty `git
+  status --porcelain` — a clean status alone misses a commit, a stash or a
+  branch switch. A difference is a role breach, reported to the user. Writes
+  outside the worktree escape this check; there only the brief holds.
 
 ## Error handling
 
@@ -90,6 +185,10 @@ Native workers use the same roles, briefs, budget and rules.
 - **The main branch moved, or the worktree already exists:** the coordinator
   fetches and rebases as the project allows, then re-checks the citations the
   change touches.
+- **A reviewer's gate must write into the repository:** the reviewer
+  reports it and does not run it, the one exception to its re-check gate
+  log in SKILL.md. The coordinator runs that gate at the same head, and the
+  re-check record's `gate:` reads `not run — <reason> → <coordinator's log>`.
 - **The coordinator dies:** a new one gets the setup record, merged plan,
   Progress, and `git log`; ticked boxes count only after a fresh gate log.
 

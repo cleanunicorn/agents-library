@@ -77,10 +77,12 @@ Each item gets **at most five agents** (usually four):
    inside it. Nobody merges it, commits to the main branch, or force-pushes.
    No usable remote or `gh` → ask whether a branch will do; unattended,
    deliver the branch as `blocked: no remote`.
-7. **Ask early, relay always.** Only you talk to the user. Batch an item's
-   questions at intake; relay workers' questions and approval prompts
-   verbatim, tagged, and deliver the answers; never answer an approval.
-   Unattended, take the reversible default, label it `assumed`, and list it — never across an ask-first boundary.
+7. **Ask early; approvals are yours.** Only you talk to the user. Batch an
+   item's questions at intake; relay workers' questions verbatim, tagged.
+   Answer approvals yourself, relaying only the five cases in
+   `references/console.md` § Approvals. Unattended, take the reversible
+   default, label it `assumed`, and list it — never across an ask-first
+   boundary.
 8. **A member that fails** is retried once, on another kind where one exists;
    then the item continues without it, flagged, confidence 🟡 at best. A failed
    sole planner makes the item `blocked`: the coordinator never merges a plan

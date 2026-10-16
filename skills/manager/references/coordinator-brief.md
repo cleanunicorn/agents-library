@@ -9,6 +9,14 @@ Send questions, `ask` actions, proposed splits and `needs-user-decision`
 findings to the manager; never address the user. Continue independent work.
 The phase numbers below match the manager's.
 
+**Access.** The manager pre-grants what your job needs at launch: the
+worktree, the run directory, the repository and its `.git`, shell commands,
+git commits and pushes of the item's branch, `gh` for its draft PR, the gate,
+installs, and network fetches. A permission prompt that still appears is the
+manager's to answer; wait for it rather than working around it. Host
+permission is not role permission: an "Allow" never makes a merge, a
+force-push, a commit to the main branch, or an early ready status acceptable.
+
 Save every gate run to `gate-coordinator-<short-sha>.log` in the run
 directory: `command: <exact command>`, `head: <full SHA>`, raw output,
 `exit: <code>`. Only a log at the branch head supports a gate claim. CI

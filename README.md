@@ -187,7 +187,15 @@ Pick the skill that matches the job:
 
 [`/manager`](skills/manager/SKILL.md) turns this session into a console:
 workers do the work while it briefs them, relays questions, and maintains a
-status board. It never edits code, plans, reviews, or runs tests itself,
+status board. In Herdr it pre-grants each worker the access its role needs
+at launch; as native subagents, which share its session's permissions, it
+checks that session at intake and each read-only worker's worktree after
+it. It answers routine permission prompts itself with the host's persistent
+option, logging each on the board. Only five kinds go to you: actions the
+skill forbids such as merging or force-pushing, destruction outside the item,
+secrets or global settings, the project's ask-first list, and prompts it
+cannot classify. Planners and reviewers still write only to the run
+directory. It never edits code, plans, reviews, or runs tests itself,
 even when asked. Three items run concurrently and a fourth queues, each in
 its own worktree with one PR and at most five workers.
 
@@ -506,7 +514,8 @@ required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-fi
 word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
-(`scripts/test-readme-toc.py`), and eval cases with `run_evals.py --dry-run`.
+(`scripts/test-readme-toc.py`), the manager's approval contract
+(`scripts/test-manager-approval.py`), and eval cases with `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.

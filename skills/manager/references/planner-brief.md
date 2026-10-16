@@ -9,6 +9,11 @@ repository; do not switch branches, fetch, install, or run test suites. If you
 were given a run directory, write your plan there and nowhere else; otherwise
 return it as text.
 
+**Access.** The manager pre-grants read access to the worktree and repository
+and write access only to the run directory, and answers any permission prompt
+your host still shows. Host permission is not role permission: a prompt to
+write anywhere else will be rejected, so do not ask for one.
+
 ## How to work
 
 1. **Use the `plan-feature` skill** for this work item, planning only, and do
