@@ -72,6 +72,8 @@ A host prompt never authorizes what SKILL.md forbids: "Allow" on a merge is
 still a rule 6 breach. Approving a prompt never widens a role either —
 host permission is not role permission, so a planner's or reviewer's prompt
 to write outside the run directory is rejected and logged, not approved.
+A host that denies an out-of-role action itself — claude `dontAsk` — has
+already rejected it; there is no prompt to log.
 Unattended, an escalation case is answered with reject — that action only —
 labelled `assumed` and listed; the worker continues. Neither a routine
 prompt nor a rejected one is a failed member (SKILL.md rule 8).
@@ -135,9 +137,10 @@ Native workers use the same roles, briefs, budget and rules.
 - **Pre-grant through the manager's own session.** Native workers inherit
   its permissions, and the spawn call has no permission fields of its own.
   At intake, check the session was started with a broad, guarded mode and
-  the item's directories — for Claude Code `--permission-mode auto
-  --add-dir <run_dir> --add-dir <repo>`; for other hosts the coordinator row
-  of `references/herdr.md` § Pre-grants per kind. If it was not, tell the
+  the item's directories and the escalation ask rules — for Claude Code
+  `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings
+  <claude ask>`; for other hosts the coordinator row of `references/herdr.md`
+  § Pre-grants per kind, which defines `<claude ask>`. If it was not, tell the
   user the one relaunch line once; never edit their global settings to get
   it.
 - **Subagents cannot ask the user.** Return their questions to the user

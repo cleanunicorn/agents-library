@@ -180,6 +180,18 @@ class ManagerApprovalTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertEqual(bash.get(command), "ask", f"opencode/kilo run {command} unasked")
 
+    def test_claude_coordinator_asks_for_every_escalation_command(self):
+        text = self.read("references/herdr.md")
+        self.assertIn("--settings <claude ask>", launch_rows(text)["claude"][0],
+                      "claude's auto mode pushes to the main branch without a prompt")
+        rules = re.search(r"<claude ask> = '(\{.*\})'", text)
+        self.assertIsNotNone(rules, "herdr.md: no <claude ask> rule block")
+        asked = {rule.replace(" ", "") for rule in json.loads(rules.group(1))["permissions"]["ask"]}
+        for command in ESCALATION_COMMANDS:
+            with self.subTest(command=command):
+                self.assertIn(f"Bash({command})".replace(" ", ""), asked,
+                              f"claude runs {command} unasked")
+
     def test_approvals_check_afterwards_what_rules_miss(self):
         policy = section(self.read("references/console.md"), "Approvals")
         self.expect("console.md § Approvals", policy, r"(?i)check afterwards.{0,400}is-ancestor",
@@ -192,6 +204,9 @@ class ManagerApprovalTests(unittest.TestCase):
                     "the native path has no pre-grant")
         self.expect("console.md native", native, r"(?i)--add-dir",
                     "the native pre-grant names no directories")
+        self.expect("console.md native", native, r"--permission-mode auto [^`]*--settings <claude ask>",
+                    "the native session runs without the escalation ask rules")
+        self.assertIsNone(BYPASS.search(native), "the native relaunch line removes every prompt")
         self.expect("console.md board", text, r"(?i)auto-approved",
                     "the board has no audit list")
         self.expect("console.md board", text, r"(?i)kept on every rewrite",
