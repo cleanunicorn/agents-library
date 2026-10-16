@@ -169,10 +169,21 @@ class ManagerApprovalTests(unittest.TestCase):
                     "a blocked Herdr prompt is relayed with its secret")
 
     def test_every_brief_states_its_access(self):
-        for role in ("coordinator", "planner", "reviewer"):
+        # The heading alone survives a gutted paragraph; pin what each worker is told.
+        promises = {
+            "coordinator": (r"(?i)prompt that still appears is the manager's to answer",
+                            r"(?i)never makes a merge, a force-push, a commit to the main branch"),
+            "planner": (r"(?i)answers any permission prompt",),
+            "reviewer": (r"(?i)answers any permission prompt",),
+        }
+        for role, patterns in promises.items():
+            text = self.read(f"references/{role}-brief.md")
+            access = re.search(r"(?s)\*\*Access\.\*\*.*?(?=\n\n)", text)
             with self.subTest(role=role):
-                self.expect(role, self.read(f"references/{role}-brief.md"), r"\*\*Access\.\*\*",
-                            "the brief does not say what the manager pre-grants")
+                self.assertIsNotNone(access, f"{role} brief does not say what the manager pre-grants")
+                for pattern in patterns:
+                    self.expect(f"{role} Access", access.group(0), pattern,
+                                "the brief no longer says who answers its prompts and what stays forbidden")
 
     def test_read_only_roles_write_only_to_the_run_directory(self):
         for role in ("planner", "reviewer"):
