@@ -284,6 +284,17 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIsNone(BYPASS.search(" ".join(cells)),
                                   "a launch recipe removes the escalation surface")
 
+    def test_herdr_names_every_banned_flag(self):
+        # The table check cannot see the prose ban; anchor it on its reason
+        # and require it to name each flag BYPASS rejects.
+        text = " ".join(self.read("references/herdr.md").split())
+        ban = re.search(r"(?i)never launch with.{0,600}?no escalation case could reach you", text)
+        self.assertIsNotNone(ban, "herdr.md no longer bans the prompt-removing flags")
+        for flag in ("--dangerously-skip-permissions", "bypassPermissions",
+                     "--dangerously-bypass-approvals-and-sandbox", "-a never", "--auto"):
+            with self.subTest(flag=flag):
+                self.assertIn(flag, ban.group(0), f"herdr.md's ban omits {flag}")
+
     def test_each_kind_launches_with_its_grant(self):
         # The mechanism, not the briefs' wording: these cells are what the host enforces.
         rows = launch_rows(self.read("references/herdr.md"))
