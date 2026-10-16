@@ -289,6 +289,12 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("console.md native", native, r"--permission-mode auto [^`]*--settings <claude ask>",
                     "the native session runs without the escalation ask rules")
         self.assertIsNone(BYPASS.search(native), "the native relaunch line removes every prompt")
+        # A clean status survives a commit, a stash or a branch switch, so it
+        # cannot prove a read-only worker wrote nothing on its own.
+        for evidence in (r"git rev-parse HEAD", r"git stash\s+list", r"status --porcelain"):
+            with self.subTest(evidence=evidence):
+                self.expect("console.md native", native, evidence,
+                            "a read-only native worker's write can go unseen")
         self.expect("console.md board", text, r"(?i)auto-approved",
                     "the board has no audit list")
         self.expect("console.md board", text, r"(?i)kept on every rewrite",

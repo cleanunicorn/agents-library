@@ -151,8 +151,12 @@ Native workers use the same roles, briefs, budget and rules.
   the user directly is noted once on the board rather than claimed as
   auto-approved.
 - **Read-only roles stay read-only** by their briefs; a host-level grant
-  for the whole session cannot narrow a planner or reviewer, so check
-  `git status --porcelain` in the worktree after each of them returns.
+  for the whole session cannot narrow a planner or reviewer. Before each
+  starts, record the worktree's `git rev-parse HEAD`, branch and `git stash
+  list | wc -l`; when it returns, compare them and require an empty `git
+  status --porcelain` — a clean status alone misses a commit, a stash or a
+  branch switch. A difference is a role breach, reported to the user. Writes
+  outside the worktree escape this check; there only the brief holds.
 
 ## Error handling
 
