@@ -381,7 +381,8 @@ loads and executes.
   syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
-  links (`scripts/test-readme-toc.py`), opencode/Kilo mirror link validation
+  links (`scripts/test-readme-toc.py`), the manager's approval contract
+  (`scripts/test-manager-approval.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer smoke tests for both hosts
   (`scripts/test-install-host.sh`), and eval case validation (`--dry-run`).

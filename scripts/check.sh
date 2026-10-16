@@ -25,6 +25,9 @@ python3 scripts/test-fix-everywhere.py
 echo "Checking the README table of contents and in-page links..."
 python3 scripts/test-readme-toc.py
 
+echo "Checking the manager answers routine approvals and relays the rare ones..."
+python3 scripts/test-manager-approval.py
+
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
 bash scripts/test-install-host.sh
