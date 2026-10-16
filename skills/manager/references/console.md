@@ -122,7 +122,11 @@ independent, and the hand-back names the file so the user merges in order.
 ## Concurrency
 
 Isolation makes concurrent items safe: each owns a worktree, branch, PR and
-workers, with one writer per worktree. Three active items (at most fifteen
+workers, with one writer per worktree. A coordinator's grant covers the
+whole repository, so an edit to a sibling's worktree would not prompt: give
+a claude coordinator the active items' other worktrees as deny rules
+(`references/herdr.md` § Pre-grants per kind). An item started later, and a
+host without path rules, rely on the coordinator brief alone. Three active items (at most fifteen
 agents) keep the board readable and host capacity sane; the user may change
 the cap. A blocked item never stops another.
 
@@ -145,7 +149,8 @@ Native workers use the same roles, briefs, budget and rules.
   the item's directories and the escalation ask rules — for Claude Code
   `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings
   <claude ask>`; for other hosts the coordinator row of `references/herdr.md`
-  § Pre-grants per kind, which defines `<claude ask>`. If it was not, tell the
+  § Pre-grants per kind, which defines `<claude ask>` — here without its
+  deny rules, since every item's coordinator shares this session. If it was not, tell the
   user the one relaunch line once; never edit their global settings to get
   it.
 - **Subagents cannot ask the user.** Return their questions to the user

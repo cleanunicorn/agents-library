@@ -268,6 +268,15 @@ class ManagerApprovalTests(unittest.TestCase):
         self.assertNotRegex(coordinator, r"network_access\s*=\s*true",
                             "codex merges and force-pushes without a prompt")
 
+    def test_coordinators_cannot_silently_edit_a_sibling_worktree(self):
+        # A repo-wide grant makes the sibling edit promptless, so it is never classified.
+        rules = re.search(r"<claude ask> = '(\{.*\})'", self.read("references/herdr.md"))
+        denied = json.loads(rules.group(1))["permissions"].get("deny", [])
+        self.assertIn("Edit(/<other worktree>/**)", denied, "a claude coordinator may edit a sibling worktree")
+        self.expect("console.md § Concurrency", section(self.read("references/console.md"), "Concurrency"),
+                    r"(?i)deny rules.{0,200}rely on the coordinator brief alone",
+                    "the concurrency claim hides where one writer per worktree is prose only")
+
     def test_approvals_check_afterwards_what_rules_miss(self):
         policy = section(self.read("references/console.md"), "Approvals")
         self.expect("console.md § Approvals", policy, r"(?i)check afterwards.{0,400}is-ancestor",

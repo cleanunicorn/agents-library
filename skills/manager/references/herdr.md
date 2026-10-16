@@ -54,13 +54,14 @@ including the main one, and denies what it blocks without a prompt; an ask
 rule still forces one, and `--settings` loads it for that session only.
 opencode and kilo allow every tool by default (`opencode debug agent build`
 shows `"*": allow`), so their ask rules come in through the environment,
-which lasts for that agent only. codex has no ask rule for a command, and
+which lasts for that agent only. The claude deny rules repeat per other
+active item's worktree, or are dropped when there is none. codex has no ask rule for a command, and
 `-a on-request` leaves asking to the model, so its sandbox is the prompt
 surface: without network access a remote write cannot run unasked, and you
 answer the routine ones for the session. `<main>` is the main branch:
 
 ```
-<claude ask> = '{"permissions":{"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'
+<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'
 <opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask"}}}'
 ```
 
