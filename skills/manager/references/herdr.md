@@ -108,7 +108,7 @@ the board. Parse every id from JSON; never derive one from a listing.
     send-keys <name> <keys>` — `agent prompt` is refused while blocked — and
     confirm any follow-up dialog. In opencode 1.19.0 that is `right`,
     `enter`, then `enter` on "Always allow … until OpenCode is restarted".
-    Add the row to the board's **auto-approved** list, then `herdr agent get
+    Add the row to the board's **approvals answered** list, then `herdr agent get
     <name>` until it is no longer `blocked`.
   - **An escalation case, or a question:** relay it to the user tagged
     `[<slug>]`, verbatim with its options and any secret redacted, and

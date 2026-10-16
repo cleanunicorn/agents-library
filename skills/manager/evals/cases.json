@@ -733,7 +733,7 @@
       "assertions": [
         {
           "type": "shell",
-          "cmd": "grep -qi 'auto-approved' .worktrees/manager-run/board.md"
+          "cmd": "grep -qi 'approvals answered' .worktrees/manager-run/board.md"
         },
         {
           "type": "shell",

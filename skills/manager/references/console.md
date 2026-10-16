@@ -63,7 +63,7 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   pushes of the item's branch, `gh` for the item's draft PR, the gate — for a
   planner or reviewer, only one that writes nowhere but the run directory —
   installs, and network fetches.
-- **Log each answer** in the board's **auto-approved** list.
+- **Log each answer** in the board's **approvals answered** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
 - **Relay to the user only** these five cases, tagged `[<slug>]`, verbatim
@@ -110,13 +110,13 @@ relayed at once.
 
 Below the table, every secret a prompt showed redacted: open questions to
 the user, each tagged `[<slug>]` — escalated approvals among them — then the
-**auto-approved** list, one row per approval you answered, appended and kept
+**approvals answered** list, one row per approval you answered, appended and kept
 on every rewrite so the user can audit them later. Its `asked` cell is your
 own one-line summary of the action and target, with pipes and newlines
 stripped, never the prompt's text pasted in:
 
 ```
-auto-approved
+approvals answered
 | time  | item       | worker=kind        | asked (action · target)                     | option       |
 |-------|------------|--------------------|---------------------------------------------|--------------|
 | 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
@@ -165,8 +165,8 @@ Native workers use the same roles, briefs, budget and rules.
 - **Subagents cannot ask the user.** Return their questions to the user
   under SKILL.md rule 7 and resume them with the answer. Their permission
   prompts follow § Approvals when they reach you; a host that shows them to
-  the user directly is noted once on the board rather than claimed as
-  auto-approved.
+  the user directly is noted once on the board rather than listed as
+  answered by you.
 - **Read-only roles stay read-only** by their briefs; a host-level grant
   for the whole session cannot narrow a planner or reviewer. Before each
   starts, record the worktree's `git rev-parse HEAD`, branch and `git stash
