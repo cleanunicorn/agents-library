@@ -24,13 +24,14 @@ MANAGER = ROOT / "skills" / "manager"
 
 OLD_RELAY_RULE = re.compile(r"(?i)never answer an approval")
 
-# Each escalation case in console.md § Approvals, by the words that make it that case.
+# Each escalation case in console.md § Approvals, by the words that make it
+# that case. All of a case's words must sit in one numbered item, in any order.
 ESCALATIONS = {
-    "forbidden or reserved actions": re.compile(r"(?is)merg.{0,80}force-push.{0,80}main branch"),
-    "destruction outside the item": re.compile(r"(?is)irreversible destruction outside"),
-    "secrets and global settings": re.compile(r"(?is)secrets.{0,40}credentials.{0,80}global"),
-    "the ask-first list": re.compile(r"(?i)ask-first list"),
-    "an unclassifiable prompt": re.compile(r"(?i)cannot classify"),
+    "forbidden or reserved actions": ("merging", "force-push", "main branch"),
+    "destruction outside the item": ("irreversible destruction outside",),
+    "secrets and global settings": ("secrets", "credentials", "global"),
+    "the ask-first list": ("ask-first list",),
+    "an unclassifiable prompt": ("cannot classify",),
 }
 
 # Launch flags that remove every prompt, so no escalation case can surface.
@@ -87,6 +88,11 @@ def board_passes(commands, board):
         run_dir.mkdir(parents=True)
         (run_dir / "board.md").write_text(board, encoding="utf-8")
         return all(subprocess.run(["bash", "-c", cmd], cwd=scratch).returncode == 0 for cmd in commands)
+
+
+def relay_list(policy):
+    """Return the numbered escalation list under § Approvals' relay bullet."""
+    return re.search(r"(?ms)^- \*\*Relay to the user only\*\*.*?(?=^\S)", policy).group(0)
 
 
 def rule(text, number):
@@ -156,9 +162,12 @@ class ManagerApprovalTests(unittest.TestCase):
                     "an approved prompt could widen a read-only role")
         self.expect(label, policy, r"(?i)unattended.{0,120}reject",
                     "unattended runs have no reversible default for an escalation")
-        for case, pattern in ESCALATIONS.items():
+        items = [" ".join(item.split()).lower()
+                 for item in re.split(r"(?m)^  \d+\. ", relay_list(policy))[1:]]
+        for case, words in ESCALATIONS.items():
             with self.subTest(case=case):
-                self.expect(label, policy, pattern.pattern, f"escalation case missing: {case}")
+                self.assertTrue(any(all(word in item for word in words) for item in items),
+                                f"{label}: escalation case missing: {case}")
 
     def test_secrets_are_redacted_on_every_path(self):
         # Escalation case 3 is exactly the prompt that shows a secret, and it is
@@ -176,7 +185,7 @@ class ManagerApprovalTests(unittest.TestCase):
     def test_every_quoted_escalation_count_matches_the_list(self):
         # The list is single-sourced in console.md; its count is quoted in three places.
         policy = section(self.read("references/console.md"), "Approvals")
-        relay = re.search(r"(?ms)^- \*\*Relay to the user only\*\*.*?(?=^\S)", policy).group(0)
+        relay = relay_list(policy)
         count = len(re.findall(r"(?m)^  \d+\. ", relay))
         word = ("zero one two three four five six seven eight nine ten").split()[count]
         quotes = {
@@ -263,7 +272,7 @@ class ManagerApprovalTests(unittest.TestCase):
 
     def test_herdr_launches_with_pre_grants_and_answers_blocked_prompts(self):
         text = self.read("references/herdr.md")
-        self.expect("herdr.md", text, r"herdr agent start [^\n]*--pane[^\n]*\n?[^\n]*-- <",
+        self.expect("herdr.md", text, r"herdr agent start .*--pane.* -- <",
                     "agent start no longer forwards pre-grant args after --")
         rows = launch_rows(text)
         for kind in ("claude", "codex", "opencode, kilo"):
