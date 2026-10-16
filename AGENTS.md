@@ -364,7 +364,7 @@ loads and executes.
   (`command:`/`head:`/`exit:`), the board's `{time, item, worker=kind, asked,
   option}` approvals-answered rows there too, and the PR evidence body in its
   coordinator brief; the
-  `INSTALLED|IDENTICAL|CONFLICT|UPDATED|JOURNAL <name>` status lines
+  `INSTALLED|IDENTICAL|CONFLICT|UPDATED|FAILED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
   `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
@@ -386,7 +386,9 @@ loads and executes.
   (`scripts/test-manager-approval.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer smoke tests for both hosts
-  (`scripts/test-install-host.sh`), and eval case validation (`--dry-run`).
+  (`scripts/test-install-host.sh`), skill-installer write failures and ledger
+  behavior (`scripts/test-install-agents.sh`), and eval case validation
+  (`--dry-run`).
   Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
