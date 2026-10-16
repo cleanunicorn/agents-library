@@ -3,10 +3,12 @@
 #
 # Usage: diff-target.sh [main|files|diff]
 #   main    print the detected main branch name
-#   files   print the changed-file list: committed vs main, uncommitted, and
-#           untracked (the union is the review target)
-#   diff    print the combined diff (committed vs main, then uncommitted;
-#           untracked files appear in `files` but not here — read them directly)
+#   files   print the sorted unique union: committed vs main, staged, unstaged,
+#           and untracked files (the union is the review target)
+#   diff    print patches in order: main→HEAD, HEAD→index, index→worktree;
+#           partially staged files may have two uncommitted patches, even when
+#           they cancel out. Untracked files appear in `files` but not here —
+#           read them directly.
 #   (none)  print "MAIN <name>" followed by the changed-file list
 #
 # Exits non-zero with FATAL on stderr if no main branch can be detected.
@@ -35,6 +37,7 @@ main=$(detect_main) || exit 1
 changed_files() {
   {
     git diff --name-only "$main...HEAD" 2>/dev/null
+    git diff --cached --name-only
     git diff --name-only
     git ls-files -o --exclude-standard
   } | sort -u
@@ -49,6 +52,7 @@ case "${1:-summary}" in
     ;;
   diff)
     git diff "$main...HEAD" 2>/dev/null
+    git diff --cached
     git diff
     ;;
   summary)

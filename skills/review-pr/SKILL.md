@@ -31,10 +31,14 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
 2. **Compute the review target.** Run `bash scripts/diff-target.sh` — it
    detects the main branch deterministically (call it `<main>`; never
    hard-code `main`) and prints the changed-file list: committed vs `<main>`,
-   uncommitted, and untracked. `bash scripts/diff-target.sh diff` prints the
-   combined diff. The review target is that union; capture the file list and
-   the diff. If the script exits `FATAL` (no main branch detectable), ask the
-   user which branch to diff against instead of guessing.
+   staged, unstaged, and untracked. `bash scripts/diff-target.sh diff` prints
+   patches in order: `<main>`→HEAD, HEAD→index, then index→worktree. Partially
+   staged files can have two uncommitted patches, including edits that cancel
+   out; preserve both and use each patch's base for line references. Untracked
+   files have no patch; read them directly. The review target is that union;
+   capture the file list and the diff. If the script exits `FATAL` (no main
+   branch detectable), ask the user which branch to diff against instead of
+   guessing.
 3. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — from the docs first, then config files (package.json
    scripts, Makefile, pyproject, etc.). You'll need these for the gate in
