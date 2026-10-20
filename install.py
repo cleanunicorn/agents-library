@@ -467,8 +467,16 @@ def install_plugin(host_key: str, project: Optional[Path], ledger: Ledger) -> No
 # --- entry point ------------------------------------------------------------
 
 
+class Parser(argparse.ArgumentParser):
+    """argparse exits 2 on bad arguments, but 2 means CONFLICT here."""
+
+    def error(self, message: str):
+        self.print_usage(sys.stderr)
+        raise Fatal(f"bad arguments: {message}; see ./install.py --help")
+
+
 def parse_args(argv: List[str]):
-    parser = argparse.ArgumentParser(
+    parser = Parser(
         prog="install.py", description="Install the library's agents and skills into your agent hosts.",
         epilog=HELP_EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-y", "--yes", action="store_true",

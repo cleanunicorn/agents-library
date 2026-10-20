@@ -275,6 +275,16 @@ class HostSelectionTests(Sandbox):
             self.assertIn("FATAL", stderr)
             self.assertEqual(out, [])
 
+    def test_bad_arguments_are_usage_errors_not_conflicts(self):
+        for args in (["--bogus"], ["--hosts"], ["--copy", "--symlink"]):
+            code, out, stderr = self.run_installer("--yes", *args)
+            self.assertEqual(code, 1, args)
+            self.assertIn("FATAL: bad arguments", stderr)
+            self.assertEqual(out, [])
+        code, out, _ = self.run_installer("--help")
+        self.assertEqual(code, 0)
+        self.assertTrue(out[0].startswith("usage: install.py"))
+
     def test_checklist_needs_a_terminal(self):
         code, _, stderr = self.run_installer("--hosts", "opencode")
         self.assertEqual(code, 1)
