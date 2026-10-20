@@ -173,6 +173,14 @@ class FileHostTests(Sandbox):
         self.assertFalse(self.opencode().exists())
         self.assertFalse((self.home / ".config" / "agents-library").exists())
 
+    def test_dry_run_removes_nothing(self):
+        self.run_installer("--yes", "--hosts", "opencode")
+        code, out, _ = self.run_installer("--yes", "--skip", "manager", "--dry-run")
+        self.assertEqual(code, 0)
+        self.assertIn("REMOVED opencode/manager", out)
+        self.assertTrue(self.opencode("skills", "manager").is_symlink())
+        self.assertEqual(self.saved()["excluded"], [])
+
 
 class CopyRemovalTests(Sandbox):
     """Unchecking a copied item removes it only while it is byte-identical to
@@ -347,6 +355,13 @@ class PluginHostTests(Sandbox):
             code, out, stderr = self.run_installer("--yes", "--hosts", "claude,codex")
             self.assertEqual(code, 0, (claude, codex, stderr))
             self.assertEqual(out, ["INSTALLED claude/agents-library", "INSTALLED codex/agents-library"])
+
+    def test_dry_run_runs_no_plugin_command(self):
+        code, out, _ = self.run_installer("--yes", "--hosts", "claude,codex", "--dry-run")
+        self.assertEqual(code, 0)
+        self.assertEqual(out, ["INSTALLED claude/agents-library", "INSTALLED codex/agents-library"])
+        self.assertEqual([call for call in self.calls() if "plugin list" not in call], [])
+        self.assertFalse((self.home / ".config" / "agents-library").exists())
 
     def test_codex_marketplace_already_added_still_installs(self):
         (self.stubs / "codex-exit-marketplace").write_text("1")
