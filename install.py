@@ -17,6 +17,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -358,7 +359,10 @@ def remove(path: Path) -> None:
 def place(source: Path, dest: Path, method: str) -> None:
     """Write source to dest via a temp path, so a failed copy never leaves a
     half-written destination behind."""
-    temp = dest.with_name(f".{dest.name}.tmp.{os.getpid()}")
+    # A fresh private directory, not a predictable name: a copy would follow a
+    # symlink planted at a guessable path and write outside the destination.
+    staging = Path(tempfile.mkdtemp(prefix=f".{dest.name}.tmp.", dir=dest.parent))
+    temp = staging / dest.name
     try:
         if method == "symlink":
             temp.symlink_to(source)
@@ -370,8 +374,7 @@ def place(source: Path, dest: Path, method: str) -> None:
             remove(dest)
         temp.rename(dest)
     finally:
-        if temp.exists() or temp.is_symlink():
-            remove(temp)
+        shutil.rmtree(staging)
 
 
 def install_files(host_key: str, root: Path, items: List[Item], excluded: List[str],

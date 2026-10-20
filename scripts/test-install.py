@@ -296,6 +296,30 @@ class FilesystemErrorTests(Sandbox):
         self.assertEqual(out, [])
 
 
+class PlaceTests(Sandbox):
+    def test_copy_never_writes_through_a_planted_temp_path(self):
+        victim = self.root / "victim"
+        victim.write_text("precious\n")
+        dest = self.root / "agents" / "architect.md"
+        dest.parent.mkdir()
+        # The name the installer once used for its temp file, with a known pid.
+        (dest.parent / ".architect.md.tmp.4242").symlink_to(victim)
+        with mock.patch.object(installer.os, "getpid", return_value=4242):
+            installer.place(REPO / "agents" / "architect.md", dest, "copy")
+        self.assertEqual(victim.read_text(), "precious\n")
+        self.assertFalse(dest.is_symlink())
+        self.assertEqual(dest.read_bytes(), (REPO / "agents" / "architect.md").read_bytes())
+        self.assertEqual(sorted(p.name for p in dest.parent.iterdir()), [".architect.md.tmp.4242", "architect.md"])
+
+    def test_failed_copy_leaves_no_staging_behind(self):
+        dest = self.root / "agents" / "architect.md"
+        dest.parent.mkdir()
+        with mock.patch.object(installer.shutil, "copy2", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                installer.place(REPO / "agents" / "architect.md", dest, "copy")
+        self.assertEqual(list(dest.parent.iterdir()), [])
+
+
 class HostSelectionTests(Sandbox):
     def test_default_hosts_are_the_ones_on_path(self):
         (self.stubs / "kilo").unlink()
