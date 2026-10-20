@@ -5,7 +5,8 @@ description: >-
   acceptance criteria, integration points, ordered changes, test strategy.
   Use when asked to plan, design, or scope a feature before coding. Not a
   substitute for a direct implementation request; describe-codebase explains
-  existing code, review-pr reviews a diff.
+  existing code, review-pr reviews a diff, simplify-sweep tidies existing
+  code.
 ---
 
 # plan-feature

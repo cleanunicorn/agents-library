@@ -1,12 +1,12 @@
 ---
 name: describe-codebase
 description: >-
-  Explain how a codebase is shaped — the whole repository, one subsystem, or
-  one feature traced — as an orientation brief with file:line
-  references. Use to understand an unfamiliar codebase, map the architecture,
-  or trace how a feature flows. Read-only unless asked to update ARCHITECTURE.md
-  or AGENTS.md; never edits code. Not for reviewing or improving code
-  (review-pr, simplify-sweep).
+  Explain how a codebase is shaped — the repository, one subsystem, or
+  one feature — as an orientation brief with file:line references. Use to
+  understand an unfamiliar codebase, map the architecture, or trace how a
+  feature flows. Never edits code, only ARCHITECTURE.md or AGENTS.md when
+  asked. Not for reviewing or improving code (review-pr,
+  simplify-sweep) or planning an unbuilt feature (plan-feature).
 ---
 
 # describe-codebase
