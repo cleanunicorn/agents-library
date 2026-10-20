@@ -448,6 +448,16 @@ class PluginHostTests(Sandbox):
         self.assertEqual(out, ["FAILED claude/agents-library", "LINKED opencode/architect"])
         self.assertIn("exited 1", stderr)
 
+    def test_saved_plugin_host_missing_from_path_is_failed(self):
+        self.run_installer("--yes", "--hosts", "claude")
+        (self.stubs / "claude").unlink()
+        (self.stubs / "calls.log").unlink()
+        code, out, stderr = self.run_installer("--yes")
+        self.assertEqual(code, 3)
+        self.assertEqual(out, ["FAILED claude/agents-library"])
+        self.assertIn("`claude` is not on PATH", stderr)
+        self.assertEqual(self.calls(), [])
+
     def test_unchecked_items_warn_for_plugin_hosts(self):
         code, _, stderr = self.run_installer("--yes", "--hosts", "claude", "--skip", "manager")
         self.assertEqual(code, 0)

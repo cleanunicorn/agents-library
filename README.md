@@ -351,7 +351,8 @@ the clone if you install symlinks; copy installs survive its removal.
 | `FATAL: agents/ or skills/ not found` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
 | `FATAL: saved selection … is malformed` or `cannot read saved selection` | Fix or delete the named JSON file. The installer won't overwrite a file it can't read. |
 | `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations, then rerun with `--force`, which replaces every item that printed `CONFLICT`. Don't narrow it with `--only` or `--skip`: they uncheck the other items, and an unchecked item the library installed is removed. |
-| `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3) | The host CLI exited non-zero; its output follows on stderr. See that host's section below. |
+| `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `claude` is not on PATH `` | The host is checked (or saved as checked) but its CLI isn't installed. Install the CLI, or drop the host: uncheck it in the checklist or pass `--hosts` without it. |
+| `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `…` exited <n> `` | The host CLI ran and failed; its output follows on stderr. See that host's section below. |
 | `FAILED <host>/<item>` (exit 3) | Read the error on stderr and check the destination. Repair that failure (for example permissions or disk space), then retry. |
 | `… is a symlink; refusing to write through it` | The guard covers the global/project root and its `agents/`/`skills/` directories. Inspect the named path with `ls -ld`. For global scope, inspect/back up dotfile-managed links and targets before deliberately converting the blocked directory to a real directory; alternatively use `--project` with real directories. `--copy` does not bypass this guard. |
 
