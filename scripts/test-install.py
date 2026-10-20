@@ -11,6 +11,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -603,6 +604,27 @@ class InteractiveTests(unittest.TestCase):
             self.assertFalse(path.exists())
             fakes["install_files"].assert_not_called()
             fakes["install_plugin"].assert_not_called()
+
+
+
+class ReadmeTests(unittest.TestCase):
+    def test_every_fatal_message_has_a_troubleshooting_row(self):
+        # The stable prefix of each message: everything before its first
+        # placeholder, `;`, `:`, or `(`.
+        messages = re.findall(r'raise Fatal\(f?"([^"]+)"', INSTALLER.read_text())
+        prefixes = {re.split(r"[{;:(]", message)[0].strip() for message in messages}
+        rows = [line.split(" | ")[0] for line in (REPO / "README.md").read_text().splitlines()
+                if line.startswith("| `FATAL:")]
+        self.assertGreaterEqual(len(prefixes), 10)
+        for prefix in sorted(prefixes):
+            self.assertTrue(any(prefix in row for row in rows), f"no README row for FATAL: {prefix}")
+
+    def test_conflict_and_failure_together_exit_3(self):
+        ledger = installer.Ledger(dry_run=False)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ledger.report("FAILED", "x/a", "broken")
+            ledger.report("CONFLICT", "x/b", "differs")
+        self.assertEqual(ledger.status, installer.EXIT_FAILED)
 
 
 if __name__ == "__main__":

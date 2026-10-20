@@ -342,14 +342,21 @@ The plugin commands require Git and the corresponding host CLI on PATH.
 the clone if you install symlinks; copy installs survive its removal.
 
 **Installer errors (install or update).** Each status line names
-`<host>/<item>`, and the reason is printed on stderr:
+`<host>/<item>`, and the reason is printed on stderr. A `FATAL:` line exits 1
+before anything is installed or saved. When a run prints both `CONFLICT` and
+`FAILED`, it exits 3.
 
 | Symptom | Diagnosis and remedy |
 | --- | --- |
 | `FATAL: not a terminal; pass --yes` | The checklist needs an interactive terminal. Pass `--yes`, plus `--hosts`/`--skip`/`--only` to choose without it. |
-| `FATAL: cannot run the checklist` | curses cannot drive this terminal (the message names `TERM`), or this Python has no `curses` module, as on Windows. Pass `--yes`, or set `TERM` to your terminal's type (for example `xterm-256color`). |
-| `FATAL: agents/ or skills/ not found` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
+| `FATAL: cannot run the checklist on this terminal` or `cannot run the checklist: this Python has no curses module` | curses cannot drive this terminal (the message names `TERM`), or this Python has no `curses` module, as on Windows. Pass `--yes`, or set `TERM` to your terminal's type (for example `xterm-256color`). |
+| `FATAL: agents/ or skills/ not found at …` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
 | `FATAL: saved selection … is malformed` or `cannot read saved selection` | Fix or delete the named JSON file. The installer won't overwrite a file it can't read. |
+| `FATAL: cannot save selection` | The selection's directory or file isn't writable (the message names it). Fix its permissions, then rerun. |
+| `FATAL: cancelled` | You pressed `q` or Esc in a checklist. Nothing was installed or saved. |
+| `FATAL: unknown host` or `unknown agent or skill` | A name passed to `--hosts`, `--only`, or `--skip` isn't one the installer knows. `./install.py --list` prints the valid names. |
+| `FATAL: bad arguments` | A flag is unknown, is missing its value, or can't be combined (`--copy` with `--symlink`). See `./install.py --help`. |
+| `FATAL: no host selected and none found on PATH` | Every host is unchecked or saved as off, and none has its CLI on PATH. Pass `--hosts`, for example `--hosts opencode`. |
 | `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations, then rerun with `--force`, which replaces every item that printed `CONFLICT`. Don't narrow it with `--only` or `--skip`: they uncheck the other items, and an unchecked item the library installed is removed. |
 | `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `claude` is not on PATH `` | The host is checked (or saved as checked) but its CLI isn't installed. Install the CLI, or drop the host: uncheck it in the checklist or pass `--hosts` without it. |
 | `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `…` exited <n> `` | The host CLI ran and failed; its output follows on stderr. See that host's section below. |

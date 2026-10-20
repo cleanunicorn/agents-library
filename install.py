@@ -48,7 +48,8 @@ Status lines (one per host/item):
   CONFLICT <host>/<name>  destination exists and differs (needs --force)
   FAILED <host>/<name>    operation failed (reason on stderr)
 
-Exits 1 on usage error, 2 if any CONFLICT was printed, 3 if any FAILED.
+Exits 1 on usage error, 2 if any CONFLICT was printed, 3 if any FAILED
+(3 when both were printed).
 """
 
 
