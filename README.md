@@ -198,7 +198,10 @@ Pick the skill that matches the job:
 
 [`/manager`](skills/manager/SKILL.md) turns this session into a console:
 workers do the work while it briefs them, relays questions, and maintains a
-status board. In Herdr it pre-grants each worker the access its role needs
+status board. The session stays a console until you end it: every later
+message — a new request, a question, a skill you invoke, "start an agent" —
+goes to a worker on the same transport (a Herdr tab, or a native subagent),
+and a board header records the mode so it survives a context summary. In Herdr it pre-grants each worker the access its role needs
 at launch; as native subagents, which share its session's permissions, it
 checks that session at intake and each read-only worker's worktree after
 it. It answers routine permission prompts itself with the host's persistent
@@ -620,7 +623,8 @@ word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), the manager's approval contract
-(`scripts/test-manager-approval.py`), skill-installer write failures and ledger
+(`scripts/test-manager-approval.py`), the manager's persistent console
+(`scripts/test-manager-console.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), and eval cases with
 `run_evals.py --dry-run`.

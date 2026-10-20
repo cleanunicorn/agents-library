@@ -814,6 +814,34 @@
       ]
     },
     {
+      "id": "mg-h22",
+      "prompt": "You are the manager; the console started earlier this session and its board header reads `console: manager \u00b7 skill .claude/skills/manager/SKILL.md \u00b7 transport native \u00b7 run_dir .worktrees/manager-run \u00b7 since 13:50`. No items are active. New message: quick question, what does list_tasks return, and is it a copy or the stored list? Just tell me, don't bother starting anyone. Ask nothing. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -q '^console: manager' .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'helper-*.md' | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)cop(y|ies)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(helper|worker|delegat)"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain --untracked-files=all -- . ':!.worktrees' ':!.claude')\""
+        }
+      ]
+    },
+    {
       "id": "mg-n1",
       "prompt": "Plan optional list limits for this repo: scope, acceptance checks, implementation order. Plan only; don't implement and don't change any file.",
       "should_trigger": false,

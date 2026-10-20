@@ -28,6 +28,9 @@ python3 scripts/test-readme-toc.py
 echo "Checking the manager answers routine approvals and relays the rare ones..."
 python3 scripts/test-manager-approval.py
 
+echo "Checking the manager stays a console for every later message..."
+python3 scripts/test-manager-console.py
+
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
 bash scripts/test-install-host.sh
