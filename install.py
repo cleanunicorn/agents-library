@@ -3,8 +3,8 @@
 
 Run it from a clone: `./install.py`. It shows two checklists — the hosts it
 found (Claude Code, Codex, opencode, Kilo Code) and the agents and skills —
-with everything checked by default. What you uncheck is saved, so the next
-run starts from your last choice. Run `./install.py --help` for the flags.
+with everything checked by default. Your host choices and unchecked items
+are saved, so the next run starts from your last choice. Run `./install.py --help` for the flags.
 
 Claude Code and Codex install the whole plugin through their own CLIs; the
 item checklist applies to opencode and Kilo, which load files from disk.
@@ -31,8 +31,8 @@ EXIT_USAGE, EXIT_CONFLICT, EXIT_FAILED = 1, 2, 3
 
 HELP_EPILOG = """\
 Without --yes, an interactive checklist runs (arrows or j/k move, space
-toggles, a toggles all, enter confirms, q cancels). Unchecked hosts and items
-are saved to $XDG_CONFIG_HOME/agents-library/selection.json (with --project:
+toggles, a toggles all, enter confirms, q cancels). Your host choices and
+unchecked items are saved to $XDG_CONFIG_HOME/agents-library/selection.json (with --project:
 ./.agents-library.json) and become the defaults of the next run. Items added
 to the library later start checked.
 

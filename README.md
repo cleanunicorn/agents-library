@@ -45,8 +45,8 @@ cd agents-library
 Arrows or `j`/`k` move, space toggles, `a` toggles all, enter confirms, and
 `q` cancels without changing anything.
 
-**Your choice is saved.** The installer writes what you checked to
-`~/.config/agents-library/selection.json` (`$XDG_CONFIG_HOME` is respected),
+**Your choice is saved.** The installer saves your host choices and the items
+you unchecked to `~/.config/agents-library/selection.json` (`$XDG_CONFIG_HOME` is respected),
 and the next `./install.py` starts from it. Items the library adds later start
 checked. Unchecking an item you already installed removes it, but only if it
 is still the library's version. A file you changed is left in place and
