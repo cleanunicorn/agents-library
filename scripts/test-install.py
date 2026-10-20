@@ -300,6 +300,18 @@ class HostSelectionTests(Sandbox):
         self.assertEqual(path.read_text(), '{"excluded": "manager"}')
 
 
+    def test_saved_selection_that_is_not_an_object_is_malformed(self):
+        path = self.home / ".config" / "agents-library" / "selection.json"
+        path.parent.mkdir(parents=True)
+        for text in ("[]", "null", '"opencode"', "3"):
+            path.write_text(text)
+            code, _, stderr = self.run_installer("--yes")
+            self.assertEqual(code, 1, text)
+            self.assertIn("malformed", stderr)
+            self.assertNotIn("Traceback", stderr)
+            self.assertEqual(path.read_text(), text)
+
+
 class PluginHostTests(Sandbox):
     def test_plugins_install_through_their_cli(self):
         code, out, _ = self.run_installer("--yes", "--hosts", "claude,codex")
@@ -318,6 +330,14 @@ class PluginHostTests(Sandbox):
         code, out, _ = self.run_installer("--yes", "--hosts", "claude,codex")
         self.assertEqual(out, ["OK claude/agents-library", "OK codex/agents-library"])
         self.assertFalse(any("install" in call or " add " in call for call in self.calls()))
+
+    def test_unexpected_plugin_listings_mean_not_installed(self):
+        for claude, codex in (("{}", "[]"), ("[1]", '{"installed": [1]}'), ("[]", '{"installed": {}}')):
+            (self.stubs / "claude-list.json").write_text(claude)
+            (self.stubs / "codex-list.json").write_text(codex)
+            code, out, stderr = self.run_installer("--yes", "--hosts", "claude,codex")
+            self.assertEqual(code, 0, (claude, codex, stderr))
+            self.assertEqual(out, ["INSTALLED claude/agents-library", "INSTALLED codex/agents-library"])
 
     def test_codex_marketplace_already_added_still_installs(self):
         (self.stubs / "codex-exit-marketplace").write_text("1")

@@ -124,6 +124,8 @@ def load_selection(path: Path) -> Selection:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise Fatal(f"cannot read saved selection {path}: {error}; fix or delete it")
+    if not isinstance(data, dict):
+        raise Fatal(f"saved selection {path} is malformed; fix or delete it")
     hosts, excluded = data.get("hosts", {}), data.get("excluded", [])
     valid = (isinstance(hosts, dict) and all(isinstance(v, bool) for v in hosts.values())
              and isinstance(excluded, list) and all(isinstance(n, str) for n in excluded))
@@ -409,8 +411,11 @@ def claude_installed(cwd: Path, scope: str) -> bool:
         entries = json.loads(listing.stdout) if listing.returncode == 0 else []
     except ValueError:
         return False
+    # The listing is another program's output; treat any other shape as "not installed".
+    if not isinstance(entries, list):
+        return False
     for entry in entries:
-        if entry.get("id") != f"{PLUGIN}@{PLUGIN}" or entry.get("scope") != scope:
+        if not isinstance(entry, dict) or entry.get("id") != f"{PLUGIN}@{PLUGIN}" or entry.get("scope") != scope:
             continue
         if scope == "user" or Path(entry.get("projectPath", "")) == cwd:
             return True
@@ -423,7 +428,10 @@ def codex_installed(cwd: Path) -> bool:
         installed = json.loads(listing.stdout).get("installed", []) if listing.returncode == 0 else []
     except (ValueError, AttributeError):
         return False
-    return any(entry.get("pluginId") == f"{PLUGIN}@{PLUGIN}" for entry in installed)
+    if not isinstance(installed, list):
+        return False
+    return any(isinstance(entry, dict) and entry.get("pluginId") == f"{PLUGIN}@{PLUGIN}"
+               for entry in installed)
 
 
 def install_plugin(host_key: str, project: Optional[Path], ledger: Ledger) -> None:
