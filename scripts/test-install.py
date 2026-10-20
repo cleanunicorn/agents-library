@@ -156,6 +156,30 @@ class FileHostTests(Sandbox):
         self.assertIn("UPDATED opencode/architect", out)
         self.assertTrue(target.is_symlink())
 
+    def test_copy_flag_copies_globally(self):
+        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review-pr")
+        self.assertEqual(out, ["COPIED opencode/review-pr"])
+        copied = self.opencode("skills", "review-pr")
+        self.assertTrue(copied.is_dir() and not copied.is_symlink())
+
+    def test_list_prints_hosts_and_items_and_writes_nothing(self):
+        (self.stubs / "kilo").unlink()
+        self.run_installer("--yes", "--hosts", "opencode", "--skip", "manager")
+        before = self.saved()
+        code, out, _ = self.run_installer("--list")
+        self.assertEqual(code, 0)
+        self.assertTrue(out[0].startswith("selection: "))
+        hosts = [line.split() for line in out if line.startswith("host ")]
+        self.assertEqual([(row[1], row[2]) for row in hosts],
+                         [("claude", "off"), ("codex", "off"), ("opencode", "on"), ("kilo", "off")])
+        self.assertIn("not found", [line for line in out if line.startswith("host  kilo")][0])
+        items = {line.split()[1]: line.split()[2] for line in out[1:] if not line.startswith("host ")}
+        self.assertEqual(sorted(items), sorted(AGENTS + SKILLS))
+        self.assertEqual(items["manager"], "off")
+        self.assertEqual(items["architect"], "on")
+        self.assertEqual(self.saved(), before)
+        self.assertEqual(self.calls(), [])
+
     def test_symlinked_destination_root_is_refused(self):
         real = self.root / "elsewhere"
         real.mkdir()
@@ -446,6 +470,14 @@ class ProjectTests(Sandbox):
 
         code, out, _ = self.run_installer("--yes", "--project")
         self.assertIn("OK opencode/review-pr", out)
+
+    def test_symlink_flag_links_into_a_project(self):
+        code, out, _ = self.run_installer("--yes", "--project", "--hosts", "opencode", "--symlink",
+                                          "--only", "review-pr")
+        self.assertEqual(out, ["LINKED opencode/review-pr"])
+        link = self.project / ".opencode" / "skills" / "review-pr"
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(link.resolve(), REPO / "skills" / "review-pr")
 
 
 class ChecklistTests(unittest.TestCase):
