@@ -32,6 +32,26 @@ SKILL_ROOT_WORD_CEILINGS = {
     "simplify-sweep": 1800,
     "triage-issues": 2800,
 }
+# One-way routing hints the mutual-routing test tolerates, as (from, to):
+# `from`'s description names `to`, but `to` does not name `from` back.
+# review-pr is the hub every reviewing skill points at; its description is at
+# the ceiling, so these wait on an eval run to decide which ones earn a word.
+# Shrink this set; never grow it to admit a new one-way hint.
+ONE_WAY_ROUTING_HINTS = {
+    ("batch-merge-prs", "review-pr"),
+    ("manager", "plan-feature"),
+    ("manager", "review-pr"),
+    ("triage-issues", "review-pr"),
+}
+
+
+def block_description(text):
+    """Return a definition's folded `description: >-` block as one line."""
+    header = re.match(r"\A---\n(.*?)\n---", text, re.S).group(1) + "\n"
+    # The block runs to the next top-level field, blank lines included.
+    block = re.search(r"(?ms)^description: [>|][-+]?\n((?:(?:  [^\n]*)?\n)+?)(?=^\S|\Z)", header)
+    return block and " ".join(block.group(1).split())
+
 
 class PluginLayoutTests(unittest.TestCase):
     def manifest(self, path):
@@ -202,11 +222,8 @@ class PluginLayoutTests(unittest.TestCase):
         for path in agents + skills:
             with self.subTest(path=str(path.relative_to(ROOT))):
                 text = path.read_text(encoding="utf-8")
-                header = re.match(r"\A---\n(.*?)\n---", text, re.S).group(1) + "\n"
-                # The block runs to the next top-level field, blank lines included.
-                block = re.search(r"(?ms)^description: [>|][-+]?\n((?:(?:  [^\n]*)?\n)+?)(?=^\S|\Z)", header)
-                self.assertIsNotNone(block, "missing block description")
-                description = " ".join(block.group(1).split())
+                description = block_description(text)
+                self.assertIsNotNone(description, "missing block description")
                 words = len(description.split())
                 self.assertLessEqual(words, DESCRIPTION_WORD_CEILING, f"description is {words} words")
                 self.assertLessEqual(len(description), DESCRIPTION_CHAR_CEILING,
@@ -215,6 +232,37 @@ class PluginLayoutTests(unittest.TestCase):
                 ceiling = (AGENT_WORD_CEILING if path.parent.name == "agents"
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
+
+    def test_skill_routing_hints_are_mutual(self):
+        """A skill that routes a request away to a sibling is routed back to.
+
+        Hosts pick a skill from its description alone. When plan-feature said
+        "describe-codebase explains existing code" but describe-codebase never
+        named plan-feature, a "plan how to add X" request still matched
+        describe-codebase's "trace how a feature flows" (issue #32). So a
+        sibling a description names must name that skill in return, unless
+        the pair is a recorded exception in ONE_WAY_ROUTING_HINTS.
+        """
+        skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
+        descriptions = {path.parent.name: block_description(path.read_text(encoding="utf-8"))
+                        for path in skills}
+
+        def names(description, skill):
+            return re.search(rf"(?<![\w-]){re.escape(skill)}(?![\w-])", description) is not None
+
+        one_way = set()
+        for source, description in descriptions.items():
+            for target in descriptions:
+                if target == source or not names(description, target):
+                    continue
+                if not names(descriptions[target], source):
+                    one_way.add((source, target))
+        for source, target in sorted(one_way - ONE_WAY_ROUTING_HINTS):
+            with self.subTest(source=source, target=target):
+                self.fail(f"{source} routes to {target}, but {target}'s description never names {source}")
+        for source, target in sorted(ONE_WAY_ROUTING_HINTS - one_way):
+            with self.subTest(source=source, target=target):
+                self.fail(f"{source} <-> {target} is mutual now; drop it from ONE_WAY_ROUTING_HINTS")
 
     def test_manager_team_stays_small(self):
         """The manager keeps its pipeline, its agent budget, and its hands off.
