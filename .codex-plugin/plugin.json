@@ -1,6 +1,6 @@
 {
   "name": "agents-library",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Orchestrator skills for feature planning, PR review, design review, issue triage, simplification, batch merging, codebase mapping, installing periodic maintenance agents, and a manager console that delegates work items to worker agents.",
   "author": {
     "name": "Daniel Luca",
