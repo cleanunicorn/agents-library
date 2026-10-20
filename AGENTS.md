@@ -392,7 +392,7 @@ loads and executes.
   also joins the agent set in `scripts/test-fix-everywhere.py`. No manifest
   edit needed.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
-  syntax, Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
+  syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), the manager's approval contract

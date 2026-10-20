@@ -11,6 +11,9 @@ for script in scripts/*.sh skills/*/scripts/*.sh; do
   bash -n "$script"
 done
 
+echo "Checking for unused Python imports..."
+python3 scripts/check-unused-imports.py
+
 echo "Checking plugin JSON syntax..."
 for manifest in .claude-plugin/*.json .codex-plugin/*.json .agents/plugins/*.json; do
   python3 -m json.tool "$manifest" >/dev/null
