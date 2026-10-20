@@ -432,16 +432,10 @@ project as weekly periodic agents with
 
 ### Shared Conventions
 
-Every agent follows the same operating model:
-
-- **How much to do per run** — one *Primary* problem, a *Sweep* of the whole repository that fixes every other instance of it in the same PR, and an *"Also spotted"* report of everything else found but not touched (instances that needed a judgement call are tagged `same-pattern`).
-- **Fix it everywhere** — the PR body reports the exact search run for other instances and its count (`N found · N fixed · N left`). A *different* problem, however close by, still gets its own PR.
-- **Look where the fix needs** — the project's docs and a well-built module, read as far as the change requires; refactor *toward* the existing style, never toward a personal preference.
-- **Evidence before claims** — the linter and tests are the feedback loop, run without asking; the PR carries their output.
-- **Numbers, not adjectives** — every claim in the PR body carries the value measured, the threshold it is judged against, and the command that produced it. "Not measured" beats a vague adjective; a qualitative claim cites the code path, rule, test, or before/after that makes it checkable.
-- **Leave a guardrail** — each PR names what would now fail if the problem came back (a test, a lint rule, a CI check), or says why nothing is warranted.
-- **Reviewable PRs** — a worktree off main, Conventional Commits title, structured PR body, and a confidence indicator (🟢 / 🟡 / 🔴).
-- **Journal critical learnings only** — record recurring patterns, not routine work.
+Each agent file defines only a personality and a purpose — what it cares about,
+what it leaves alone, and that it fixes one kind of problem everywhere it
+occurs. How to work (orienting, verifying, opening a PR) comes from the host
+project's own guide, such as its `AGENTS.md`, and the model's judgement.
 
 ### Adapting to a Project
 
@@ -456,7 +450,7 @@ The agents are designed to discover most of this themselves, but supplying it up
 
 ### Journals
 
-Agents append durable, codebase-specific learnings to `agents/journals/<agent>.md`. These are intentionally empty here — they accumulate per project.
+`/install-agents` seeds an empty journal per agent at `.claude/agents/journals/<agent>.md` for durable, codebase-specific notes. The copies in `agents/journals/` are intentionally empty — they accumulate per project.
 
 ## Architect
 
