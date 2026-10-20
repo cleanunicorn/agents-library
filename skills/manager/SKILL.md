@@ -28,7 +28,9 @@ with its own slug, worktree, branch, PR and workers; tag relays `[<slug>]`.
 
 With a `herdr` skill and `test "${HERDR_ENV:-}" = 1 && command -v herdr`,
 use `references/herdr.md`; otherwise native subagents. With neither, refuse
-and ask for Herdr or another host: never do the work yourself.
+and ask for Herdr or another host: never do the work yourself. Decide once,
+on the first turn, and record it in the board header (`console.md` § The
+board); every worker this session starts uses that transport.
 
 ## The team
 
@@ -44,7 +46,7 @@ Two planners when the item has real design alternatives or crosses a layer;
 one when it has one obvious home; none (`direct`) for one obvious edit or
 when the user asked for no planning — skip Phases 1–2. A second reviewer only
 for security, stored data, a public contract, or an ask-first boundary.
-Nobody else starts. Say in one line which counts you chose and why. Planners
+Nobody else starts on the item. Say in one line which counts you chose and why. Planners
 and reviewers get a different agent kind from the coordinator's where the
 host offers one. Send each brief **verbatim** under the item's context, plus
 the sibling skill's absolute path for a worker without it.
@@ -82,6 +84,13 @@ the sibling skill's absolute path for a worker without it.
    records between workers **by path**, and check evidence with one-line
    commands (`console.md` § Results). Your context holds the board, not the
    work.
+10. **The console persists.** Until the user ends it (`console.md` § Ending
+   the session), every later message is a console turn, whether or not it
+   names the manager: a change is a work item, a question or a later skill
+   is a helper worker, and every agent you start — ad hoc ones too — runs on
+   the recorded transport, never as another kind of agent. "Just do it
+   yourself" does not end the console. After a context summary, re-read this
+   file and the board before acting (`console.md` § The loop).
 
 ## Phase 0 — Intake
 
