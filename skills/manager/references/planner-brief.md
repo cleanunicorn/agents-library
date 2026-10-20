@@ -5,9 +5,8 @@ directories or chat history. The coordinator compares independently reached
 decisions; it writes none of the input plans.
 
 Planning is **read-only**. Do not edit, create, or delete any file in the
-repository; do not switch branches, fetch, install, or run test suites. If you
-were given a run directory, write your plan there and nowhere else; otherwise
-return it as text.
+repository; do not switch branches, fetch, install, or run test suites. Write
+your plan record to the run directory you were given and nowhere else.
 
 **Access.** The manager pre-grants read access to the worktree and repository
 and write access only to the run directory, and answers any permission prompt
@@ -17,22 +16,22 @@ write anywhere else will be rejected, so do not ask for one.
 ## How to work
 
 1. **Use the `plan-feature` skill** for this work item, planning only, and do
-   its investigation yourself: start no subagents. If your host does not have
-   it, the manager's prompt names where to read it; follow it as written.
-2. Work from the acceptance criteria you were given. Keep their ids. Add one
-   only when the work item plainly needs it, and say why.
-3. Cite existing code as `path:line`. Label every new path as `proposed:`.
-   When you searched and found nothing, write `unknown: <what you searched>` —
-   an honest unknown is more useful to the merge than a confident guess.
-4. Prefer the smallest complete change that ships as one PR. Milestones are
-   checklist steps inside that PR.
-5. Ask nobody. A missing decision goes in your plan as an open decision, with
-   its evidence and the exact question; the manager relays what matters. This
-   overrides `plan-feature`'s own step of asking the user.
+   its investigation yourself: start no subagents. If your host lacks it, the
+   manager's prompt names where to read it.
+2. Keep the acceptance criteria's ids. Add one only when the item plainly
+   needs it, and say why.
+3. Cite existing code as `path:line`; label every new path `proposed:`. When
+   a search found nothing, write `unknown: <what you searched>` — an honest
+   unknown helps the merge more than a confident guess.
+4. Prefer the smallest complete change that ships as one PR; milestones are
+   checklist steps inside it.
+5. Ask nobody. A missing decision goes in the plan as an open decision with
+   its evidence and the exact question. This overrides `plan-feature`'s own
+   step of asking the user.
 
-## What to return
+## What to write
 
-Return a **plan record**:
+The **plan record**, at the path you were given:
 
 ```
 planner:      <label>              (the letter the manager gave you — A, B, …)
@@ -44,9 +43,23 @@ decisions:    [{id: <label>-D<n>,
                 rejected: the alternatives you considered, and why not}]
 ```
 
-The `decisions` list is the part the merge depends on. Give every choice that
-another competent planner could reasonably have made differently its own
-entry: where the change lives, which existing helper it reuses, the data
-shape, the test location, the order of steps, what is left out. Include the choices that would change the diff.
+The merge depends on `decisions`. Give every choice another competent planner
+could have made differently its own entry — where the change lives, which
+helper it reuses, the data shape, the test location, the step order, what is
+left out.
+
+## What to reply
+
+The manager reads only your final reply, so it is this result block and
+nothing else — the plan stays in the record:
+
+```
+result:   planner-<label> · done | blocked: <why> | failed: <why>
+record:   <record path>
+head:     n/a
+gate:     n/a
+summary:  N decisions · N open decisions · N criteria covered of N
+asks:     none — open decisions stay in the record
+```
 
 End with a confidence indicator: 🟢 High | 🟡 Medium | 🔴 Low.

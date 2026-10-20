@@ -26,11 +26,9 @@ FIXING_SKILLS = {"manager", "review-design", "review-pr", "review-ux-psychology"
                  "simplify-sweep"}
 
 APPLIES_FIXES = re.compile(r"(?i)\*\*apply the (edit|change|fix)\*\*")
-# Both the rule and the process step must name the whole repository: narrowing
-# either one to "the module" is the regression this guards against.
-SWEEP_RULE = re.compile(r"(?mi)^\s*\d+\.\s*\*\*Sweep\*\*[^\n]*whole repository")
-SWEEP_STEP = re.compile(r"(?m)^\s*\d+\.[^\n]{0,12}SWEEP\b[^\n]*whole repository")
-SWEEP_REPORTED = re.compile(r"(?m)^\s*-[^\n]{0,12}\*{0,2}Sweep:")
+# Agents carry only identity and purpose, so the rule lives in the purpose:
+# one problem, fixed at every place it occurs.
+AGENT_FIXES_EVERYWHERE = re.compile(r"(?i)\b(everywhere it (occurs|recurs)|on every (view|page)\b)")
 FIXES_EVERY_INSTANCE = re.compile(r"(?i)fix every instance")
 # Any cap that stops at the instances nearby is the rule this PR removed.
 CAP = re.compile(r"(?i)\b(up to|at most|no more than|only)\s+(2|two|3|three)\b"
@@ -50,15 +48,14 @@ class FixEverywhereTests(unittest.TestCase):
         if found:
             self.fail(f"{label}: {why} — found {found.group(0)!r}")
 
-    def test_agents_sweep_the_whole_repository(self):
+    def test_agents_fix_every_instance(self):
         found = {path.stem for path in (ROOT / "agents").glob("*.md")}
         self.assertEqual(found, AGENTS, "agents/ no longer holds exactly the named agents")
         for name in sorted(AGENTS):
             with self.subTest(agent=name):
                 text = self.read(f"agents/{name}.md")
-                self.expect(name, text, SWEEP_RULE, "the sweep rule no longer covers the whole repository")
-                self.expect(name, text, SWEEP_STEP, "the SWEEP step no longer covers the whole repository")
-                self.expect(name, text, SWEEP_REPORTED, "PR body does not report the sweep")
+                self.expect(name, text, AGENT_FIXES_EVERYWHERE,
+                            "the purpose no longer fixes every place the problem occurs")
                 self.refute(name, text, CAP, "a per-area cap is back")
 
     def test_fixing_skills_fix_every_instance(self):
