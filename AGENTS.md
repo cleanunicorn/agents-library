@@ -291,7 +291,9 @@ loads and executes.
   install-agents is a linear installer with no fan-out (orient → one
   confirmation → install via script → schedule → ledger). manager turns
   the invoking session into a console that does no work itself: it reads the
-  request, project guidance, git state, and worker records, and everything
+  request, project guidance, git state, and workers' short result blocks —
+  never their full records or transcripts, which pass between workers by
+  path — and everything
   else — worktree setup, plans, code, reviews, gate runs, git and PR writes —
   is a worker's. Its default playbook composes the other skills, at most five
   workers per work item: intake and ask early → a coordinator sets up the
@@ -359,7 +361,8 @@ loads and executes.
   plan_<label> per plan, chosen, rule, reason, swot_refs}` decision records,
   and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
   action, sweep, status}` validation records, and `{reviewer, head, gate,
-  findings, new}` re-check records for manager, defined in its
+  findings, new}` re-check records, and the `{result, record, head, gate,
+  summary, asks}` result block every worker ends with for manager, defined in its
   role briefs, with the gate-log and CI-log format in `references/console.md`
   (`command:`/`head:`/`exit:`), the board's `{time, item, worker=kind, asked,
   option}` approvals-answered rows there too, and the PR evidence body in its

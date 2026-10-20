@@ -24,7 +24,7 @@ SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 700,
     "describe-codebase": 1000,
     "install-agents": 1400,
-    "manager": 1500,
+    "manager": 1450,
     "plan-feature": 1300,
     "review-design": 1800,
     "review-pr": 2200,
@@ -291,6 +291,36 @@ class PluginLayoutTests(unittest.TestCase):
             with self.subTest(path=str(path.relative_to(ROOT))):
                 found = re.search(r"(?i)final review|super.?manager|simplify pass", path.read_text(encoding="utf-8"))
                 self.assertIsNone(found, f"a manifest still sells a removed stage — found {found and found.group(0)!r}")
+
+    def test_manager_reads_results_not_transcripts(self):
+        """The manager's context holds result blocks, never the workers' full output.
+
+        Every worker writes its record to the run directory and ends with a
+        short result block; the manager reads only that block and passes
+        records between workers by path. This guards both halves, so a brief
+        that drops its block, or a transport step that has the manager read a
+        record or a pane's scrollback for a result, fails here.
+        """
+        skill = ROOT / "skills/manager"
+        root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("**Results, not transcripts.**", root_text, "SKILL.md lost the results-only rule")
+        self.assertRegex(root_text, r"(?i)records between workers \*\*by path\*\*",
+                         "records are no longer passed by path")
+        fields = ("result:", "record:", "head:", "gate:", "summary:", "asks:")
+        console = (skill / "references/console.md").read_text(encoding="utf-8")
+        self.assertIn("## Results", console, "console.md lost its Results section")
+        for name in ("console.md", "planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
+            text = (skill / "references" / name).read_text(encoding="utf-8")
+            blocks = [b for b in re.findall(r"(?s)```\n(.*?)```", text) if b.startswith("result:")]
+            with self.subTest(file=name):
+                self.assertTrue(blocks, f"{name} has no result block")
+                for field in fields:
+                    self.assertRegex(blocks[0], rf"(?m)^{field}", f"{name}'s result block lacks `{field}`")
+        herdr = " ".join((skill / "references/herdr.md").read_text(encoding="utf-8").split())
+        self.assertIn(".result", herdr, "Herdr workers no longer save a result file")
+        self.assertRegex(herdr, r"(?i)never the record", "the Herdr manager may read a full record")
+        self.assertNotRegex(herdr, r"(?i)reply with the path only, then read the file",
+                            "the Herdr manager reads the full record again")
 
 
 if __name__ == "__main__":
