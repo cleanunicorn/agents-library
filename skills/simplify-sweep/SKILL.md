@@ -41,8 +41,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
    - nothing specified → the whole repository
    - a path or glob → just that subtree / matching files
    - "diff" / "my changes" / `--diff` → the current branch diff
-     (`git diff <main>...HEAD`) plus working-tree changes (`git diff`,
-     `git status`)
+     (`git diff <main>...HEAD`) plus staged and unstaged changes
+     (`git diff --cached`, then `git diff`) and untracked files (`git status`)
    If it's ambiguous which they meant, ask before scanning.
 4. **Find the commands that matter.** Detect how the project lints, formats,
    tests, and builds — docs first, then config (package.json scripts, Makefile,
