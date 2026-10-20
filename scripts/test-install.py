@@ -178,6 +178,8 @@ class FileHostTests(Sandbox):
         self.assertEqual(sorted(items), sorted(AGENTS + SKILLS))
         self.assertEqual(items["manager"], "off")
         self.assertEqual(items["architect"], "on")
+        item_lines = [line for line in out[1:] if not line.startswith("host ")]
+        self.assertEqual(len({line.rindex(" ") for line in item_lines}), 1, item_lines)
         self.assertEqual(self.saved(), before)
         self.assertEqual(self.calls(), [])
 
@@ -537,6 +539,12 @@ class ChecklistTests(unittest.TestCase):
             plain = text.replace("`", "").lower()
             self.assertRegex(plain, r"j/k move", surface)
             self.assertRegex(plain, r"\besc\b", surface)
+
+    def test_host_notes_line_up_in_one_column(self):
+        rows = installer.host_rows(installer.Selection({}, []), None)
+        lines = installer.row_lines(rows)
+        columns = {line.index(row.note) for line, row in zip(lines, rows)}
+        self.assertEqual(len(columns), 1, lines)
 
     def test_item_rows_start_checked_except_saved_exclusions(self):
         rows = installer.item_rows(installer.discover_items(), ["manager"])

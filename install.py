@@ -226,9 +226,7 @@ def draw(screen, checklist: Checklist) -> None:
 
     screen.erase()
     height, width = screen.getmaxyx()
-    lines = [checklist.title, KEY_HINT, ""]
-    for row in checklist.rows:
-        lines.append(f"[{'x' if row.checked else ' '}] {row.label}  {row.note}".rstrip())
+    lines = [checklist.title, KEY_HINT, ""] + row_lines(checklist.rows)
     # Scroll so the cursor row stays visible on short terminals.
     offset = max(0, checklist.cursor + 3 - (height - 1))
     for y, line in enumerate(lines[:3] + lines[3 + offset:]):
@@ -237,6 +235,12 @@ def draw(screen, checklist: Checklist) -> None:
         selected = y >= 3 and y - 3 + offset == checklist.cursor
         screen.addnstr(y, 0, line, width - 1, curses.A_REVERSE if selected else 0)
     screen.refresh()
+
+
+def row_lines(rows: List[Row]) -> List[str]:
+    # Pad labels to the longest so every row's note starts in one column.
+    width = max(len(row.label) for row in rows)
+    return [f"[{'x' if row.checked else ' '}] {row.label:{width}}  {row.note}".rstrip() for row in rows]
 
 
 def host_rows(selection: Selection, project: Optional[Path]) -> List[Row]:
@@ -527,11 +531,13 @@ def parse_args(argv: List[str]):
 def print_listing(items: List[Item], saved: Selection, path: Path) -> None:
     print(f"selection: {path}{'' if path.exists() else ' (none saved; everything is on)'}")
     active = active_hosts(saved)
+    key_width = max(len(key) for key in HOSTS)
     for key, host in HOSTS.items():
         found = "found" if shutil.which(host.binary) else "not found"
-        print(f"host  {key:9} {'on ' if key in active else 'off'}  {host.kind:6} {found}")
+        print(f"host  {key:{key_width}} {'on ' if key in active else 'off'}  {host.kind:6} {found}")
+    name_width = max(len(item.name) for item in items)
     for item in items:
-        print(f"{item.kind:5} {item.name:20} {'off' if item.name in saved.excluded else 'on'}")
+        print(f"{item.kind:5} {item.name:{name_width}} {'off' if item.name in saved.excluded else 'on'}")
 
 
 def main(argv: List[str]) -> int:
