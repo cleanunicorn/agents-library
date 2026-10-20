@@ -6,7 +6,9 @@ XDG_CONFIG_HOME point into a temp dir, and `claude`/`codex`/`opencode`/`kilo`
 are shell stubs that log their arguments.
 """
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -15,6 +17,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parent.parent
 INSTALLER = REPO / "install.py"
@@ -207,6 +210,46 @@ class CopyRemovalTests(Sandbox):
         subdir.write_text("mine\n")
         self.assertIn("KEPT opencode/review-pr", self.skip("review-pr"))
         self.assertEqual(subdir.read_text(), "mine\n")
+
+
+class FilesystemErrorTests(Sandbox):
+    """A filesystem error on one item is reported as FAILED and the run goes
+    on; it never escapes as a traceback."""
+
+    def run_in_process(self, excluded, **patches):
+        ledger = installer.Ledger(dry_run=False)
+        items = installer.discover_items()
+        with contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()), \
+                mock.patch.multiple(installer, **patches):
+            installer.install_files("opencode", self.opencode(), items, excluded, "symlink", False, ledger)
+        return ledger.status, out.getvalue().splitlines()
+
+    def test_removal_error_is_failed_and_later_items_continue(self):
+        self.run_installer("--yes", "--hosts", "opencode")
+        denied = mock.Mock(side_effect=PermissionError("denied"))
+        status, out = self.run_in_process(["architect", "manager"], remove=denied)
+        self.assertEqual(status, installer.EXIT_FAILED)
+        self.assertIn("FAILED opencode/architect", out)
+        self.assertIn("FAILED opencode/manager", out)
+        self.assertIn("OK opencode/review-pr", out)
+
+    def test_comparison_error_is_failed_and_later_items_continue(self):
+        self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review-pr")
+        unreadable = mock.Mock(side_effect=PermissionError("denied"))
+        status, out = self.run_in_process([], same_copy=unreadable, same_link=unreadable)
+        self.assertEqual(status, installer.EXIT_FAILED)
+        self.assertIn("FAILED opencode/review-pr", out)
+        self.assertEqual(len(out), len(AGENTS) + len(SKILLS))
+
+    def test_unwritable_selection_is_fatal(self):
+        (self.home / ".config").mkdir()
+        (self.home / ".config" / "agents-library").write_text("a file, not a directory\n")
+        code, out, stderr = self.run_installer("--yes", "--hosts", "opencode")
+        self.assertEqual(code, 1)
+        self.assertIn("FATAL: cannot save selection", stderr)
+        self.assertNotIn("Traceback", stderr)
+        self.assertEqual(out, [])
 
 
 class HostSelectionTests(Sandbox):

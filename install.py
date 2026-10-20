@@ -135,8 +135,11 @@ def load_selection(path: Path) -> Selection:
 def save_selection(path: Path, selection: Selection) -> None:
     payload = {"version": SELECTION_VERSION, "hosts": selection.hosts,
                "excluded": sorted(set(selection.excluded))}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    except OSError as error:
+        raise Fatal(f"cannot save selection {path}: {error}; nothing was installed")
 
 
 # --- interactive checklist -----------------------------------------------
@@ -360,38 +363,40 @@ def install_files(host_key: str, root: Path, items: List[Item], excluded: List[s
 
     for item in items:
         target = f"{host_key}/{item.name}"
-        dest = root / item.subdir / item.filename
-        present = dest.exists() or dest.is_symlink()
-        ours = same_link(dest, item.source) if method == "symlink" else same_copy(dest, item.source)
-
-        if item.name in excluded:
-            if not present:
-                continue
-            if not (same_link(dest, item.source) or same_copy(dest, item.source)):
-                ledger.report("KEPT", target, f"{dest} differs from the library; left in place")
-                continue
-            if not ledger.dry_run:
-                remove(dest)
-            ledger.report("REMOVED", target)
-            continue
-
-        if ours:
-            ledger.report("OK", target)
-            continue
-        if present and not force:
-            ledger.report("CONFLICT", target, f"{dest} exists and differs; rerun with --force to replace it")
-            continue
-        status = "UPDATED" if present else ("LINKED" if method == "symlink" else "COPIED")
-        if ledger.dry_run:
-            ledger.report(status, target)
-            continue
+        # One unreadable or unremovable item must not abort the rest of the run.
         try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            place(item.source, dest, method)
+            install_item(item, root / item.subdir / item.filename, target, item.name in excluded,
+                         method, force, ledger)
         except OSError as error:
             ledger.report("FAILED", target, str(error))
-            continue
-        ledger.report(status, target)
+
+
+def install_item(item: Item, dest: Path, target: str, excluded: bool,
+                 method: str, force: bool, ledger: Ledger) -> None:
+    present = dest.exists() or dest.is_symlink()
+    if excluded:
+        if not present:
+            return
+        if not (same_link(dest, item.source) or same_copy(dest, item.source)):
+            ledger.report("KEPT", target, f"{dest} differs from the library; left in place")
+            return
+        if not ledger.dry_run:
+            remove(dest)
+        ledger.report("REMOVED", target)
+        return
+
+    ours = same_link(dest, item.source) if method == "symlink" else same_copy(dest, item.source)
+    if ours:
+        ledger.report("OK", target)
+        return
+    if present and not force:
+        ledger.report("CONFLICT", target, f"{dest} exists and differs; rerun with --force to replace it")
+        return
+    status = "UPDATED" if present else ("LINKED" if method == "symlink" else "COPIED")
+    if not ledger.dry_run:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        place(item.source, dest, method)
+    ledger.report(status, target)
 
 
 def run(command: List[str], cwd: Path) -> subprocess.CompletedProcess:
