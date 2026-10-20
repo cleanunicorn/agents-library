@@ -414,6 +414,9 @@ def install_item(item: Item, dest: Path, target: str, excluded: bool,
 
 
 def run(command: List[str], cwd: Path) -> subprocess.CompletedProcess:
+    # Output is captured for the FAILED reason, so say what is running: a
+    # plugin install over the network can take a while.
+    print(f"install: running {' '.join(command)}", file=sys.stderr, flush=True)
     return subprocess.run(command, cwd=cwd, capture_output=True, text=True)
 
 

@@ -411,6 +411,13 @@ class PluginHostTests(Sandbox):
         self.assertIn("codex plugin marketplace add cleanunicorn/agents-library", self.calls())
         self.assertIn("codex plugin add agents-library@agents-library", self.calls())
 
+    def test_each_plugin_command_is_announced_before_it_runs(self):
+        code, _, stderr = self.run_installer("--yes", "--hosts", "claude,codex")
+        self.assertEqual(code, 0)
+        announced = [line.removeprefix("install: running ") for line in stderr.splitlines()
+                     if line.startswith("install: running ")]
+        self.assertEqual(announced, self.calls())
+
     def test_installed_plugins_report_ok(self):
         (self.stubs / "claude-list.json").write_text(
             '[{"id": "agents-library@agents-library", "scope": "user"}]')
