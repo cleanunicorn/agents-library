@@ -490,8 +490,8 @@ def parse_args(argv: List[str]):
     parser.add_argument("-y", "--yes", action="store_true",
                         help="skip the checklist; install the saved selection (default: everything)")
     parser.add_argument("--hosts", metavar="LIST", help=f"comma-separated hosts to install into: {','.join(HOSTS)}")
-    parser.add_argument("--only", metavar="LIST", help="comma-separated agents/skills to keep; uncheck the rest")
-    parser.add_argument("--skip", metavar="LIST", help="comma-separated agents/skills to uncheck")
+    parser.add_argument("--only", metavar="LIST", help="comma-separated agents/skills to keep; uncheck (and remove) the rest")
+    parser.add_argument("--skip", metavar="LIST", help="comma-separated agents/skills to uncheck (and remove)")
     parser.add_argument("--all", action="store_true", help="re-check every agent and skill")
     parser.add_argument("--project", action="store_true",
                         help="install into the current directory's project instead of globally")

@@ -73,8 +73,8 @@ change the selection and are saved the same way:
 ```sh
 ./install.py --yes                                # saved selection
 ./install.py --yes --hosts opencode,kilo          # choose hosts
-./install.py --yes --skip manager,triage-issues   # uncheck items
-./install.py --yes --only review-pr,architect     # keep only these
+./install.py --yes --skip manager,triage-issues   # uncheck (and remove) items
+./install.py --yes --only review-pr,architect     # keep these, remove the rest
 ./install.py --yes --all                          # re-check every item
 ./install.py --list                               # hosts, items, what is saved
 ./install.py --yes --dry-run                      # show, change nothing
@@ -349,7 +349,7 @@ the clone if you install symlinks; copy installs survive its removal.
 | `FATAL: not a terminal; pass --yes` | The checklist needs an interactive terminal. Pass `--yes`, plus `--hosts`/`--skip`/`--only` to choose without it. |
 | `FATAL: agents/ or skills/ not found` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
 | `FATAL: saved selection … is malformed` or `cannot read saved selection` | Fix or delete the named JSON file. The installer won't overwrite a file it can't read. |
-| `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations before rerunning with `--force`; add `--only` to limit replacement. |
+| `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations, then rerun with `--force`, which replaces every item that printed `CONFLICT`. Don't narrow it with `--only` or `--skip`: they uncheck the other items, and an unchecked item the library installed is removed. |
 | `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3) | The host CLI exited non-zero; its output follows on stderr. See that host's section below. |
 | `FAILED <host>/<item>` (exit 3) | Read the error on stderr and check the destination. Repair that failure (for example permissions or disk space), then retry. |
 | `… is a symlink; refusing to write through it` | The guard covers the global/project root and its `agents/`/`skills/` directories. Inspect the named path with `ls -ld`. For global scope, inspect/back up dotfile-managed links and targets before deliberately converting the blocked directory to a real directory; alternatively use `--project` with real directories. `--copy` does not bypass this guard. |

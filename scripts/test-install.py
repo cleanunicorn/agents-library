@@ -125,6 +125,15 @@ class FileHostTests(Sandbox):
         self.assertEqual(out, ["LINKED opencode/review-pr"])
         self.assertEqual(len(self.saved()["excluded"]), len(AGENTS) + len(SKILLS) - 1)
 
+    def test_only_removes_every_other_installed_item(self):
+        self.run_installer("--yes", "--hosts", "opencode")
+        code, out, _ = self.run_installer("--yes", "--force", "--only", "review-pr")
+        self.assertEqual(code, 0)
+        self.assertIn("OK opencode/review-pr", out)
+        self.assertIn("REMOVED opencode/architect", out)
+        self.assertEqual(sum(line.startswith("REMOVED ") for line in out), len(AGENTS) + len(SKILLS) - 1)
+        self.assertEqual([p.name for p in self.opencode("skills").iterdir()], ["review-pr"])
+
     def test_unchecked_item_that_differs_is_kept(self):
         target = self.opencode("agents", "architect.md")
         target.parent.mkdir(parents=True)
