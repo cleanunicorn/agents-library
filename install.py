@@ -31,7 +31,7 @@ EXIT_USAGE, EXIT_CONFLICT, EXIT_FAILED = 1, 2, 3
 
 HELP_EPILOG = """\
 Without --yes, an interactive checklist runs (arrows or j/k move, space
-toggles, a toggles all, enter confirms, q cancels). Your host choices and
+toggles, a toggles all, enter confirms, q or esc cancels). Your host choices and
 unchecked items are saved to $XDG_CONFIG_HOME/agents-library/selection.json (with --project:
 ./.agents-library.json) and become the defaults of the next run. Items added
 to the library later start checked.
@@ -156,6 +156,9 @@ class Row:
     note: str = ""
 
 
+KEY_HINT = "↑↓/j/k move · space toggle · a all · enter confirm · q/esc cancel"
+
+
 class Checklist:
     """The checklist's state and key handling, kept apart from curses so it
     can be tested without a terminal."""
@@ -223,7 +226,7 @@ def draw(screen, checklist: Checklist) -> None:
 
     screen.erase()
     height, width = screen.getmaxyx()
-    lines = [checklist.title, "space toggle · a all · enter confirm · q cancel", ""]
+    lines = [checklist.title, KEY_HINT, ""]
     for row in checklist.rows:
         lines.append(f"[{'x' if row.checked else ' '}] {row.label}  {row.note}".rstrip())
     # Scroll so the cursor row stays visible on short terminals.

@@ -530,6 +530,14 @@ class ChecklistTests(unittest.TestCase):
         self.assertEqual(checklist.press("q"), "cancel")
         self.assertEqual(checklist.press("esc"), "cancel")
 
+    def test_move_and_esc_keys_are_named_on_screen_in_help_and_in_readme(self):
+        readme = (REPO / "README.md").read_text()
+        surfaces = {"screen": installer.KEY_HINT, "--help": installer.HELP_EPILOG, "README": readme}
+        for surface, text in surfaces.items():
+            plain = text.replace("`", "").lower()
+            self.assertRegex(plain, r"j/k move", surface)
+            self.assertRegex(plain, r"\besc\b", surface)
+
     def test_item_rows_start_checked_except_saved_exclusions(self):
         rows = installer.item_rows(installer.discover_items(), ["manager"])
         unchecked = [row.key for row in rows if not row.checked]

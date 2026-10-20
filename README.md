@@ -43,7 +43,7 @@ cd agents-library
    because Claude Code and Codex install the plugin as a whole.
 
 Arrows or `j`/`k` move, space toggles, `a` toggles all, enter confirms, and
-`q` cancels without changing anything.
+`q` or Esc cancels without changing anything.
 
 **Your choice is saved.** The installer saves your host choices and the items
 you unchecked to `~/.config/agents-library/selection.json` (`$XDG_CONFIG_HOME` is respected),
