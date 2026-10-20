@@ -51,9 +51,18 @@ relay a worker's question that quotes it, and then only the lines it names.
 
 Each turn, in this order:
 
-1. **The user's message.** A new work item → Phase 0, or the queue when
-   three are active. An answer → the worker that asked. "Status" → the
-   board. A change to a running item → its coordinator, logged on the board.
+0. **Still the console** (SKILL.md rule 10). Read the board header. When a
+   context summary has replaced SKILL.md or this file, re-read both from the
+   header's `skill` path before anything else. Start every worker on the
+   header's `transport`.
+1. **The user's message**, whatever it says and whether or not it names the
+   manager. A new change → Phase 0, or the queue when three are active. A
+   question your own reads (`SKILL.md` § Where the line sits) cannot answer,
+   a skill the user invokes now (`/review-pr`, `/describe-codebase`, …), or
+   "start an agent to …" → a helper (§ Helpers), or Phase 0 when it asks for
+   a change. An answer → the worker that asked. "Status" → the board. A
+   change to a running item → its coordinator, logged on the board. "Do it
+   yourself" → say the console delegates, and delegate it.
 2. **Worker events.** A worker that finished: read its result block, check
    it as § Results says, start the next phase. A worker that blocked:
    classify and answer its prompt per § Approvals; it keeps its phase.
@@ -63,6 +72,20 @@ Keep the console responsive: wait in the background with wake-up where the
 host allows (`herdr agent wait <name>`, a background subagent) and return to
 the user; otherwise wait with a timeout and check next turn. A timeout is not
 a failure; check the worker before re-prompting.
+
+## Helpers
+
+A request that changes nothing — a question, an investigation, a read-only
+skill such as `review-pr` in report mode or `describe-codebase` — is its own
+board item with **one helper** and no other team. It launches like a planner:
+the read-only grant (`references/herdr.md` § Pre-grants per kind, the
+planner, reviewer column) on the recorded transport, a tab labelled
+`<slug>-helper-a` in Herdr, and the planner's worktree check as a native
+subagent. Its brief is the request verbatim, the skill's absolute path when
+one is named, its record path `<run_dir>/<slug>/helper-a.md`, write access
+only to the run directory, and the result block. Its `summary` holds the
+answer in at most five lines; relay those and the record path. A helper never
+edits, and a request that turns out to need a change becomes a work item.
 
 ## Approvals
 
@@ -117,7 +140,15 @@ relayed at once.
 
 ## The board
 
-`<run_dir>/board.md`, rewritten after every event and shown on request:
+`<run_dir>/board.md`, rewritten after every event and shown on request.
+It opens with the **console header**, written on the first turn and kept on
+every rewrite, so a context summary cannot lose the mode or the transport:
+
+```
+console: manager · skill <absolute path to SKILL.md> · transport herdr <workspace id> | native · run_dir <absolute path> · since <HH:MM>
+```
+
+Then the items:
 
 ```
 | item | phase | members (name=kind: state) | PR / branch | waiting on | last event |
@@ -205,6 +236,8 @@ Same roles, briefs, budget and rules.
 
 ## Ending the session
 
-Report every item still open with its hand-back block (`in progress` or
-`blocked`), close the workers you started, and leave every worktree and
-branch in place.
+The console ends only when the user ends it in words — "end the manager",
+"leave the console", "stop managing". A later request, a skill invocation,
+or "just do it yourself" does not end it (SKILL.md rule 10). Then report
+every item still open with its hand-back block (`in progress` or `blocked`),
+close the workers you started, and leave every worktree and branch in place.

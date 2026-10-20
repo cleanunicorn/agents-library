@@ -19,7 +19,8 @@ context, with the same roles and rules as native workers.
    workspace only: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
    <dir> --label "<slug>-<role>-<label>" --no-focus`. The coordinator's
    `<dir>` is the repository root, since it creates the worktree; every later
-   worker's is that worktree. Add the kind's `--env` from § Pre-grants per
+   worker's is that worktree, and a helper's (`references/console.md`
+   § Helpers) the repository root. Add the kind's `--env` from § Pre-grants per
    kind, if any, to this command. Record `.result.tab.tab_id` and
    `.result.root_pane.pane_id` per worker in `<run_dir>/<slug>/tabs.md`. Never
    split your own pane, never `--current`, never a new workspace.
@@ -31,7 +32,8 @@ context, with the same roles and rules as native workers.
 
 ### Pre-grants per kind
 
-The args give each role what its job needs (`references/console.md`
+A helper launches with the planner, reviewer column. The args give each
+role what its job needs (`references/console.md`
 § Approvals) so prompts rarely appear, while every escalation case still
 surfaces as a prompt. A host's own default can approve silently what no flag
 names, so each recipe also adds **ask rules** for the escalation commands —
