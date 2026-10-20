@@ -265,14 +265,19 @@ loads and executes.
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
   issue work list), and install-agents has `install-agents.sh` (copies
   `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
-  Repo-level scripts (installers, CI helpers) live in top-level `scripts/`.
+  Repo-level scripts (CI helpers, the gate's tests) live in top-level
+  `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
   symlinks so both hosts auto-discover everything without duplicating files.
-  The per-host wrappers `scripts/install-opencode.sh` and
-  `scripts/install-kilo.sh` delegate to the shared
-  `scripts/install-host.sh <host>`, which installs the agents and skills into
-  a discovery path (global `~/.config/<host>/` by default, or a target
-  project's `.<host>/` with `--project`) via symlinks or copies.
+  One installer, `install.py` at the repo root (Python 3.9+, stdlib only),
+  covers every host: it shows a hosts checklist (claude, codex, opencode,
+  kilo; those on `PATH` pre-checked) and an agents-and-skills checklist (all
+  checked), saves what was unchecked, and installs. Claude Code and Codex go
+  through their plugin CLIs and always get the whole plugin; opencode and
+  Kilo get symlinks (global `~/.config/<host>/`) or copies (`--project`, the
+  target project's `.<host>/`) of the checked items. `--yes` skips the
+  checklist for unattended runs. install-agents keeps its own script because
+  a skill installed into opencode or Kilo carries only its own directory.
 - **Skill shape** — the review and survey skills follow Phase 0 *orient* →
   Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
   review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
@@ -366,7 +371,12 @@ loads and executes.
   role briefs, with the gate-log and CI-log format in `references/console.md`
   (`command:`/`head:`/`exit:`), the board's `{time, item, worker=kind, asked,
   option}` approvals-answered rows there too, and the PR evidence body in its
-  coordinator brief; the
+  coordinator brief; install.py's
+  `LINKED|COPIED|INSTALLED|OK|UPDATED|REMOVED|KEPT|SKIPPED|CONFLICT|FAILED
+  <host>/<name>` status lines and its saved selection `{version, hosts:
+  {<host>: bool}, excluded: [<name>]}` (user config, or `.agents-library.json`
+  with `--project`) — `excluded` lists only unchecked items so later
+  additions default on; the
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|FAILED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
@@ -388,8 +398,8 @@ loads and executes.
   links (`scripts/test-readme-toc.py`), the manager's approval contract
   (`scripts/test-manager-approval.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
-  `scripts/test-check-host-sync.py`), installer smoke tests for both hosts
-  (`scripts/test-install-host.sh`), skill-installer write failures and ledger
+  `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
+  in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
   tests (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
   Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or

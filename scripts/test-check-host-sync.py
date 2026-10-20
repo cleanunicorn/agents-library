@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 CHECKER = Path(__file__).resolve().with_name("check-host-sync.sh")
-# Must list the same mirrors as check-host-sync.sh and install-host.sh.
+# Must list the same mirrors as check-host-sync.sh and install.py.
 HOST_DIRS = (".opencode", ".kilo")
 
 
@@ -132,20 +132,20 @@ class HostListAgreementTests(unittest.TestCase):
     each script; this test extracts and compares them so drift fails here.
     """
 
-    SCRIPTS = ("install-host.sh", "check-host-sync.sh", "test-check-host-sync.py")
-    # In install-host.sh each host appears as "<host>)"; in the other two
-    # scripts the list is a shell/Python tuple or loop over ".<host>" dirs.
-    CASE_LINE = re.compile(r"^\s{2}(\w+)\)\s+global_root=")
+    SCRIPTS = ("install.py", "check-host-sync.sh", "test-check-host-sync.py")
+    # install.py names each mirror as `mirror=".<host>"` in its HOSTS table;
+    # the other two scripts list them as a shell/Python tuple or loop.
+    MIRROR = re.compile(r'mirror="\.(\w+)"')
     QUOTED_DOT_DIR = re.compile(r'"(\.\w+)"')
 
     def host_sets(self):
-        root = Path(__file__).resolve().parent
+        scripts = Path(__file__).resolve().parent
         found = {}
         for script in self.SCRIPTS:
-            text = (root / script).read_text(encoding="utf-8")
-            if script == "install-host.sh":
-                found[script] = {match.group(1) for line in text.splitlines()
-                                 if (match := self.CASE_LINE.match(line))}
+            path = scripts.parent / script if script == "install.py" else scripts / script
+            text = path.read_text(encoding="utf-8")
+            if script == "install.py":
+                found[script] = set(self.MIRROR.findall(text))
             else:
                 found[script] = {match.lstrip(".") for match
                                  in self.QUOTED_DOT_DIR.findall(text)}
