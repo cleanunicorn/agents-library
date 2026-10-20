@@ -308,11 +308,14 @@ def same_copy(dest: Path, source: Path) -> bool:
         return False
     if source.is_file():
         return dest.is_file() and filecmp.cmp(source, dest, shallow=False)
-    return dest.is_dir() and not differs(filecmp.dircmp(source, dest))
+    # ignore=[]: dircmp skips names like `tags` and `.git` by default, and a
+    # user's file hidden that way would be deleted along with our copy.
+    return dest.is_dir() and not differs(filecmp.dircmp(source, dest, ignore=[]))
 
 
 def differs(comparison: filecmp.dircmp) -> bool:
-    if comparison.left_only or comparison.right_only or comparison.funny_files:
+    if (comparison.left_only or comparison.right_only or comparison.common_funny
+            or comparison.funny_files):
         return True
     _, mismatch, errors = filecmp.cmpfiles(comparison.left, comparison.right,
                                            comparison.common_files, shallow=False)

@@ -9,6 +9,7 @@ are shell stubs that log their arguments.
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -159,6 +160,53 @@ class FileHostTests(Sandbox):
         self.assertIn("LINKED opencode/architect", out)
         self.assertFalse(self.opencode().exists())
         self.assertFalse((self.home / ".config" / "agents-library").exists())
+
+
+class CopyRemovalTests(Sandbox):
+    """Unchecking a copied item removes it only while it is byte-identical to
+    the library; anything a user added or changed keeps it in place."""
+
+    def install_copies(self):
+        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy")
+        self.assertEqual(code, 0)
+        self.assertIn("COPIED opencode/review-pr", out)
+
+    def skip(self, name):
+        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy", "--skip", name)
+        self.assertEqual(code, 0)
+        return out
+
+    def test_identical_copy_is_removed(self):
+        self.install_copies()
+        self.assertIn("REMOVED opencode/review-pr", self.skip("review-pr"))
+        self.assertFalse(self.opencode("skills", "review-pr").exists())
+
+    def test_edited_agent_copy_is_kept(self):
+        self.install_copies()
+        target = self.opencode("agents", "architect.md")
+        target.write_text("my own architect\n")
+        self.assertIn("KEPT opencode/architect", self.skip("architect"))
+        self.assertEqual(target.read_text(), "my own architect\n")
+
+    def test_file_added_to_a_copied_skill_keeps_it(self):
+        # `tags` and `.git` are on filecmp's default ignore list.
+        for name in ("notes.md", "tags", ".git"):
+            with self.subTest(name=name):
+                shutil.rmtree(self.home / ".config", ignore_errors=True)
+                self.install_copies()
+                added = self.opencode("skills", "review-pr", name)
+                added.write_text("mine\n")
+                self.assertIn("KEPT opencode/review-pr", self.skip("review-pr"))
+                self.assertEqual(added.read_text(), "mine\n")
+
+    def test_directory_replaced_by_a_file_keeps_it(self):
+        self.install_copies()
+        skill = self.opencode("skills", "review-pr")
+        subdir = next(path for path in sorted(skill.iterdir()) if path.is_dir())
+        shutil.rmtree(subdir)
+        subdir.write_text("mine\n")
+        self.assertIn("KEPT opencode/review-pr", self.skip("review-pr"))
+        self.assertEqual(subdir.read_text(), "mine\n")
 
 
 class HostSelectionTests(Sandbox):
