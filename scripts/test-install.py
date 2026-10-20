@@ -329,6 +329,53 @@ class HostSelectionTests(Sandbox):
             self.assertEqual(path.read_text(), text)
 
 
+@unittest.skipUnless(sys.platform != "win32", "needs a pseudo-terminal")
+class TerminalTests(Sandbox):
+    """Run the checklist on a real pseudo-terminal: a terminal curses cannot
+    drive must end in the FATAL contract, never a traceback."""
+
+    def run_in_terminal(self, term, keys=b""):
+        import pty
+
+        env = {"HOME": str(self.home), "XDG_CONFIG_HOME": str(self.home / ".config"),
+               "PATH": f"{self.stubs}:/usr/bin:/bin", "STUB_DIR": str(self.stubs)}
+        if term:
+            env["TERM"] = term
+        master_fd, terminal_fd = pty.openpty()
+        with open(master_fd, "r+b", buffering=0) as master:
+            with open(terminal_fd, "r+b", buffering=0) as terminal:
+                process = subprocess.Popen([sys.executable, str(INSTALLER), "--hosts", "opencode"],
+                                           cwd=self.project, env=env, stdin=terminal, stdout=terminal,
+                                           stderr=terminal)
+            if keys:
+                master.write(keys)
+            output = b""
+            try:
+                while chunk := master.read(4096):
+                    output += chunk
+            except OSError:  # EIO once the child closes the terminal
+                pass
+        return process.wait(timeout=30), output.decode(errors="replace")
+
+    def test_unknown_terminal_is_fatal(self):
+        code, output = self.run_in_terminal(None)
+        self.assertEqual(code, 1, output)
+        self.assertIn("FATAL: cannot run the checklist on this terminal (TERM=unset)", output)
+        self.assertNotIn("Traceback", output)
+
+    def test_dumb_terminal_still_runs_the_checklist(self):
+        code, output = self.run_in_terminal("dumb", b"q")
+        self.assertEqual(code, 1, output)
+        self.assertIn("FATAL: cancelled", output)
+        self.assertNotIn("Traceback", output)
+
+    def test_python_without_curses_is_fatal(self):
+        checklist = installer.Checklist("t", [installer.Row("a", "a", True)])
+        with mock.patch.dict(sys.modules, {"curses": None}):
+            with self.assertRaisesRegex(installer.Fatal, "no curses module; pass --yes"):
+                installer.run_checklist(checklist)
+
+
 class PluginHostTests(Sandbox):
     def test_plugins_install_through_their_cli(self):
         code, out, _ = self.run_installer("--yes", "--hosts", "claude,codex")

@@ -347,6 +347,7 @@ the clone if you install symlinks; copy installs survive its removal.
 | Symptom | Diagnosis and remedy |
 | --- | --- |
 | `FATAL: not a terminal; pass --yes` | The checklist needs an interactive terminal. Pass `--yes`, plus `--hosts`/`--skip`/`--only` to choose without it. |
+| `FATAL: cannot run the checklist` | curses cannot drive this terminal (the message names `TERM`), or this Python has no `curses` module, as on Windows. Pass `--yes`, or set `TERM` to your terminal's type (for example `xterm-256color`). |
 | `FATAL: agents/ or skills/ not found` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
 | `FATAL: saved selection … is malformed` or `cannot read saved selection` | Fix or delete the named JSON file. The installer won't overwrite a file it can't read. |
 | `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations, then rerun with `--force`, which replaces every item that printed `CONFLICT`. Don't narrow it with `--only` or `--skip`: they uncheck the other items, and an unchecked item the library installed is removed. |

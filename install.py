@@ -186,13 +186,19 @@ class Checklist:
 
 
 def run_checklist(checklist: Checklist) -> List[str]:
-    import curses
+    try:
+        import curses
+    except ImportError:
+        raise Fatal("cannot run the checklist: this Python has no curses module; pass --yes")
 
     names = {curses.KEY_UP: "up", curses.KEY_DOWN: "down", 10: "enter", 13: "enter",
              curses.KEY_ENTER: "enter", 27: "esc"}
 
     def loop(screen) -> Optional[str]:
-        curses.curs_set(0)
+        try:
+            curses.curs_set(0)
+        except curses.error:
+            pass  # Terminals such as TERM=dumb cannot hide the cursor; the checklist still works.
         while True:
             draw(screen, checklist)
             code = screen.getch()
@@ -201,7 +207,12 @@ def run_checklist(checklist: Checklist) -> List[str]:
             if outcome:
                 return outcome
 
-    if curses.wrapper(loop) == "cancel":
+    try:
+        outcome = curses.wrapper(loop)
+    except curses.error as error:
+        term = os.environ.get("TERM", "unset")
+        raise Fatal(f"cannot run the checklist on this terminal (TERM={term}): {error}; pass --yes")
+    if outcome == "cancel":
         raise Fatal("cancelled; nothing was installed or saved")
     return checklist.checked()
 
