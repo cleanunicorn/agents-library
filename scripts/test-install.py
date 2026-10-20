@@ -425,5 +425,81 @@ class ChecklistTests(unittest.TestCase):
         self.assertEqual(len(rows), len(AGENTS) + len(SKILLS))
 
 
+
+class InteractiveTests(unittest.TestCase):
+    """The glue between the checklists and the saved selection, with the
+    terminal and the curses screens replaced by scripted answers."""
+
+    ON_PATH = ("claude", "opencode")
+
+    def setUp(self):
+        which = mock.patch.object(installer.shutil, "which",
+                                  side_effect=lambda binary: f"/bin/{binary}" if binary in self.ON_PATH else None)
+        which.start()
+        self.addCleanup(which.stop)
+        terminal = mock.patch.object(installer, "sys")
+        fake_sys = terminal.start()
+        self.addCleanup(terminal.stop)
+        fake_sys.stdin.isatty.return_value = fake_sys.stdout.isatty.return_value = True
+        self.shown = []
+
+    def answer(self, *answers):
+        """Patch run_checklist to record each checklist and give the next answer."""
+        replies = iter(answers)
+
+        def run_checklist(checklist):
+            self.shown.append(checklist)
+            reply = next(replies)
+            if isinstance(reply, Exception):
+                raise reply
+            return reply
+
+        patcher = mock.patch.object(installer, "run_checklist", side_effect=run_checklist)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def resolve(self, saved, *argv):
+        return installer.resolve(installer.parse_args(list(argv)), installer.discover_items(), saved, None)
+
+    def test_host_rows_check_hosts_on_path_unless_a_saved_choice_says_otherwise(self):
+        saved = installer.Selection({"claude": False, "kilo": True}, [])
+        rows = {row.key: row for row in installer.host_rows(saved, None)}
+        self.assertEqual({key: row.checked for key, row in rows.items()},
+                         {"claude": False, "codex": False, "opencode": True, "kilo": True})
+        self.assertEqual(rows["claude"].note, "found · whole plugin via its CLI")
+        self.assertEqual(rows["kilo"].note, "not found on PATH")
+        project_rows = {row.key: row for row in installer.host_rows(saved, Path("/project"))}
+        self.assertIn("no project scope", project_rows["codex"].note)
+
+    def test_both_checklists_decide_hosts_and_unchecked_items(self):
+        everything_but_manager = [name for name in AGENTS + SKILLS if name != "manager"]
+        self.answer(["claude", "opencode"], everything_but_manager)
+        chosen = self.resolve(installer.Selection({}, ["architect"]))
+        self.assertEqual(chosen.hosts, {"claude": True, "codex": False, "opencode": True, "kilo": False})
+        self.assertEqual(chosen.excluded, ["manager"])
+        hosts_screen, items_screen = self.shown
+        self.assertEqual(hosts_screen.checked(), ["claude", "opencode"])
+        unchecked = [row.key for row in items_screen.rows if not row.checked]
+        self.assertEqual(unchecked, ["architect"])
+
+    def test_items_screen_is_skipped_without_a_file_host(self):
+        self.answer(["claude"])
+        chosen = self.resolve(installer.Selection({}, ["architect"]))
+        self.assertEqual(len(self.shown), 1)
+        self.assertEqual(chosen.excluded, ["architect"])
+
+    def test_cancelling_the_items_screen_installs_and_saves_nothing(self):
+        self.answer(["opencode"], installer.Fatal("cancelled; nothing was installed or saved"))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "selection.json"
+            with mock.patch.multiple(installer, selection_path=mock.Mock(return_value=path),
+                                     install_files=mock.DEFAULT, install_plugin=mock.DEFAULT) as fakes:
+                with self.assertRaises(installer.Fatal):
+                    installer.main([])
+            self.assertFalse(path.exists())
+            fakes["install_files"].assert_not_called()
+            fakes["install_plugin"].assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
