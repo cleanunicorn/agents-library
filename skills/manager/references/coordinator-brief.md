@@ -9,7 +9,8 @@ address the user.
 
 **Access.** The manager pre-grants what your job needs at launch: the
 worktree, the run directory, the repository and its `.git`, shell commands,
-git commits and pushes of the item's branch, `gh` for its draft PR, the gate,
+git commits and pushes of the item's branch, `gh` for its PR (including
+ready status when the manager authorizes it in Phase 5), the gate,
 installs, and network fetches. A permission prompt that still appears is the
 manager's to answer; wait for it rather than working around it. Host
 permission is not role permission: an "Allow" never makes a merge, a
@@ -206,10 +207,14 @@ line per finding — `id · verdict · status · evidence in a phrase` — and
 
 ## Phase 5 — Hand back
 
-On the manager's word:
+On the manager's Phase 5 instruction, complete these steps without a separate
+user confirmation. A manager instruction to proceed is the go-ahead to push
+and publish; ready status still requires the manager's gate verification.
 
 1. **Gate** at the branch head; save its log.
-2. **Update the PR evidence** body (`gh pr edit <pr> --body-file`) and push.
+2. **Update the PR evidence** body (`gh pr edit <pr> --body-file`) and push
+   all remaining commits. Verify the remote branch and PR head match the
+   tested local head; a successful local commit is not delivery.
 3. **Wait for CI** at that head: `gh pr checks <pr> --watch --required`, or
    poll; with no required checks, every check counts. Save the CI log with
    `head:` from `gh pr view <pr> --json headRefOid`. Record `none — no CI
@@ -219,7 +224,8 @@ On the manager's word:
    check the repository cannot fix (a missing secret, an outage) is
    reported, not retried.
 5. **Mark the PR ready** (`gh pr ready`) only when the manager says so, and
-   confirm the worktree is clean. Never merge. A failed push or PR command is
+   verify with `gh pr view` that it is open, no longer a draft, and at the
+   tested head; confirm the worktree is clean. Never merge. A failed push or PR command is
    reported with the exact command and its error.
 
 `summary`: the CI log path, `N of N required checks passed at <sha>` or the
