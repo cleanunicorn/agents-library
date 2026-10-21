@@ -11,6 +11,9 @@ for script in scripts/*.sh skills/*/scripts/*.sh; do
   bash -n "$script"
 done
 
+echo "Checking for unused Python imports..."
+python3 scripts/check-unused-imports.py
+
 echo "Checking plugin JSON syntax..."
 for manifest in .claude-plugin/*.json .codex-plugin/*.json .agents/plugins/*.json; do
   python3 -m json.tool "$manifest" >/dev/null
@@ -33,7 +36,7 @@ python3 scripts/test-manager-console.py
 
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
-bash scripts/test-install-host.sh
+python3 scripts/test-install.py
 bash scripts/test-install-agents.sh
 ./scripts/test-diff-target.sh
 python3 run_evals.py --dry-run

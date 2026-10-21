@@ -9,15 +9,9 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 <!-- toc:start -->
 **Contents**
 
-- [Install (Codex plugin)](#install-codex-plugin)
-- [Install (Claude Code plugin)](#install-claude-code-plugin)
-- [Install (opencode)](#install-opencode)
-- [Install (Kilo Code)](#install-kilo-code)
+- [Install](#install)
 - [Choose a skill](#choose-a-skill)
-- [Update (Claude Code plugin)](#update-claude-code-plugin)
-- [Update (Codex plugin)](#update-codex-plugin)
-- [Update (opencode)](#update-opencode)
-- [Update (Kilo Code)](#update-kilo-code)
+- [Update](#update)
 - [Troubleshooting](#troubleshooting)
 - [About the agents](#about-the-agents)
 - [Architect](#architect)
@@ -31,9 +25,100 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 - [Maintain the library](#maintain-the-library)
 <!-- toc:end -->
 
-## Install (Codex plugin)
+## Install
 
-Two steps — register the marketplace, then install the plugin from it:
+Clone the library and run its installer. It finds the agent hosts on your
+machine and shows two checklists, with everything checked by default:
+
+```sh
+git clone https://github.com/cleanunicorn/agents-library.git
+cd agents-library
+./install.py
+```
+
+1. **Hosts**: Claude Code, Codex, opencode, and Kilo Code. Hosts whose CLI
+   is on your `PATH` start checked.
+2. **Agents and skills**: the eight agents and ten skills. Uncheck any you
+   don't want. This screen appears only when opencode or Kilo is checked,
+   because Claude Code and Codex install the plugin as a whole.
+
+Arrows or `j`/`k` move, space toggles, `a` toggles all, enter confirms, and
+`q` or Esc cancels without changing anything.
+
+**Your choice is saved.** The installer saves your host choices and the items
+you unchecked to `~/.config/agents-library/selection.json` (`$XDG_CONFIG_HOME` is respected),
+and the next `./install.py` starts from it. Items the library adds later start
+checked. Unchecking an item you already installed removes it, but only if it
+is still the library's version. A file you changed is left in place and
+reported as `KEPT`.
+
+| Host | What the installer does | Item checklist applies |
+| --- | --- | --- |
+| Claude Code | `claude plugin install agents-library --marketplace cleanunicorn/agents-library` | No: whole plugin |
+| Codex | `codex plugin marketplace add cleanunicorn/agents-library`, then `codex plugin add agents-library@agents-library` | No: whole plugin |
+| opencode | Symlinks into `~/.config/opencode/{agents,skills}/` | Yes |
+| Kilo Code | Symlinks into `~/.config/kilo/{agents,skills}/` | Yes |
+
+Restart the host afterwards (a new Claude Code session, a new Codex thread).
+In Claude Code the agents become subagents (e.g. `architect`, `refactor`,
+`testforge`) and the skills are available as `/review-pr`, `/review-design`,
+`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
+`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`,
+and `/manager`.
+
+**Without the checklist** (scripts, CI, a remote shell), pass `--yes`. The
+installer then uses the saved selection, or everything on a first run. Flags
+change the selection and are saved the same way:
+
+```sh
+./install.py --yes                                # saved selection
+./install.py --yes --hosts opencode,kilo          # choose hosts
+./install.py --yes --skip manager,triage-issues   # uncheck (and remove) items
+./install.py --yes --only review-pr,architect     # keep these, remove the rest
+./install.py --yes --all                          # re-check every item
+./install.py --list                               # hosts, items, what is saved
+./install.py --yes --dry-run                      # show, change nothing
+```
+
+**Into one project**, run the installer from that project. Files are copied
+instead of symlinked, Claude Code installs at project scope, Codex is
+`SKIPPED` because it has no project scope, and the selection is saved in that
+project's `.agents-library.json`:
+
+```sh
+cd /path/to/your/project
+/path/to/agents-library/install.py --project
+```
+
+`--copy`, `--symlink`, and `--force` (replace items that differ) work in
+either scope; `./install.py --help` lists every flag and status line. The
+installer needs Python 3.9+ and nothing else. The checklist uses `curses`,
+which Windows' Python lacks, so pass `--yes` there.
+
+Something failed? See [Troubleshooting](#troubleshooting).
+
+### Install without cloning (Claude Code, Codex)
+
+The plugin hosts don't need the clone. These are the commands the installer
+runs, and you can run them directly.
+
+Claude Code 2.1.286 uses SSH for this plugin by default, both here and through
+the installer. Provide a GitHub SSH key **or**
+[opt into HTTPS](#troubleshooting-claude-code). For the in-session commands,
+run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting `claude` if you
+want HTTPS.
+
+```
+/plugin marketplace add cleanunicorn/agents-library
+/plugin install agents-library@agents-library
+```
+
+The same from the CLI is
+`claude plugin marketplace add cleanunicorn/agents-library` then
+`claude plugin install agents-library@agents-library`.
+
+Codex takes two steps, registering the marketplace and then installing the
+plugin from it:
 
 ```
 codex plugin marketplace add cleanunicorn/agents-library
@@ -42,148 +127,18 @@ codex plugin add agents-library@agents-library
 
 Codex's in-thread plugin UI takes this repository's URL,
 `https://github.com/cleanunicorn/agents-library`, in place of the first command.
-
 Registering the marketplace does not install the plugin. Check installation
-with `codex plugin list -m agents-library --json`.
+with `codex plugin list -m agents-library --json`. The manifests are
+[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) and
+[`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 
-The marketplace manifest is
-[`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json); the
-plugin metadata is [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
-Start a new Codex thread after installing so the skills load. To pick up later
-changes, see [Update (Codex plugin)](#update-codex-plugin).
+### Work inside the clone (opencode, Kilo Code)
 
-Something failed? See [Troubleshooting Codex](#troubleshooting-codex).
-
-## Install (Claude Code plugin)
-
-This repo is a Claude Code plugin marketplace. Installing it gives you the
-`/review-pr`, `/review-design`, `/review-ux-psychology`, `/batch-merge-prs`,
-`/triage-issues`, `/simplify-sweep`, `/describe-codebase`,
-`/plan-feature`, `/install-agents`, and `/manager` skills plus all eight agents
-as subagents.
-
-Claude Code 2.1.286 uses SSH for this plugin by default: provide a GitHub SSH
-key **or** [opt into HTTPS](#troubleshooting-claude-code). For the in-session
-commands below, run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting
-`claude` if you want HTTPS.
-
-```
-/plugin marketplace add cleanunicorn/agents-library
-/plugin install agents-library@agents-library
-```
-
-Then start a new session. The agents become subagents (e.g. `architect`,
-`refactor`, `testforge`) and the skills are available as `/review-pr`,
-`/review-design`, `/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
-`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`, and
-`/manager`.
-
-Outside a session, the same works from the CLI:
-
-```
-claude plugin marketplace add cleanunicorn/agents-library
-claude plugin install agents-library@agents-library
-```
-
-Something failed? See [Troubleshooting Claude Code](#troubleshooting-claude-code).
-
-## Install (opencode)
-
-With Git, Bash, and `opencode` installed, first clone the library via HTTPS:
-
-```sh
-git clone https://github.com/cleanunicorn/agents-library.git
-cd agents-library
-```
-
-This repo is directly compatible with [opencode](https://opencode.ai).
-
-**Work inside the clone** — just run `opencode` in the repo root. The
-`.opencode/` directory is auto-discovered, no install step needed:
-
-- `.opencode/agents/*.md` → the eight subagents (architect, deadwood, docbot,
-  refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
-  `mode: subagent` so opencode registers them as subagents (invokable via
-  `@mention` or dispatched by the orchestrator skills).
-- `.opencode/skills/<name>/SKILL.md` → the ten orchestrator skills
-  (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
-  `triage-issues`, `simplify-sweep`, `describe-codebase`, `plan-feature`,
-  `install-agents`, `manager`),
-  loaded on demand via opencode's `skill` tool.
-
-Both directories symlink to the canonical `agents/` and `skills/` at the repo
-root, so there is a single source of truth.
-
-**Install into other projects or globally** — run the installer script from
-the repo root:
-
-```
-# Global: symlink all 8 agents + 10 skills into ~/.config/opencode/
-./scripts/install-opencode.sh
-
-# Project: copy into a specific project's .opencode/
-cd /path/to/your/project
-/path/to/agents-library/scripts/install-opencode.sh --project
-
-# Pick specific items only
-./scripts/install-opencode.sh review-pr simplify-sweep architect
-```
-
-Global installs use symlinks by default, so `git pull` in this repo updates
-every linked install. Project installs use copies for self-containment. Run
-`./scripts/install-opencode.sh --help` for all options.
-
-Something failed? See [Troubleshooting opencode](#troubleshooting-opencode).
-
-## Install (Kilo Code)
-
-With Git, Bash, and `kilo` installed, first clone the library via HTTPS:
-
-```sh
-git clone https://github.com/cleanunicorn/agents-library.git
-cd agents-library
-```
-
-This repo is directly compatible with [Kilo Code](https://kilo.ai). Kilo
-auto-discovers a `.kilo/` config directory, so there is no marketplace or
-manifest — the same install paths as opencode.
-
-**Work inside the clone** — just run `kilo` in the repo root. The `.kilo/`
-directory is auto-discovered, no install step needed:
-
-- `.kilo/agents/*.md` → the eight subagents (architect, deadwood, docbot,
-  refactor, sentinel, testforge, uidesigner, uxpolish), each carrying
-  `mode: subagent` so Kilo registers them as subagents (dispatchable via the
-  Task tool or by the orchestrator skills).
-- `.kilo/skills/<name>/SKILL.md` → the ten orchestrator skills
-  (`review-pr`, `review-design`, `review-ux-psychology`, `batch-merge-prs`,
-  `triage-issues`, `simplify-sweep`, `describe-codebase`, `plan-feature`,
-  `install-agents`, `manager`),
-  loaded on demand via Kilo's `skill` tool.
-
-Both directories symlink to the canonical `agents/` and `skills/` at the repo
-root, so there is a single source of truth.
-
-**Install into other projects or globally** — run the installer script from
-the repo root:
-
-```
-# Global: symlink all 8 agents + 10 skills into ~/.config/kilo/
-./scripts/install-kilo.sh
-
-# Project: copy into a specific project's .kilo/
-cd /path/to/your/project
-/path/to/agents-library/scripts/install-kilo.sh --project
-
-# Pick specific items only
-./scripts/install-kilo.sh review-pr simplify-sweep architect
-```
-
-Global installs use symlinks by default, so `git pull` in this repo updates
-every linked install. Project installs use copies for self-containment. Run
-`./scripts/install-kilo.sh --help` for all options.
-
-Something failed? See [Troubleshooting Kilo Code](#troubleshooting-kilo-code).
+Running `opencode` or `kilo` in the clone's root needs no install. They
+auto-discover `.opencode/` and `.kilo/`, whose `agents/*.md` (eight subagents,
+each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (ten skills,
+loaded on demand via the `skill` tool) are symlinks to the canonical `agents/`
+and `skills/` at the repo root, so there is a single source of truth.
 
 ## Choose a skill
 
@@ -322,75 +277,36 @@ Code schedules, GitHub Actions, and local cron, and preserves locally customized
 agent files unless you explicitly approve an overwrite. Re-running upgrades or
 extends an installation.
 
-## Update (Claude Code plugin)
+## Update
 
-Update the installed plugin, then restart Claude Code to apply the changes:
-
-```sh
-claude plugin update agents-library@agents-library
-```
-
-Check `claude plugin list --json` for the installed scope. To target a project
-install explicitly, run from that project's directory:
+Pull the clone and rerun the installer:
 
 ```sh
-claude plugin update agents-library@agents-library --scope project
+git pull
+./install.py --yes
 ```
 
-Claude Code 2.1.286 auto-detects the update scope; older versions may differ.
+- **opencode and Kilo symlinks** already point at the clone, so `git pull`
+  updates them. The rerun links any items the library added.
+- **Copies** (`--project` or `--copy`) differ from the pulled clone and report
+  `CONFLICT` until refreshed. Inspect customizations, then rerun with
+  `--force`, for example `/path/to/agents-library/install.py --project --yes --force`
+  from the project.
+- **Claude Code**: the installer reports an installed plugin as `OK` and
+  does not update it. Update it, then restart Claude Code:
 
-Something failed? See [Troubleshooting Claude Code](#troubleshooting-claude-code).
-
-## Update (Codex plugin)
-
-[Refresh the Git marketplace](https://developers.openai.com/plugins/build/plugins)
-and start a new Codex thread:
-
-```sh
-codex plugin marketplace upgrade agents-library
-```
-
-Omit the marketplace name to refresh all configured Git marketplaces.
-
-Something failed? See [Troubleshooting Codex](#troubleshooting-codex).
-
-## Update (opencode)
-
-The update path depends on how you installed:
-
-- **Working inside the clone** — run `git pull` in the clone; no reinstall
-  is needed for `.opencode/` discovery.
-- **Global symlink install** — `git pull` in this repo updates every linked
-  install automatically (the symlinks point here).
-- **Copy installs** — pull the clone first, then refresh the destination. For
-  a global copy, run `./scripts/install-opencode.sh --global --copy --force`
-  from the clone. For a project copy:
-
-  ```
-  cd /path/to/your/project
-  /path/to/agents-library/scripts/install-opencode.sh --project --force
+  ```sh
+  claude plugin update agents-library@agents-library
   ```
 
-Something failed? See [Troubleshooting opencode](#troubleshooting-opencode).
+  Check `claude plugin list --json` for the installed scope, and add
+  `--scope project` from a project directory to target a project install.
+  Claude Code 2.1.286 auto-detects the scope; older versions may differ.
+- **Codex**: [refresh the Git marketplace](https://developers.openai.com/plugins/build/plugins)
+  with `codex plugin marketplace upgrade agents-library`, then start a new
+  thread. Omit the name to refresh all configured Git marketplaces.
 
-## Update (Kilo Code)
-
-As with opencode, update the source clone before refreshing copies:
-
-- **Working inside the clone** — run `git pull` in the clone; no reinstall
-  is needed for `.kilo/` discovery.
-- **Global symlink install** — `git pull` in this repo updates every linked
-  install automatically (the symlinks point here).
-- **Copy installs** — pull the clone first, then refresh the destination. For
-  a global copy, run `./scripts/install-kilo.sh --global --copy --force`
-  from the clone. For a project copy:
-
-  ```
-  cd /path/to/your/project
-  /path/to/agents-library/scripts/install-kilo.sh --project --force
-  ```
-
-Something failed? See [Troubleshooting Kilo Code](#troubleshooting-kilo-code).
+Something failed? See [Troubleshooting](#troubleshooting).
 
 ## Troubleshooting
 
@@ -422,21 +338,30 @@ configuration if you intend to use keys. `ssh-add -l` checks keys loaded in an
 agent; an agent is only one way to supply an SSH key.
 
 The plugin commands require Git and the corresponding host CLI on PATH.
-opencode/Kilo installers also need Bash and standard shell utilities
-(including `cp`, `diff`, `ln`, `mkdir`, `mv`, `readlink`, `rm`) and a complete
-local clone.
-Keep the clone if you install symlinks; copy installs can survive its removal.
+[`install.py`](install.py) needs Python 3.9+ and a complete local clone. Keep
+the clone if you install symlinks; copy installs survive its removal.
 
-**opencode/Kilo installer errors (install or update):** the
-[shared installer](scripts/install-host.sh) reports the following:
+**Installer errors (install or update).** Each status line names
+`<host>/<item>`, and the reason is printed on stderr. A `FATAL:` line exits 1
+before anything is installed or saved. When a run prints both `CONFLICT` and
+`FAILED`, it exits 3.
 
 | Symptom | Diagnosis and remedy |
 | --- | --- |
-| `install-host.sh: No such file or directory` | The wrapper was copied or symlinked out of `scripts/`. Invoke the original wrapper by its path inside the clone; it needs the adjacent `install-host.sh`. |
-| `FATAL: agents/ not found` or `skills/ not found` | The script is detached from a complete clone. Invoke the script inside the clone; invoking it by absolute path from another project is supported. |
-| `CONFLICT <name>` (exit 2) | The destination differs. Inspect/back up customizations before rerunning with `--force`; pass selected names to limit replacement. |
-| `FAILED <name>` (exit 3) | Read the adjacent shell error and check the destination. Repair that failure (for example permissions or disk space), then retry. |
-| `… is a symlink — refusing to write through it` | The guard covers the global/project root and its `agents/`/`skills/` directories. Inspect the named path with `ls -ld`. For global scope, inspect/back up dotfile-managed links and targets before deliberately converting the blocked directory to a real directory; alternatively use `--project` with real directories. `--copy` does not bypass this guard. |
+| `FATAL: not a terminal; pass --yes` | The checklist needs an interactive terminal. Pass `--yes`, plus `--hosts`/`--skip`/`--only` to choose without it. |
+| `FATAL: cannot run the checklist on this terminal` or `cannot run the checklist: this Python has no curses module` | curses cannot drive this terminal (the message names `TERM`), or this Python has no `curses` module, as on Windows. Pass `--yes`, or set `TERM` to your terminal's type (for example `xterm-256color`). |
+| `FATAL: agents/ or skills/ not found at …` | `install.py` was copied out of the clone. Run it by its path inside the clone; running it by absolute path from another project is supported. |
+| `FATAL: saved selection … is malformed` or `cannot read saved selection` | Fix or delete the named JSON file. The installer won't overwrite a file it can't read. |
+| `FATAL: cannot save selection` | The selection's directory or file isn't writable (the message names it). Fix its permissions, then rerun. |
+| `FATAL: cancelled` | You pressed `q` or Esc in a checklist. Nothing was installed or saved. |
+| `FATAL: unknown host` or `unknown agent or skill` | A name passed to `--hosts`, `--only`, or `--skip` isn't one the installer knows. `./install.py --list` prints the valid names. |
+| `FATAL: bad arguments` | A flag is unknown, is missing its value, or can't be combined (`--copy` with `--symlink`). See `./install.py --help`. |
+| `FATAL: no host selected and none found on PATH` | Every host is unchecked or saved as off, and none has its CLI on PATH. Pass `--hosts`, for example `--hosts opencode`. |
+| `CONFLICT <host>/<item>` (exit 2) | The destination differs. Inspect/back up customizations, then rerun with `--force`, which replaces every item that printed `CONFLICT`. Don't narrow it with `--only` or `--skip`: they uncheck the other items, and an unchecked item the library installed is removed. |
+| `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `claude` is not on PATH `` | The host is checked (or saved as checked) but its CLI isn't installed. Install the CLI, or drop the host: uncheck it in the checklist or pass `--hosts` without it. |
+| `FAILED claude/agents-library` or `FAILED codex/agents-library` (exit 3), stderr says `` `…` exited <n> `` | The host CLI ran and failed; its output follows on stderr. See that host's section below. |
+| `FAILED <host>/<item>` (exit 3) | Read the error on stderr and check the destination. Repair that failure (for example permissions or disk space), then retry. |
+| `… is a symlink; refusing to write through it` | The guard covers the global/project root and its `agents/`/`skills/` directories. Inspect the named path with `ls -ld`. For global scope, inspect/back up dotfile-managed links and targets before deliberately converting the blocked directory to a real directory; alternatively use `--project` with real directories. `--copy` does not bypass this guard. |
 
 ### Troubleshooting Claude Code
 
@@ -444,7 +369,7 @@ Keep the clone if you install symlinks; copy installs can survive its removal.
 `claude plugin marketplace list` and `claude plugin list --json`. Marketplace
 registration and plugin installation are
 [separate steps](https://code.claude.com/docs/en/plugin-marketplaces): run the
-two commands in [Install (Claude Code plugin)](#install-claude-code-plugin).
+two commands in [Install without cloning](#install-without-cloning-claude-code-codex).
 
 **Install/update: `Permission denied (publickey)`.** The failing clone uses
 SSH, even if marketplace registration succeeded. For this public repository,
@@ -505,7 +430,7 @@ Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above,
 then restart opencode in the intended project.
 
 **Update: old skills or broken links.** Run `git pull` in the source clone;
-for copies, rerun the matching command in [Update (opencode)](#update-opencode).
+for copies, rerun the installer as in [Update](#update).
 If you moved/deleted a symlinked clone, `ls -l ~/.config/opencode/skills/` shows
 the old targets. Restore the clone or rerun the installer from its new location
 with `--force` after inspecting destination customizations. For a fresh
@@ -523,7 +448,7 @@ from that listing, use the documented `.kilo/skills/` project path:
 
 ```sh
 cd /path/to/your/project
-/path/to/agents-library/scripts/install-kilo.sh --project
+/path/to/agents-library/install.py --project --hosts kilo
 ```
 
 Resolve any [installer error](#git-access-https-ssh-and-prerequisites) above.
@@ -531,7 +456,7 @@ Restart the [Kilo CLI](https://kilo.ai/docs/code-with-ai/platforms/cli) in that
 project; these instructions target the CLI, not the editor extension.
 
 **Update: old skills or broken links.** Pull the source clone first and refresh
-copies using [Update (Kilo Code)](#update-kilo-code). For a global symlink
+copies using [Update](#update). For a global symlink
 install, inspect `ls -l ~/.config/kilo/skills/`: moving/deleting the clone breaks
 its links. Restore the clone or rerun the installer from the new clone with
 `--force` after inspecting customizations. A project copy avoids dependence on
@@ -614,8 +539,8 @@ The same command covers all four supported hosts:
 | --- | --- |
 | Claude Code | Plugin/marketplace identity, GitHub source, agent and skill discovery paths, and the intentionally versionless manifest. |
 | Codex | Plugin/marketplace identity, local source path, release version, interface metadata, availability policy, and skill discovery. |
-| opencode | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests. |
-| Kilo Code | Agent/skill symlink targets, stale or missing definitions, and installer smoke tests (shared with opencode via `scripts/install-host.sh`). |
+| opencode | Agent/skill symlink targets, stale or missing definitions, and installer tests. |
+| Kilo Code | Agent/skill symlink targets, stale or missing definitions, and installer tests (shared with every host via `install.py`, tested by `scripts/test-install.py` against stub host CLIs). |
 
 It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
@@ -683,7 +608,7 @@ The workflow bumps the version in `.codex-plugin/plugin.json`, commits
 generated notes. **Those release notes are the changelog** — there is no
 `CHANGELOG.md` to update. The Claude Code plugin stays versioned by commit SHA
 rather than by release tag, so both tools track `main` — see
-[Update (Claude Code plugin)](#update-claude-code-plugin) for how an installed
+[Update](#update) for how an installed
 copy picks it up.
 
 The skill evals are **not** part of any workflow — they spawn real agent runs

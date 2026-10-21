@@ -57,7 +57,7 @@ check_host() {
   for stray in "$dir"/agents/* "$dir"/skills/*; do
     [ -e "$stray" ] || [ -L "$stray" ] || continue
     [ -L "$stray" ] && continue
-    echo "STRAY: $stray — not a symlink; expected a link installed by install-host.sh"
+    echo "STRAY: $stray — not a symlink; expected a symlink into agents/ or skills/"
     status=1
     host_status=1
   done
@@ -68,7 +68,7 @@ check_host() {
   fi
 }
 
-# Keep this host list in sync with install-host.sh and test-check-host-sync.py.
+# Keep this host list in sync with install.py and test-check-host-sync.py.
 for dir in ".opencode" ".kilo"; do
   check_host "$dir"
 done
