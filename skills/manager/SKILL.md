@@ -119,8 +119,8 @@ For "stop after the plan", go to Phase 5.
 
 ## Phase 3 — Implement
 
-The coordinator implements behind the gate and, with a remote, opens a
-**draft** PR. Check against git: `git diff --stat` non-empty, and the gate
+The coordinator commits locally; push and PR creation wait until Phase 5.
+Check git: `git diff --stat` non-empty, and the gate
 log's `head:` is the branch head with `exit: 0`. No diff → no review; say why.
 
 ## Phase 4 — Review, validate, fix
@@ -141,8 +141,8 @@ log's `head:` is the branch head with `exit: 0`. No diff → no review; say why.
 
 ## Phase 5 — Hand back
 
-1. **Final push.** The coordinator automatically updates PR evidence,
-   pushes, and saves CI evidence.
+1. **Final push.** The coordinator pushes once, creates or updates the draft
+   PR, and saves CI evidence.
 2. **Ready.** Unless the item is `blocked`, tell the coordinator to mark the PR
    ready once rule 5's three SHAs match (`gh pr view` for the head), the gate
    exited 0, every required check passed (or none exist), and the last
