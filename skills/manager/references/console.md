@@ -89,6 +89,14 @@ edits, and a request that turns out to need a change becomes a work item.
 
 ## Approvals
 
+For implementation items, the manager invocation authorizes committing and
+pushing the item's branch, creating or updating its PR, waiting for CI, and
+marking it ready after all gates pass. Continue through final delivery without
+asking whether to push or publish. Keep Phases 0–4 local: no early draft PR
+or intermediate pushes. Publish once at Phase 5 after local gates pass;
+CI-only fixes follow the coordinator's batched recovery rule. A user-requested
+stopping point wins.
+
 A worker waiting on a permission prompt is stalled work, and almost none of
 those prompts need the user. SKILL.md rule 7 makes them yours:
 
@@ -103,7 +111,8 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   an option persists, take the session or once option. Routine is whatever the
   role's job needs: files and folders (worktree, run directory, the repository
   and its `.git`, other paths the job reads), shell commands, git commits and
-  pushes of the item's branch, `gh` for the item's draft PR, the gate — for a
+  pushes of the item's branch, `gh` for the item's PR (including ready status
+  after Phase 5's gates pass), the gate — for a
   planner or reviewer, only one that writes nowhere but the run directory —
   installs, and network fetches.
 - **Log each answer** in the board's **approvals answered** list.
@@ -132,11 +141,14 @@ escalation case is answered with reject — that action only — labelled
 rejected one is a failed member (SKILL.md rule 8).
 
 **Check afterwards** what launch rules cannot promise, since they match a
-command as written: at each coordinator event, the PR is still an open
-draft (`gh pr view <pr> --json state,isDraft`), the remote branch head is an
-ancestor of the local one (`git merge-base --is-ancestor`), and the main
-branch's remote head is the one recorded at intake. A mismatch is case 1,
-relayed at once.
+command as written: any existing remote branch head remains an ancestor of
+the local head (`git merge-base --is-ancestor`). Before Phase 5, no new PR
+exists and the remote branch is absent or unchanged from intake. For an existing PR, verify it remains
+open and draft. In Phase 5, verify the published head matches the tested
+local head, and the PR is open and ready only after authorization
+(`gh pr view <pr> --json state,isDraft,headRefOid`). The main branch's remote
+head must remain the one recorded at intake. A mismatch is case 1, relayed
+at once.
 
 ## The board
 

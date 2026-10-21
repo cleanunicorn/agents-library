@@ -3,7 +3,7 @@ name: manager
 description: >-
   Turn this session into a manager console that delegates each work item to
   worker agents (Herdr tabs, else subagents) — plan, SWOT merge, implement,
-  review, fix, one PR — tracks them on a status board, and never does the
+  review, fix, push one ready PR — tracks a status board, and never does the
   work itself. Use to manage, coordinate, or shepherd work through a PR. Not
   for planning alone (plan-feature) or review alone (review-pr).
 ---
@@ -66,6 +66,7 @@ the sibling skill's absolute path for a worker without it.
    quality adjective without a number.
 6. **One work item, one PR — the deliverable.** Milestones are checkboxes
    inside it. Nobody merges it, commits to the main branch, or force-pushes.
+   Automatically push and mark ready after gates pass, unless instructed otherwise.
    No usable remote or `gh` → ask whether a branch will do; unattended,
    deliver the branch as `blocked: no remote`.
 7. **Ask early; approvals are yours.** Only you talk to the user. Batch an
@@ -118,8 +119,8 @@ For "stop after the plan", go to Phase 5.
 
 ## Phase 3 — Implement
 
-The coordinator implements behind the gate and, with a remote, opens a
-**draft** PR. Check against git: `git diff --stat` non-empty, and the gate
+The coordinator commits locally; push and PR creation wait until Phase 5.
+Check git: `git diff --stat` non-empty, and the gate
 log's `head:` is the branch head with `exit: 0`. No diff → no review; say why.
 
 ## Phase 4 — Review, validate, fix
@@ -140,8 +141,8 @@ log's `head:` is the branch head with `exit: 0`. No diff → no review; say why.
 
 ## Phase 5 — Hand back
 
-1. **Final push.** The coordinator updates the PR evidence body, pushes, and
-   saves the CI log.
+1. **Final push.** The coordinator pushes once, creates or updates the draft
+   PR, and saves CI evidence.
 2. **Ready.** Unless the item is `blocked`, tell the coordinator to mark the PR
    ready once rule 5's three SHAs match (`gh pr view` for the head), the gate
    exited 0, every required check passed (or none exist), and the last

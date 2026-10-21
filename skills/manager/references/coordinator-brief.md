@@ -9,7 +9,8 @@ address the user.
 
 **Access.** The manager pre-grants what your job needs at launch: the
 worktree, the run directory, the repository and its `.git`, shell commands,
-git commits and pushes of the item's branch, `gh` for its draft PR, the gate,
+git commits and pushes of the item's branch, `gh` for its PR (including
+ready status when the manager authorizes it in Phase 5), the gate,
 installs, and network fetches. A permission prompt that still appears is the
 manager's to answer; wait for it rather than working around it. Host
 permission is not role permission: an "Allow" never makes a merge, a
@@ -135,13 +136,13 @@ the go-ahead.
 - Gate after each milestone, adding no failure to the baseline; commit in the
   project's format, never red; tick the Progress box.
 - When the plan proves wrong, change it and log the deviation with a reason.
-- With a remote and `gh`, push and open a **draft** PR in the project's title
-  convention with the **PR evidence** body below, and push after every later
-  phase that adds commits. Only the manager authorizes ready status. Never
-  merge. Without a remote, commit the branch: `pr: none — branch only`.
+- Keep implementation, review fixes and re-checks local. Do not push or
+  create a PR in Phases 0–4; this avoids triggering CI for intermediate work.
+  Record local commits and evidence for Phase 5. Without a remote, commit
+  the branch: `pr: none — branch only`.
 
 The **PR evidence** body shows a reader the PR is tested and reviewed; keep
-it current at every push:
+it current at final delivery:
 
 ```
 ## Progress
@@ -181,7 +182,7 @@ status:      fixed | refuted | deferred | reverted | unresolved
 Because you wrote the code, the raising reviewer audits every refutation.
 Unsettled findings stay `uncertain`: neither apply nor drop them. A confirmed
 in-scope finding that ends `reverted` or `unresolved`, or an `uncertain` one,
-keeps the PR a draft.
+blocks initial publication; an existing PR stays a draft.
 
 **Fix** each `confirmed`, `in-scope` finding, in severity order — review-pr's
 own Phase 5 steps:
@@ -206,10 +207,18 @@ line per finding — `id · verdict · status · evidence in a phrase` — and
 
 ## Phase 5 — Hand back
 
-On the manager's word:
+On the manager's Phase 5 instruction, complete these steps without a separate
+user confirmation. A manager instruction to proceed is the go-ahead to push
+and publish; ready status still requires the manager's gate verification.
 
 1. **Gate** at the branch head; save its log.
-2. **Update the PR evidence** body (`gh pr edit <pr> --body-file`) and push.
+2. **Push once at the end.** Only after local implementation, review,
+   fixes, reviewer re-checks and the final gate pass, push all local commits
+   in one normal push. Create the **draft** PR now with `gh pr create --draft
+   --body-file`, or update the existing PR with `gh pr edit --body-file`.
+   Follow the project's title convention and use the PR evidence body above.
+   Verify the remote branch and PR head match the tested local head. Do not
+   push intermediate milestones or individual review fixes.
 3. **Wait for CI** at that head: `gh pr checks <pr> --watch --required`, or
    poll; with no required checks, every check counts. Save the CI log with
    `head:` from `gh pr view <pr> --json headRefOid`. Record `none — no CI
@@ -217,10 +226,18 @@ On the manager's word:
 4. **A failing check is a finding.** Validate it (`raised_by: [CI]`), fix it
    as in Phase 4, and return to step 1; the reviewer re-checks the commits. A
    check the repository cannot fix (a missing secret, an outage) is
-   reported, not retried.
+   reported, not retried. A CI-only failure may require another push: batch
+   all fixes locally, finish review and testing, then push once for that
+   recovery round. Never skip failing checks to preserve a one-push count.
 5. **Mark the PR ready** (`gh pr ready`) only when the manager says so, and
-   confirm the worktree is clean. Never merge. A failed push or PR command is
-   reported with the exact command and its error.
+   verify with `gh pr view` that it is open, no longer a draft, and at the
+   tested head; confirm the worktree is clean. Update the PR evidence with
+   final CI results without another commit or push. Never merge. A failed
+   push or PR command is reported with the exact command and its error.
+
+One final push is the normal path; the exact number of Actions runs depends
+on the repository's workflow events (push, PR creation, ready status). Do not
+change those workflows unless requested.
 
 `summary`: the CI log path, `N of N required checks passed at <sha>` or the
 failing names, the PR head SHA, `draft | ready`.
