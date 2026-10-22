@@ -170,6 +170,102 @@ few-line result block — status, record path, head SHA, gate exit, counts —
 and hands full plans and reviews between workers by path. Three items run concurrently and a fourth queues, each in
 its own worktree with one PR and at most five workers.
 
+The manager runs three work items at once. Each item has its own team,
+led by a coordinator, and ends in its own PR. Workers don't message each other
+directly. Every arrow inside an item goes through the manager as a file path.
+
+```mermaid
+flowchart TB
+  U(["You"]) <-->|"requests · questions · approvals"| M
+  M["Manager console<br/>briefs workers · reads result blocks<br/>keeps the status board · does no work itself"]
+  Q[["Item 4+ waits in the queue"]] -.->|"starts when an item finishes"| M
+  M ==>|"starts a team per item"| C1 & C2 & C3
+
+  subgraph I1 ["Work item 1 — own worktree, branch and PR"]
+    C1["Coordinator<br/>only writer: setup · SWOT merge<br/>implement · validate · fix · push"]
+    subgraph P1 ["Planners, in parallel, read-only"]
+      P1A["Planner A<br/>plan-feature"]
+      P1B["Planner B<br/>plan-feature"]
+    end
+    subgraph R1 ["Reviewers, in parallel, read-only"]
+      R1A["Reviewer<br/>review-pr"]
+      R1B["Reviewer 2<br/>high risk only"]
+    end
+    P1 -->|"independent plans"| C1
+    C1 -->|"frozen SHA"| R1
+    R1 -->|"findings · rulings · re-checks"| C1
+    C1 --> PR1[("PR 1: tested, reviewed, ready")]
+  end
+
+  subgraph I2 ["Work item 2"]
+    C2["Coordinator"] <--> W2["Planners · Reviewers"]
+    C2 --> PR2[("PR 2")]
+  end
+
+  subgraph I3 ["Work item 3"]
+    C3["Coordinator"] <--> W3["Planners · Reviewers"]
+    C3 --> PR3[("PR 3")]
+  end
+```
+
+Here is one work item from request to ready PR. Planning and review each run
+in parallel. Review, fixing, and CI repeat until nothing is left open.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as You
+  participant M as Manager
+  participant C as Coordinator
+  participant P as Planners A and B
+  participant R as Reviewers
+  participant GH as GitHub PR and CI
+
+  U->>M: request
+  M-->>U: intake questions, asked once and early
+  M->>C: set up a worktree from main and a baseline gate
+  C-->>M: result block: worktree, baseline gate log
+  par Plan in parallel
+    M->>P: brief Planner A
+    P-->>M: plan A path
+  and
+    M->>P: brief Planner B
+    P-->>M: plan B path
+  end
+  M->>C: plan paths, authors hidden
+  C->>C: SWOT merge into one plan with a Progress checklist
+  C->>C: implement, commit locally, gate log at the head
+  C-->>M: result block: head SHA, gate exit 0
+  Note over C: freeze at one SHA, coordinator stops writing
+  par Review in parallel
+    M->>R: Reviewer 1: frozen SHA and acceptance criteria
+    R-->>M: review 1 path
+  and high risk only
+    M->>R: Reviewer 2: same SHA, reviews independently
+    R-->>M: review 2 path
+  end
+  loop until nothing is open, a failed fix goes back once and then you decide
+    M->>C: review paths
+    C-->>M: each finding confirmed, refuted or uncertain, with evidence
+    M->>R: validation record
+    R-->>M: concede or dispute each refutation
+    M->>C: fix confirmed findings
+    C-->>M: one commit per finding, gate log at the new head
+    M->>R: re-check the fix commits
+    R-->>M: re-check result and gate log
+  end
+  M->>C: final push
+  C->>GH: push once, open a draft PR, wait for CI
+  GH-->>C: CI result
+  alt a check fails
+    C-->>M: the failure becomes a finding and goes back to the loop
+  else gate, PR head and CI share one SHA, all green, nothing open
+    M->>C: mark the PR ready
+    C->>GH: mark ready, never merge
+  end
+  M-->>U: status block: done, PR URL, gate, CI, findings
+```
+
 One or two independent `plan-feature` planners feed a coordinator's SWOT
 merge and Progress checklist. The coordinator implements; one independent
 `review-pr` reviewer (two for high risk) reviews. Findings are validated with
