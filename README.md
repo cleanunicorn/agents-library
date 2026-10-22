@@ -151,6 +151,15 @@ Pick the skill that matches the job:
 
 ### The Manager Skill
 
+![Manager workflow: three parallel item teams, each with a coordinator, planners, and reviewers. Plans feed implementation and tests, followed by independent review, a fix-and-recheck loop, final push and draft PR, CI, and a ready PR. Results return to the manager.](docs/assets/manager-workflow.png)
+
+The manager launches every worker; three item teams can run concurrently. Each
+coordinator combines independent plans and implements in its own worktree;
+reviewers return findings for validation, fixes, tests, and re-checks. Local
+review and testing finish before the final push creates the draft PR. CI
+failures return to the same fix loop; the PR becomes ready only when the
+tested commit matches the PR and CI, with no open findings.
+
 [`/manager`](skills/manager/SKILL.md) turns this session into a console:
 workers do the work while it briefs them, relays questions, and maintains a
 status board. The session stays a console until you end it: every later

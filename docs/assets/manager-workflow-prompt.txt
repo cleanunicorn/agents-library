@@ -1,0 +1,21 @@
+Generated with the built-in image_gen tool.
+
+Initial prompt:
+Use case: infographic-diagram
+Asset type: illustrated workflow image for a GitHub README.
+Create a beautiful professionally art-directed editorial infographic, landscape 1536x1024 or larger, cream paper background, dark navy legible typography, restrained teal, blue and amber accents, subtle hand-drawn linework and small charming robot agent illustrations. Crisp readable text, spacious aligned composition, elegant rather than generic flowchart. No Mermaid or code aesthetic.
+Title: "How the manager delivers PRs"
+Upper half: manager console robot centered at top, label "MANAGER" and subtitle "Launches workers • relays results • tracks status". Three arrows fan out to THREE equal team panels in a horizontal row, labeled "ITEM A", "ITEM B", "ITEM C". Each panel features prominent "Coordinator" robot, two smaller planner robots side-by-side labeled "Planners" with small "parallel" label, and separate reviewer robot labeled "Reviewers". Visually group these as a team, not as coordinator spawning agents. Small note spanning all panels: "3 items in parallel • separate worktrees • one writer per item". Dashed return arrows from team panels back to manager labeled "Results + record paths". Caption under teams: "The manager starts every worker; coordinators combine plans and implement."
+Lower half: expanded lifecycle headed "Inside each team". Six numbered stages read left to right in two rows of three, connected unambiguously:
+1 "PLAN IN PARALLEL" with two small plan sheets converging; subtitle "1–2 independent planners"
+2 "COMBINE + BUILD" with coordinator; subtitle "SWOT merge • implement • run tests"
+3 "REVIEW" with reviewer magnifying glass; subtitle "Freeze commit • independent review"
+4 "FIX + RE-CHECK" with loop icon; subtitle "Validate findings • fix • test • reviewer re-check"
+5 "PUBLISH + CI" with branch/PR icon; subtitle "Final push • draft PR • CI"
+6 "READY PR" with green check; subtitle "Tests + CI pass • no open findings"
+Flow from 3 goes down to 4 on left of second row, then 4→5→6. Amber curved loop from stage 4 back to stage 3 labeled "Findings remain". Another amber small return from stage 5 to stage 4 labeled "CI fails". Keep arrows readable with no accidental ambiguity.
+Footer: "Ready requires matching commit SHAs: gate log = PR head = CI log" and smaller "Results return to the manager. One PR per item. Never auto-merged."
+Accuracy constraints: do NOT imply coordinator spawns workers; manager launches all workers. Do NOT imply planners and reviewers run simultaneously; parallel planners first, reviews after implementation. PR created only after local review and test loop passes. No extra stages or fabricated text. All specified words spelled correctly. Make primary labels large enough to read at GitHub README width.
+
+Final edit prompt:
+Edit this infographic with one precise correction. Preserve every illustration, label, color, panel and layout. Fix the blue workflow arrows: REMOVE the vertical blue arrow from panel 3 REVIEW directly down to panel 6 READY PR. Instead route a blue connector from panel 3 REVIEW through the horizontal gap between rows to the top of panel 4 FIX + RE-CHECK, arrowhead pointing into panel 4. Keep the orange Findings remain return arrow from panel 4 back to panel 3, but make it separate from the blue forward path so both are unambiguous. The sole forward order must be 1→2→3→4→5→6. Existing 4→5 and 5→6 blue arrows and orange CI fails loop stay. No other edits.
