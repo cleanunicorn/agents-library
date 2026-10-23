@@ -47,6 +47,26 @@ not a reason to open the record.
 reviewer gets the validation record's path. Open a record yourself only to
 relay a worker's question that quotes it, and then only the lines it names.
 
+## Output budget
+
+The manager and every worker follow this paragraph; each brief carries it
+word for word, and a helper's brief gets it too:
+
+**Output budget.** Every tool result stays in your context until the session
+ends, so keep each one small. Send output that can grow — a gate, a CI wait,
+a build, a log, a full diff — to a file (`> <log> 2>&1`) and read back only
+what you need: `tail -n 40 <log>`, `grep -n -m 20 '<pattern>' <log>`. Pipe
+any other command that can print more than a screen through `head`, `tail`
+or `grep`. Read a large file by line range — the host's read tool with an
+offset and limit, or `sed -n '<a>,<b>p'` — never `cat` it whole; `grep -n`
+first to find the range. A slice that cut too much is re-read narrower or
+further on, not in full.
+
+Your own reads (SKILL.md § Where the line sits) are already small; keep them
+so — `git diff --stat | tail -n 1` for a count, `git log --oneline -5`, the
+`sed` and `gh --json` checks in § Results — and never open a log or record to
+look around.
+
 ## The loop
 
 Each turn, in this order:
@@ -83,9 +103,10 @@ planner, reviewer column) on the recorded transport, a tab labelled
 `<slug>-helper-a` in Herdr, and the planner's worktree check as a native
 subagent. Its brief is the request verbatim, the skill's absolute path when
 one is named, its record path `<run_dir>/<slug>/helper-a.md`, write access
-only to the run directory, and the result block. Its `summary` holds the
-answer in at most five lines; relay those and the record path. A helper never
-edits, and a request that turns out to need a change becomes a work item.
+only to the run directory, the § Output budget paragraph, and the result
+block. Its `summary` holds the answer in at most five lines; relay those and
+the record path. A helper never edits, and a request that turns out to need a
+change becomes a work item.
 
 ## Approvals
 

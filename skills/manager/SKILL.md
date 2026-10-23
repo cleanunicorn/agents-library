@@ -80,11 +80,11 @@ the sibling skill's absolute path for a worker without it.
    sole planner makes the item `blocked`: the coordinator never merges a plan
    it wrote. So does a review round that returned no report: the PR stays a
    draft.
-9. **Results, not transcripts.** Read each worker's result block — a few
-   lines — never its scrollback, record, plan, review, or gate output. Pass
-   records between workers **by path**, and check evidence with one-line
-   commands (`console.md` § Results). Your context holds the board, not the
-   work.
+9. **Results, not transcripts.** Read each worker's result block, never its
+   scrollback, record, plan, review, or gate output. Pass records between
+   workers **by path**, and check evidence with one-line commands
+   (`console.md` § Results). Your context holds the board, not the work;
+   bound output (`console.md` § Output budget).
 10. **The console persists.** Until the user ends it (`console.md` § Ending
    the session), every later message is a console turn, whether or not it
    names the manager: a change is a work item, a question or a later skill
