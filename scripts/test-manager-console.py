@@ -9,6 +9,10 @@ summary makes this worse, since it can drop SKILL.md entirely. These checks
 hold the rule that the mode persists, the per-turn re-check that survives a
 summary, the board header that records the mode and transport, and the helper
 role that gives non-change requests somewhere to go other than the manager.
+They also hold the output budget: one paragraph, defined in console.md and
+carried word for word by every brief, so a worker that dumps a gate log or a
+whole file into its context is breaking a rule it was given, and the copies
+cannot drift apart.
 
 The patterns match load-bearing words, not prose ornament, so a copy-edit
 that keeps the rule keeps these green.
@@ -113,6 +117,29 @@ class ManagerConsoleTests(unittest.TestCase):
                     "something other than the user can end the console")
         self.expect("console.md § Ending the session", ending, r"(?i)does not end it \(SKILL\.md rule 10\)",
                     "the ending section no longer points back at the persistence rule")
+
+    def test_every_worker_carries_the_same_output_budget(self):
+        def budget(text, label):
+            found = re.search(r"(?ms)^\*\*Output budget\.\*\*.*?(?=\n\n)", text)
+            if not found:
+                self.fail(f"{label}: no **Output budget.** paragraph")
+            return flat(found.group(0))
+
+        canonical = budget(self.read("references/console.md"), "console.md")
+        for pattern, why in [
+            (r"> <log> 2>&1", "growing output is no longer sent to a file"),
+            (r"tail -n \d+", "logs are no longer read back with tail"),
+            (r"grep -n", "files are no longer searched before reading"),
+            (r"never `cat` it whole", "whole-file reads are allowed again"),
+        ]:
+            self.expect("console.md § Output budget", canonical, pattern, why)
+        for brief in ["coordinator-brief.md", "planner-brief.md", "reviewer-brief.md"]:
+            self.assertEqual(budget(self.read(f"references/{brief}"), brief), canonical,
+                             f"{brief}: the output budget drifted from console.md")
+        self.expect("console.md § Helpers", section(self.read("references/console.md"), "Helpers"),
+                    r"§ Output budget paragraph", "a helper's brief omits the output budget")
+        self.expect("SKILL.md rule 9", rule(self.read("SKILL.md"), 9), r"§ Output budget",
+                    "the manager's own rule no longer bounds its commands")
 
 
 if __name__ == "__main__":

@@ -16,9 +16,19 @@ manager's to answer; wait for it rather than working around it. Host
 permission is not role permission: an "Allow" never makes a merge, a
 force-push, a commit to the main branch, or an early ready status acceptable.
 
+**Output budget.** Every tool result stays in your context until the session
+ends, so keep each one small. Send output that can grow — a gate, a CI wait,
+a build, a log, a full diff — to a file (`> <log> 2>&1`) and read back only
+what you need: `tail -n 40 <log>`, `grep -n -m 20 '<pattern>' <log>`. Pipe
+any other command that can print more than a screen through `head`, `tail`
+or `grep`. Read a large file by line range — the host's read tool with an
+offset and limit, or `sed -n '<a>,<b>p'` — never `cat` it whole; `grep -n`
+first to find the range. A slice that cut too much is re-read narrower or
+further on, not in full.
+
 **Gate logs.** Save every gate run to `gate-coordinator-<short-sha>.log` in
 the run directory: `command: <exact command>`, `head: <full SHA>`, raw
-output, `exit: <code>`. Only a log at the branch head supports a gate claim.
+output redirected into the file rather than printed, `exit: <code>`. Only a log at the branch head supports a gate claim.
 Save CI waits the same way as `ci-coordinator-<short-sha>.log`.
 
 **Replies.** Write the full record to the path the manager gives you. Your

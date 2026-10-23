@@ -14,6 +14,16 @@ permission prompt your host still shows. Host permission is not role
 permission: a prompt to write anywhere else will be rejected, so do not ask
 for one.
 
+**Output budget.** Every tool result stays in your context until the session
+ends, so keep each one small. Send output that can grow — a gate, a CI wait,
+a build, a log, a full diff — to a file (`> <log> 2>&1`) and read back only
+what you need: `tail -n 40 <log>`, `grep -n -m 20 '<pattern>' <log>`. Pipe
+any other command that can print more than a screen through `head`, `tail`
+or `grep`. Read a large file by line range — the host's read tool with an
+offset and limit, or `sed -n '<a>,<b>p'` — never `cat` it whole; `grep -n`
+first to find the range. A slice that cut too much is re-read narrower or
+further on, not in full.
+
 ## How to work
 
 1. **Check the target first.** `review-pr` reviews `HEAD` and the working
@@ -48,7 +58,7 @@ Continue as the same reviewer:
    sweep claims, the gap it says it closed — and change nothing else. Then
    run the gate at the new head and save its log as
    `gate-reviewer-<label>-<short-sha>.log`: `command:`, `head:`, the raw
-   output, `exit:`. Send any output or cache the gate lets you place to the
+   output redirected into the file rather than printed, `exit:`. Send any output or cache the gate lets you place to the
    run directory; a gate that must write into the repository is reported to
    the manager, not run. Write a **re-check record** to the path you were
    given:
