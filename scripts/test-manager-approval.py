@@ -55,7 +55,9 @@ VERIFIED = re.compile(r"^(smoke-checked \d{4}-\d{2}-\d{2}\b|--help-derived\b|in 
 # host's ask rule writes them. A host default that allows everything (opencode,
 # kilo) otherwise lets these run silently even with no bypass flag.
 ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "git push* <main>*", "gh pr merge*",
-                       "gh pr ready*", "git branch -D*", "git worktree remove*", "rm -rf*")
+                       "gh pr ready*", "git branch -D*", "git worktree remove*", "rm -rf*",
+                       # `git -C <dir>` puts an option between git and its subcommand.
+                       "git -C * push*", "git -C * branch -D*", "git -C * worktree remove*")
 
 # Concrete commands for the recipes that match by pattern (gemini's policy, pi's
 # extension): every ESCALATING one must ask, no ROUTINE one may. `main` stands
@@ -63,8 +65,11 @@ ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "git push* <main>*",
 ESCALATING = ("git push --force origin feat/x", "git push origin feat/x -f", "git push origin +feat/x",
               "git push origin main", "git push origin HEAD:main", "gh pr merge 12 --squash",
               "gh pr ready 12", "git branch -D feat/x", "git worktree remove ../wt",
-              "rm -rf /tmp/run/x", "cd /tmp && rm -fr x")
+              "rm -rf /tmp/run/x", "cd /tmp && rm -fr x", "git -C ../wt push --force origin feat/x",
+              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other",
+              "git --no-pager -C ../wt push origin main")
 ROUTINE = ("git push origin feat/x", "git push -u origin feat/main-fix", "git status",
+           "git -C ../wt log --grep push",
            "gh pr view 12", "git branch -d feat/x", "rm notes.txt")
 
 

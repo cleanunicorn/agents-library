@@ -86,8 +86,8 @@ that reads `unknown — do not launch` rules that kind out for that role.
 `<main>` is the main branch:
 
 ```
-<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'
-<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask"}}}'
+<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)","Bash(git -C * push*)","Bash(git -C * branch -D*)","Bash(git -C * worktree remove*)"]}}'
+<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask","git -C * push*":"ask","git -C * branch -D*":"ask","git -C * worktree remove*":"ask"}}}'
 ```
 
 ```toml
@@ -99,7 +99,7 @@ priority = 100
 
 [[rule]]
 toolName = "run_shell_command"
-commandRegex = '.*\b(git\s+push\b.*\s(--force|-[a-zA-Z]*f\b|\+\S)|git\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git\s+branch\b.*\s-[a-zA-Z]*D\b|git\s+worktree\s+remove\b|rm\s+(.*\s)?-[a-zA-Z]*(r[a-zA-Z]*f|f[a-zA-Z]*r))'
+commandRegex = '.*\b(git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(--force|-[a-zA-Z]*f\b|\+\S)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+branch\b.*\s-[a-zA-Z]*D\b|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+worktree\s+remove\b|rm\s+(.*\s)?-[a-zA-Z]*(r[a-zA-Z]*f|f[a-zA-Z]*r))'
 decision = "ask_user"
 priority = 900
 

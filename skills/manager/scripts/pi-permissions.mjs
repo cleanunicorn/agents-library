@@ -39,14 +39,17 @@ const READ_COMMANDS = [
 // (`2>&1`, `>&2`) is harmless; every other `>` writes a file.
 const SHELL_WRITES = />(?!&\d)|\$\(|`|<\(/;
 
+// `git` plus any global options before the subcommand (`git -C <dir> push`).
+const GIT = String.raw`\bgit(\s+-\S+(\s+[^-\s]\S*)?)*\s+`;
+
 function escalations(main) {
   const branch = main.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return [
-    /\bgit\s+push\b.*\s(--force(-with-lease|-if-includes)?\b|-[a-zA-Z]*f\b|\+\S)/,
-    new RegExp(`\\bgit\\s+push\\b.*\\s(\\S*:)?(refs/heads/)?${branch}(\\s|$)`),
+    new RegExp(String.raw`${GIT}push\b.*\s(--force(-with-lease|-if-includes)?\b|-[a-zA-Z]*f\b|\+\S)`),
+    new RegExp(String.raw`${GIT}push\b.*\s(\S*:)?(refs/heads/)?${branch}(\s|$)`),
     /\bgh\s+pr\s+(merge|ready)\b/,
-    /\bgit\s+branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)/,
-    /\bgit\s+worktree\s+remove\b/,
+    new RegExp(String.raw`${GIT}branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)`),
+    new RegExp(String.raw`${GIT}worktree\s+remove\b`),
     recursiveForceRm,
   ].map((shape) => (typeof shape === "function" ? { test: shape } : shape));
 }
