@@ -39,6 +39,7 @@ python3 scripts/test-check-host-sync.py
 python3 scripts/test-install.py
 bash scripts/test-install-agents.sh
 ./scripts/test-diff-target.sh
+bash scripts/test-rename-herdr-tab.sh
 python3 run_evals.py --dry-run
 
 echo "All local checks passed."
