@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CANONICAL="$ROOT/skills/manager/scripts/rename-herdr-tab.sh"
-COPIES=()
+COPIES=("$ROOT/skills/file-issues/scripts/rename-herdr-tab.sh")
 pass=0
 fail=0
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR

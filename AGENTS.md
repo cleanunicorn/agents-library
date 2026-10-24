@@ -250,7 +250,7 @@ loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode and Kilo register them as
-  subagents). `skills/<name>/SKILL.md` are 10 orchestrators that fan out to
+  subagents). `skills/<name>/SKILL.md` are 11 skills; all but file-issues are orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
   plan-feature), or
@@ -263,8 +263,13 @@ loads and executes.
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
-  issue work list), and install-agents has `install-agents.sh` (copies
-  `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  issue work list), install-agents has `install-agents.sh` (copies
+  `agents/*.md` into a host project's `.claude/agents/` and seeds journals),
+  and manager and file-issues each ship a byte-identical
+  `rename-herdr-tab.sh` (labels the session's Herdr tab `<prefix> <project>`;
+  the manager copy is canonical, and `scripts/test-rename-herdr-tab.sh`
+  fails when a copy drifts, since a skill installed alone carries only its
+  own directory).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
@@ -294,7 +299,10 @@ loads and executes.
   (`references/herdr.md`, self-contained for standalone installation),
   otherwise as native subagents and plain shell.
   install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger). manager turns
+  confirmation → install via script → schedule → ledger). file-issues is a
+  long-lived linear loop with no fan-out (accept a description → search
+  open and closed issues → ground it in code → `gh issue create` → report
+  the URL → wait) that files issues and never implements. manager turns
   the invoking session into a console that does no work itself: it reads the
   request, project guidance, git state, and workers' short result blocks —
   never their full records or transcripts, which pass between workers by
@@ -402,7 +410,9 @@ loads and executes.
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
+  tests (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
+  against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), and eval case
+  validation (`--dry-run`).
   Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML

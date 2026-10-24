@@ -38,7 +38,7 @@ cd agents-library
 
 1. **Hosts**: Claude Code, Codex, opencode, and Kilo Code. Hosts whose CLI
    is on your `PATH` start checked.
-2. **Agents and skills**: the eight agents and ten skills. Uncheck any you
+2. **Agents and skills**: the eight agents and eleven skills. Uncheck any you
    don't want. This screen appears only when opencode or Kilo is checked,
    because Claude Code and Codex install the plugin as a whole.
 
@@ -62,7 +62,7 @@ reported as `KEPT`.
 Restart the host afterwards (a new Claude Code session, a new Codex thread).
 In Claude Code the agents become subagents (e.g. `architect`, `refactor`,
 `testforge`) and the skills are available as `/review-pr`, `/review-design`,
-`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
+`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`, `/file-issues`,
 `/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`,
 and `/manager`.
 
@@ -136,7 +136,7 @@ with `codex plugin list -m agents-library --json`. The manifests are
 
 Running `opencode` or `kilo` in the clone's root needs no install. They
 auto-discover `.opencode/` and `.kilo/`, whose `agents/*.md` (eight subagents,
-each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (ten skills,
+each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (eleven skills,
 loaded on demand via the `skill` tool) are symlinks to the canonical `agents/`
 and `skills/` at the repo root, so there is a single source of truth.
 
@@ -146,7 +146,7 @@ Pick the skill that matches the job:
 
 - **Deliver work:** [`/manager`](#the-manager-skill) or [`/plan-feature`](#the-feature-planning-skill).
 - **Review or improve:** [`/review-pr`](#the-pr-review-skill), [`/review-design`](#the-review-design-skill), [`/review-ux-psychology`](#the-ux-psychology-review-skill), or [`/simplify-sweep`](#the-simplify-sweep-skill).
-- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), or [`/install-agents`](#the-install-agents-skill).
+- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), [`/file-issues`](#the-issue-filing-skill), or [`/install-agents`](#the-install-agents-skill).
 - **Understand a codebase:** [`/describe-codebase`](#the-describe-codebase-skill).
 
 ### The Manager Skill
@@ -259,6 +259,17 @@ GitHub issues into a code-grounded action plan covering duplicates, easy wins,
 needs-info cases, and larger work. Every GitHub write needs per-action approval;
 approved easy wins are fixed in separate worktrees and pull requests behind the
 project's lint and test gate. Requires the `gh` CLI.
+
+### The Issue Filing Skill
+
+[`/file-issues`](skills/file-issues/SKILL.md) keeps a long-lived session that
+turns each description you give into one well-formed GitHub issue, reports its
+URL, and waits for the next. It searches open and closed issues first and
+links the existing one instead of filing a duplicate, grounds the issue in
+permalinks to the code, and follows the repository's title convention and
+existing labels. It files issues only: no code edits, branches, commits, or
+pull requests. Inside Herdr it labels its tab `issues <project>`, as the
+manager labels its own `manager <project>`. Requires the `gh` CLI.
 
 ### The Simplify Sweep Skill
 
@@ -560,7 +571,8 @@ in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-manager-approval.py`), the manager's persistent console
 (`scripts/test-manager-console.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
-regressions (`scripts/test-diff-target.sh`), and eval cases with
+regressions (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
+against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), and eval cases with
 `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual

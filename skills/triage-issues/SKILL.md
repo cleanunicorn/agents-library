@@ -5,7 +5,8 @@ description: >-
   code evidence, needs-info drafts, larger work. Applies labels, comments,
   closes duplicates, and fixes easy wins only after per-action approval. Use
   to groom the backlog, find duplicates, or fix good first issues. Requires
-  `gh`. Not for pull requests (batch-merge-prs, review-pr).
+  `gh`. Not for pull requests (batch-merge-prs, review-pr) or filing new
+  issues (file-issues).
 ---
 
 # triage-issues
