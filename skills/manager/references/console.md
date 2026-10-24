@@ -216,8 +216,9 @@ names the file so the user merges in order.
 Each item owns a worktree, branch, PR and workers, with one writer per
 worktree, and a blocked item never stops another. A coordinator's grant covers
 the whole repository, so an edit to a sibling's worktree would not prompt:
-give a claude coordinator the other active worktrees as deny rules
-(`references/herdr.md` § Pre-grants per kind). An item started later, and a
+give a claude, pi or gemini coordinator the other active worktrees as deny
+rules — claude's `<claude ask>` deny, pi's `PI_MANAGER_DENY`, gemini's
+`<other worktree>` rule (`references/herdr.md` § Pre-grants per kind). An item started later, and a
 host without path rules, rely on the coordinator brief alone. The cap of
 three active items is the user's to change.
 
