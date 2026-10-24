@@ -1,0 +1,447 @@
+#!/usr/bin/env python3
+"""Exercise the manager's worker watcher against a stub `herdr` and a fake clock.
+
+The manager used to see a worker waiting on a permission prompt only when a
+turn happened to read live state, so a prompt raised between turns could sit
+unanswered. The approval evals hand the manager a prompt directly, which
+tests the decision and never the discovery. These tests run the real watcher
+CLI as a subprocess against a stub `herdr` that serves scripted agent states
+and logs every call, with `--now` standing in for the clock, so discovery,
+deduplication, claims, backoff and the watcher's lifecycle are held without a
+live Herdr, a model, or the network.
+
+The prose-contract tests at the end hold the manager's side: the watcher
+starts before the first worker, every resume drains it, and the approval
+policy stays the manager's alone.
+"""
+
+import json
+import re
+import signal
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+MANAGER = ROOT / "skills" / "manager"
+WATCHER = MANAGER / "scripts" / "watch-workers.py"
+SECRET = "SECRET-TOKEN-4f9a"
+CLAUDE_PROMPT = f"""Bash command
+  curl -H 'Authorization: {SECRET}' https://example.test
+Do you want to proceed?
+❯ 1. Yes
+  2. Yes, and don't ask again for curl commands
+  3. No, and tell Claude what to do differently (esc)
+"""
+CONFIRM_PROMPT = "Write ~/.claude/settings.json?\nDo you want to proceed?\n❯ 1. Yes\n  2. No\n"
+WORKING_TEXT = "⏺ Reading skills/manager/SKILL.md\n✳ Thinking… (12s · esc to interrupt)\n"
+
+# A stub `herdr`: serves `agent get` and `agent read` from a scenario file the
+# test rewrites between sweeps, and logs every call so a test can prove the
+# watcher never writes terminal input.
+STUB = r'''#!/usr/bin/env python3
+import json, os, sys, time
+root = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(root, "calls.log"), "a") as log:
+    log.write(" ".join(sys.argv[1:]) + "\n")
+scenario = json.load(open(os.path.join(root, "scenario.json")))
+args = sys.argv[1:]
+if args[:2] not in (["agent", "get"], ["agent", "read"]):
+    print(json.dumps({"error": {"code": "unexpected", "message": " ".join(args)}}))
+    sys.exit(9)
+agent = scenario.get(args[2])
+if agent is None:
+    print(json.dumps({"error": {"code": "agent_not_found", "message": "not found"}, "id": "cli:agent:get"}))
+    sys.exit(1)
+time.sleep(agent.get("sleep", 0))
+if args[1] == "read":
+    sys.stdout.write(agent.get("read", ""))
+    sys.exit(0)
+record = {"agent": "claude", "agent_status": agent["status"], "name": args[2],
+          "pane_id": "w1:p9", "terminal_id": agent.get("terminal", "term_1")}
+if agent.get("session"):
+    record["agent_session"] = {"kind": "id", "value": agent["session"]}
+print(json.dumps({"id": "cli:agent:get", "result": {"agent": record}}))
+'''
+
+
+class Run:
+    """One manager run directory with its own stub Herdr."""
+
+    def __init__(self, test):
+        self.dir = Path(tempfile.mkdtemp(prefix="watcher-test-"))
+        test.addCleanup(self.cleanup)
+        self.processes = []
+        self.bin = self.dir / "bin"
+        self.bin.mkdir()
+        self.herdr = self.bin / "herdr"
+        self.herdr.write_text(STUB, encoding="utf-8")
+        self.herdr.chmod(0o755)
+        self.agents = {}
+        self.save()
+
+    def cleanup(self):
+        for process in self.processes:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        subprocess.run(["rm", "-rf", str(self.dir)], check=False)
+
+    def save(self):
+        (self.bin / "scenario.json").write_text(json.dumps(self.agents), encoding="utf-8")
+
+    def agent(self, name, status, read="", session="ses-1", sleep=0):
+        self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep}
+        self.save()
+
+    def calls(self):
+        log = self.bin / "calls.log"
+        return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+
+    def cli(self, *args, now=None, timeout=30):
+        command = [sys.executable, str(WATCHER), *args, "--run-dir", str(self.dir), "--herdr", str(self.herdr)]
+        if now is not None:
+            command += ["--now", str(now)]
+        return subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+
+    def start(self, *args):
+        command = [sys.executable, str(WATCHER), "run", "--run-dir", str(self.dir), "--herdr", str(self.herdr), *args]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        self.processes.append(process)
+        return process
+
+    def register(self, name, item="item-a", role="coordinator"):
+        result = self.cli("register", "--name", name, "--item", item, "--role", role)
+        assert result.returncode == 0, result.stdout + result.stderr
+        return result
+
+    def sweep(self, now, timeout="2"):
+        result = self.cli("sweep", "--timeout", timeout, now=now)
+        assert result.returncode == 0, result.stdout + result.stderr
+        return result
+
+    def status(self, now=None):
+        result = self.cli("status", now=now)
+        assert result.returncode == 0, result.stdout + result.stderr
+        return json.loads(result.stdout)
+
+    def events(self, state=None):
+        return [e for e in self.status()["events"] if state is None or e["state"] == state]
+
+    def wait(self, now):
+        return self.cli("wait", now=now)
+
+
+def event_ids(output):
+    return re.findall(r"(?m)^EVENT (\S+)", output)
+
+
+class DetectionTests(unittest.TestCase):
+    def test_a_blocked_worker_is_found_within_two_sweeps(self):
+        run = Run(self)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.register("coord")
+        run.sweep(now=1000)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.sweep(now=1005)
+        pending = run.events("pending")
+        self.assertEqual(len(pending), 1, "a blocked worker produced no pending event")
+        self.assertEqual((pending[0]["worker"], pending[0]["item"], pending[0]["kind"]), ("coord", "item-a", "blocked"))
+
+    def test_a_prompt_behind_a_working_status_is_found_after_two_sweeps(self):
+        run = Run(self)
+        run.agent("coord", "working", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        self.assertEqual(run.events(), [], "one working observation already triggered inspection")
+        self.assertFalse(any(" read " in f" {c} " for c in run.calls()), "a fresh working status was read")
+        run.sweep(now=1005)
+        self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"],
+                         "a prompt behind an unchanged working status was never found")
+
+    def test_an_unknown_status_is_inspected_at_once(self):
+        run = Run(self)
+        run.agent("coord", "unknown", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"])
+
+    def test_plain_work_and_finished_turns_raise_nothing(self):
+        run = Run(self)
+        run.agent("busy", "working", WORKING_TEXT)
+        run.agent("idle", "idle", CLAUDE_PROMPT)
+        run.register("busy")
+        run.register("idle", item="item-b")
+        for now in (1000, 1005, 1010):
+            run.sweep(now=now)
+        self.assertEqual(run.events(), [], "ordinary output or a finished turn raised an event")
+        self.assertFalse(any(c.startswith("agent read idle") for c in run.calls()),
+                         "a finished turn was inspected; its result file is the manager's signal")
+
+    def test_the_same_prompt_is_one_event_and_a_new_one_supersedes_it(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        run.sweep(now=1005)
+        first = run.events("pending")
+        self.assertEqual(len(first), 1, "a prompt seen twice became two events")
+        run.agent("coord", "blocked", CONFIRM_PROMPT)
+        run.sweep(now=1010)
+        states = {e["id"]: e["state"] for e in run.events()}
+        self.assertEqual(states[first[0]["id"]], "superseded", "a follow-up dialog left the old event live")
+        self.assertEqual(len(run.events("pending")), 1, "the follow-up dialog is not its own event")
+
+    def test_a_spinner_or_timer_change_does_not_split_one_prompt(self):
+        run = Run(self)
+        run.agent("coord", "blocked", "\x1b[33m✳\x1b[0m waiting 3s\n" + CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        run.agent("coord", "blocked", "✶ waiting 41s\n" + CLAUDE_PROMPT)
+        run.sweep(now=1005)
+        self.assertEqual(len(run.events()), 1, "terminal noise changed the prompt identity")
+
+    def test_a_replacement_worker_does_not_inherit_old_events(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT, session="ses-old")
+        run.register("coord")
+        run.sweep(now=1000)
+        old = run.events("pending")[0]["id"]
+        run.agent("coord", "blocked", CLAUDE_PROMPT, session="ses-new")
+        run.sweep(now=1005)
+        states = {e["id"]: e["state"] for e in run.events()}
+        self.assertEqual(states[old], "superseded", "a replacement worker inherited its predecessor's event")
+        self.assertEqual(len(run.events("pending")), 1)
+
+    def test_a_prompt_that_goes_away_is_cleared(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.sweep(now=1005)
+        self.assertEqual([e["state"] for e in run.events()], ["cleared"])
+
+    def test_one_hung_worker_does_not_stall_the_sweep(self):
+        run = Run(self)
+        run.agent("hung", "working", sleep=10)
+        run.agent("helper", "blocked", CLAUDE_PROMPT)
+        run.register("hung")
+        run.register("helper", item="question-1", role="helper")
+        started = time.monotonic()
+        run.sweep(now=1000, timeout="0.5")
+        self.assertLess(time.monotonic() - started, 5, "a hung worker serialized the sweep")
+        self.assertEqual([e["worker"] for e in run.events("pending")], ["helper"],
+                         "the helper's block was missed while another worker hung")
+        workers = {w["name"]: w for w in run.status()["workers"]}
+        self.assertEqual(workers["hung"]["failures"], 1, "the timeout was not counted")
+
+    def test_simultaneous_blocks_are_all_kept(self):
+        run = Run(self)
+        for index in range(12):
+            run.agent(f"w{index}", "blocked", CLAUDE_PROMPT, session=f"ses-{index}")
+            run.register(f"w{index}", item=f"item-{index}")
+        run.sweep(now=1000)
+        self.assertEqual(len(run.events("pending")), 12, "a block was lost when many arrived at once")
+
+    def test_a_failed_read_never_clears_an_event(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        del run.agents["coord"]
+        run.save()
+        run.sweep(now=1005)
+        self.assertEqual(len(run.events("pending")), 1, "a transport failure resolved a pending event")
+
+    def test_no_prompt_text_or_secret_is_stored_or_printed(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        outputs = [run.sweep(now=1000).stdout, run.cli("status").stdout, run.wait(now=1001).stdout]
+        stored = b"".join(p.read_bytes() for p in run.dir.glob("watcher.sqlite3*"))
+        for text in outputs + [stored.decode("utf-8", "replace")]:
+            self.assertNotIn(SECRET, text, "prompt text leaked into the store or an output")
+            self.assertNotIn("curl", text, "prompt text leaked into the store or an output")
+
+    def test_the_watcher_never_writes_terminal_input(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        for now in (1000, 1005, 1010):
+            run.sweep(now=now)
+            run.wait(now=now + 1)
+        verbs = {" ".join(c.split()[:2]) for c in run.calls()}
+        self.assertEqual(verbs, {"agent get", "agent read"}, "the watcher called more than get and read")
+        herdr_verbs = re.findall(r'\["agent", "([a-z-]+)"', WATCHER.read_text(encoding="utf-8"))
+        self.assertEqual(set(herdr_verbs), {"get", "read"}, "the watcher source can call more than get and read")
+
+
+class HandlingTests(unittest.TestCase):
+    def blocked_run(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        run.sweep(now=1000)
+        return run, run.events("pending")[0]["id"]
+
+    def test_wait_names_the_event_and_backs_off_to_thirty_seconds(self):
+        run, event = self.blocked_run()
+        first = run.wait(now=1000)
+        self.assertEqual(first.returncode, 0)
+        self.assertRegex(first.stdout, rf"(?m)^EVENT {event} worker=coord item=item-a role=coordinator kind=blocked$")
+        last = 1000
+        for gap in (5, 10, 20, 30, 30):
+            self.assertEqual(event_ids(run.wait(now=last + gap - 1).stdout), [], f"re-notified before the {gap} s backoff")
+            self.assertEqual(event_ids(run.wait(now=last + gap).stdout), [event], f"not re-notified after {gap} s")
+            last += gap
+
+    def test_a_claim_is_the_acknowledgment_and_has_one_winner(self):
+        run, event = self.blocked_run()
+        run.wait(now=1000)
+        won = run.cli("claim", "--event", event, now=1001)
+        lost = run.cli("claim", "--event", event, now=1001)
+        self.assertEqual(won.returncode, 0, won.stdout)
+        self.assertNotEqual(lost.returncode, 0, "two handlers claimed the same event")
+        self.assertIn("NOT_CLAIMABLE", lost.stdout)
+        self.assertEqual(event_ids(run.wait(now=1010).stdout), [], "a claimed event was notified again")
+
+    def test_an_unresolved_claim_is_due_again_after_thirty_seconds(self):
+        run, event = self.blocked_run()
+        run.cli("claim", "--event", event, now=1000)
+        self.assertEqual(event_ids(run.wait(now=1029).stdout), [], "a claim expired early")
+        self.assertEqual(event_ids(run.wait(now=1030).stdout), [event], "an abandoned claim was never retried")
+
+    def test_resolve_needs_the_claim_token(self):
+        run, event = self.blocked_run()
+        token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1000).stdout).group(1)
+        self.assertNotEqual(run.cli("resolve", "--event", event, "--token", "wrong", now=1001).returncode, 0)
+        self.assertEqual(run.cli("resolve", "--event", event, "--token", token, now=1001).returncode, 0)
+        self.assertEqual([e["state"] for e in run.events()], ["resolved"])
+        self.assertEqual(event_ids(run.wait(now=1100).stdout), [])
+
+    def test_an_answered_prompt_that_cleared_resolves_quietly(self):
+        run, event = self.blocked_run()
+        token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1000).stdout).group(1)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.sweep(now=1005)
+        result = run.cli("resolve", "--event", event, "--token", token, now=1006)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("ALREADY cleared", result.stdout)
+
+    def test_awaiting_the_user_stays_visible_without_notifications(self):
+        run, event = self.blocked_run()
+        token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1000).stdout).group(1)
+        self.assertEqual(run.cli("await-user", "--event", event, "--token", token, now=1001).returncode, 0)
+        for now in (1031, 1100, 2000):
+            self.assertEqual(event_ids(run.wait(now=now).stdout), [], "an event awaiting the user was re-notified")
+        self.assertEqual(run.status()["counts"]["awaiting_user"], 1, "the event awaiting the user left the board")
+        again = run.cli("claim", "--event", event, now=2001)
+        self.assertEqual(again.returncode, 0, "the user's answer cannot be applied")
+
+    def test_wait_times_out_without_events(self):
+        run = Run(self)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.register("coord")
+        run.sweep(now=1000)
+        result = run.wait(now=1001)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout.strip(), "TIMEOUT")
+
+
+class LifecycleTests(unittest.TestCase):
+    INTERVAL = "0.2"
+
+    def until(self, check, seconds=5):
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            if check():
+                return True
+            time.sleep(0.05)
+        return False
+
+    def test_one_watcher_per_run_and_stop_ends_only_this_one(self):
+        first, second = Run(self), Run(self)
+        for run in (first, second):
+            run.agent("coord", "working", WORKING_TEXT)
+            run.register("coord")
+        a = first.start("--interval", self.INTERVAL)
+        b = second.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: first.status()["watcher"]["alive"] and second.status()["watcher"]["alive"]))
+        duplicate = first.cli("run", "--interval", self.INTERVAL, timeout=10)
+        self.assertEqual(duplicate.stdout.strip().split()[0], "ALREADY_RUNNING", duplicate.stdout)
+        stopped = first.cli("stop", timeout=10)
+        self.assertIn("STOPPED", stopped.stdout)
+        self.assertEqual(a.wait(timeout=5), 0)
+        self.assertFalse(first.status()["watcher"]["alive"])
+        self.assertIsNone(b.poll(), "stopping one run's watcher stopped another's")
+        self.assertTrue(second.status()["watcher"]["alive"])
+
+    def test_status_reports_identity_heartbeat_and_pending_count(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["counts"]["pending"] == 1), "the running watcher found nothing")
+        watcher = run.status()["watcher"]
+        self.assertRegex(watcher["instance"], r"^[0-9a-f]{8}$")
+        self.assertLess(watcher["heartbeat_age"], 2)
+        self.assertTrue(watcher["alive"])
+
+    def test_a_crashed_watcher_is_reported_and_replaced_without_losing_events(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        crashed = run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["counts"]["pending"] == 1))
+        old = run.status()["watcher"]["instance"]
+        crashed.send_signal(signal.SIGKILL)
+        crashed.wait()
+        self.assertTrue(self.until(lambda: not run.status()["watcher"]["alive"]), "a dead watcher still looks alive")
+        stale = run.cli("wait", timeout=10)
+        self.assertIn("WATCHER stale", stale.stdout, "a waiting manager is never told its watcher died")
+        run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
+        self.assertNotEqual(run.status()["watcher"]["instance"], old)
+        time.sleep(0.5)
+        self.assertEqual(len(run.events()), 1, "a restart lost or duplicated the pending event")
+
+    def test_a_superseded_watcher_exits_instead_of_competing(self):
+        run = Run(self)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.register("coord")
+        paused = run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
+        paused.send_signal(signal.SIGSTOP)
+        self.assertTrue(self.until(lambda: not run.status()["watcher"]["alive"]))
+        run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
+        paused.send_signal(signal.SIGCONT)
+        self.assertEqual(paused.wait(timeout=5), 0)
+        self.assertIn("SUPERSEDED", paused.stdout.read())
+
+    def test_unregistered_workers_are_no_longer_polled(self):
+        run = Run(self)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.register("coord")
+        run.cli("unregister", "--name", "coord")
+        run.sweep(now=1000)
+        self.assertEqual(run.calls(), [], "a closed worker is still polled")
+
+    def test_a_newer_store_is_refused_not_reset(self):
+        run = Run(self)
+        run.register("coord")
+        with sqlite3.connect(run.dir / "watcher.sqlite3") as db:
+            db.execute("PRAGMA user_version = 99")
+        result = run.cli("status")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SCHEMA", result.stdout + result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()
