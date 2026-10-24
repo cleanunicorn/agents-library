@@ -136,8 +136,9 @@ def herdr(binary, args, timeout):
 
 
 def instance_key(agent):
-    session = (agent.get("agent_session") or {}).get("value")
-    return session or agent.get("terminal_id") or ""
+    session = agent.get("agent_session")
+    value = session.get("value") if isinstance(session, dict) else None
+    return str(value or agent.get("terminal_id") or "")
 
 
 def prompt_identity(screen):
@@ -158,6 +159,8 @@ def observe(binary, worker, timeout):
     try:
         agent = json.loads(raw)["result"]["agent"]
     except (TypeError, ValueError, KeyError):
+        agent = None
+    if not isinstance(agent, dict):
         return {"name": worker["name"], "error": True}
     status = agent.get("agent_status", "unknown")
     streak = worker["status_streak"] + 1 if status == worker["last_status"] else 1

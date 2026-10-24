@@ -59,6 +59,9 @@ if agent is None:
     print(json.dumps({"error": {"code": "agent_not_found", "message": "not found"}, "id": "cli:agent:get"}))
     sys.exit(1)
 time.sleep(agent.get("sleep", 0))
+if "raw" in agent:
+    print(agent["raw"])
+    sys.exit(0)
 if args[1] == "read":
     sys.stdout.write(agent.get("read", ""))
     sys.exit(0)
@@ -254,6 +257,20 @@ class DetectionTests(unittest.TestCase):
                          "the helper's block was missed while another worker hung")
         workers = {w["name"]: w for w in run.status()["workers"]}
         self.assertEqual(workers["hung"]["failures"], 1, "the timeout was not counted")
+
+    def test_a_malformed_agent_record_is_a_failed_poll_not_a_crash(self):
+        run = Run(self)
+        run.agents["gone"] = {"raw": json.dumps({"result": {"agent": None}})}
+        run.agents["odd"] = {"raw": json.dumps({"result": {"agent": {"agent_status": "blocked", "agent_session": "x"}}})}
+        run.agents["list"] = {"raw": json.dumps({"result": []})}
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        for name in ("gone", "odd", "list", "coord"):
+            run.register(name)
+        run.sweep(now=1000)
+        failures = {w["name"]: w["failures"] for w in run.status()["workers"]}
+        self.assertEqual((failures["gone"], failures["list"]), (1, 1), "a malformed record was not counted as a failed poll")
+        self.assertEqual(sorted(e["worker"] for e in run.events("pending")), ["coord", "odd"],
+                         "one malformed record stopped detection for the others")
 
     def test_simultaneous_blocks_are_all_kept(self):
         run = Run(self)
