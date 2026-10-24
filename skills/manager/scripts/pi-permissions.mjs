@@ -25,13 +25,14 @@ const WRITE_TOOLS = new Set(["write", "edit"]);
 // Commands a reader may run unasked: each segment of a pipeline or chain must
 // match one of these. Each excludes the options that make its command write a
 // file or run a program: git's --output and --ext-diff, rg's --pre, find's
-// -exec and -fprint families; sed is limited to printing a line range, since
-// a sed script can write (`w`) or execute (`e`).
+// -exec and -fprint families; sed is limited to printing a line range over
+// file operands, since a sed script can write (`w`) or execute (`e`) and GNU
+// sed takes options such as -i after the script too.
 const READ_COMMANDS = [
   /^git (log|diff|show|status|rev-parse|blame|branch --show-current)\b(?!.*\s--(output|ext-diff)\b)/,
   /^(ls|cat|head|tail|grep|wc|pwd)\b/,
   /^rg\b(?!.*\s--pre\b)/,
-  /^sed -n ['"]?\d+(,\d+)?p['"]?(\s+[^\s'"]+)*$/,
+  /^sed -n ['"]?\d+(,\d+)?p['"]?(\s+[^-\s'"][^\s'"]*)*$/,
   /^find\b(?!.*\s-(exec|execdir|delete|ok|okdir|fprint|fprint0|fprintf|fls)\b)/,
 ];
 
