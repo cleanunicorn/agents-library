@@ -460,8 +460,10 @@ class ManagerApprovalTests(unittest.TestCase):
         self.assertIsNotNone(ban, "herdr.md no longer bans the prompt-removing flags")
         for flag in BANNED_FLAGS + (f"pi without `{PI_EXTENSION}`",):
             with self.subTest(flag=flag):
-                self.assertIn(f"`{flag}" if flag.startswith("-") else flag, ban.group(0),
-                              f"herdr.md's ban omits {flag}")
+                # A dash flag is a substring of longer ones (`-f` sits inside `--force`),
+                # so it must appear opening its own code span.
+                named = f"`{flag}" if flag.startswith("-") else flag
+                self.assertIn(named, ban.group(0), f"herdr.md's ban omits {flag}")
 
     def test_bypass_matches_every_banned_flag_and_spares_the_recipes(self):
         # The cell scan is only as wide as BYPASS; prove it sees each banned shape.
