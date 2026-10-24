@@ -477,6 +477,18 @@ class LifecycleTests(unittest.TestCase):
         self.assertLess(watcher["heartbeat_age"], 2)
         self.assertTrue(watcher["alive"])
 
+    def test_the_run_log_carries_no_prompt_text(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        run.register("coord")
+        watcher = run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["counts"]["pending"] == 1))
+        run.cli("stop", timeout=10)
+        log = watcher.communicate(timeout=5)[0]
+        self.assertRegex(log, r"(?m)^EVENT ", "the run log never recorded the event")
+        self.assertNotIn(SECRET, log, "prompt text leaked into watcher.log")
+        self.assertNotIn("curl", log, "prompt text leaked into watcher.log")
+
     def test_a_crashed_watcher_is_reported_and_replaced_without_losing_events(self):
         run = Run(self)
         run.agent("coord", "blocked", CLAUDE_PROMPT)
