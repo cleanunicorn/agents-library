@@ -430,6 +430,16 @@ class LifecycleTests(unittest.TestCase):
         self.assertIsNone(b.poll(), "stopping one run's watcher stopped another's")
         self.assertTrue(second.status()["watcher"]["alive"])
 
+    def test_stop_is_safe_when_no_watcher_runs(self):
+        run = Run(self)
+        fresh = run.cli("stop", timeout=10)
+        self.assertEqual((fresh.returncode, fresh.stdout.strip()), (0, "NOT_RUNNING"), "stop fails on a fresh run")
+        run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
+        run.cli("stop", timeout=10)
+        again = run.cli("stop", timeout=10)
+        self.assertEqual((again.returncode, again.stdout.strip()), (0, "NOT_RUNNING"), "a second stop fails")
+
     def test_status_reports_identity_heartbeat_and_pending_count(self):
         run = Run(self)
         run.agent("coord", "blocked", CLAUDE_PROMPT)
