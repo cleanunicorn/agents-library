@@ -44,12 +44,15 @@ worktree's commits land in `<repo>/.git` (`git rev-parse --git-common-dir`),
 outside the worktree. `<worktree>` is the item's worktree, which exists only
 after the coordinator creates it, so only later workers start there.
 
-| kind | coordinator | planner, reviewer — writes only to the run directory |
-|------|-------------|------------------------------------------------------|
-| claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` |
-| codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write asks once and you answer it for the session, and so does a reviewer's gate that writes only to the run directory (`TMPDIR=<run_dir>`) |
-| opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
-| any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
+| kind | coordinator | planner, reviewer — writes only to the run directory | verified |
+|------|-------------|------------------------------------------------------|----------|
+| claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` | in use |
+| codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write asks once and you answer it for the session, and so does a reviewer's gate that writes only to the run directory (`TMPDIR=<run_dir>`) | in use |
+| opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else | in use |
+| pi | `tab create --env PI_MANAGER_ROLE=coordinator --env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main> --env PI_MANAGER_DENY=<other worktrees>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs` | `tab create --env PI_MANAGER_ROLE=planner` (or `reviewer`, adding `--env PI_MANAGER_GATE=<gate command>`) `--env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs`; a write outside `<run_dir>` is blocked, and a command other than a read or the gate asks | smoke-checked 2026-10-24, pi 1.2.0 |
+| gemini | `--approval-mode auto_edit --include-directories <run_dir>,<repo> --policy <run_dir>/<slug>/gemini-coordinator.toml`, that file holding `<gemini coordinator policy>` | `--approval-mode default --include-directories <run_dir> --policy <run_dir>/<slug>/gemini-reader.toml`, that file holding `<gemini reader policy>`; writes outside `<run_dir>/<slug>/` are denied | --help-derived; unknown whether the installed release has `--policy` — when `gemini --help` does not list it, both cells are unknown: do not launch |
+| cursor | `--workspace <repo>`; no per-process allow or ask rule exists, so each command not allowed by the user's own config prompts, escalations included; answer a routine one once, never with an option that saves a rule | unknown — do not launch under this role: no per-process way to limit writes to the run directory | --help-derived |
+| any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory | fallback |
 
 Why: claude's `auto` mode would approve a push to the main branch, so an ask
 rule forces the prompt, loaded for that session only by `--settings`; its
@@ -58,6 +61,28 @@ none. opencode and kilo allow every tool by default, so their ask rules come
 in through the environment, for that agent only. codex has no per-command ask
 rule and `-a on-request` leaves asking to the model, so its sandbox is the
 prompt surface: without network, a remote write cannot run unasked.
+pi asks before no tool call at all (its `docs/security.md`), so the
+skill's own extension `<manager>/scripts/pi-permissions.mjs` (`<manager>` is
+this skill's directory) is the prompt surface: it reads the role from the
+tab's environment, asks for each escalation command every time, blocks a
+reader's write outside `<run_dir>`, and blocks every call when a setting is
+missing; `--no-extensions` keeps other extensions from answering first.
+Smoke check (herdr 0.9.5, pi 1.2.0): `rm -rf` raised the extension's
+"Allow once / Deny" dialog and Deny left the target intact, a planner's
+write into the worktree was blocked and its run-directory write allowed —
+and Herdr reported the agent `done`, not `blocked`, while the dialog was up,
+so read a pi pane before trusting `done`.
+gemini's `--policy` file replaces the user's own policy directory for that
+process (gemini-cli `packages/core/src/policy/config.ts`), and an `ask_user`
+rule outranks the routine allow by priority. cursor reads permissions only
+from `~/.cursor/cli-config.json` or the project's `.cursor/cli.json`, a
+global file and a checked-in one, so nothing per-process can grant or limit
+it. **verified** says how far each row is proven: `smoke-checked` — started
+in a Herdr tab, prompted, and an escalation surfaced as a prompt;
+`--help-derived` — read from the kind's help, source or official docs,
+never run here, with every cell those do not settle reading `unknown`; `in
+use` — the recipe the manager already runs; `fallback` — no recipe. A cell
+that reads `unknown — do not launch` rules that kind out for that role.
 `<main>` is the main branch:
 
 ```
@@ -65,10 +90,67 @@ prompt surface: without network, a remote write cannot run unasked.
 <opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask"}}}'
 ```
 
+```toml
+# <gemini coordinator policy>
+[[rule]]
+toolName = "run_shell_command"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '.*\b(git\s+push\b.*\s(--force|-[a-zA-Z]*f\b|\+\S)|git\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git\s+branch\b.*\s-[a-zA-Z]*D\b|git\s+worktree\s+remove\b|rm\s+(.*\s)?-[a-zA-Z]*(r[a-zA-Z]*f|f[a-zA-Z]*r))'
+decision = "ask_user"
+priority = 900
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"<other worktree>/'
+decision = "deny"
+priority = 950
+```
+
+```toml
+# <gemini reader policy> = the ask_user rule above, then:
+[[rule]]
+toolName = ["read_file", "grep_search", "glob", "list_directory"]
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["git log", "git diff", "git show", "git status"]
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "deny"
+priority = 150
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"<run_dir>/<slug>/[^"/]+\.(md|result|log)"'
+decision = "allow"
+priority = 200
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"[^"]*\.\.'
+decision = "deny"
+priority = 300
+```
+
+Whether gemini splits a chained command (`git log && …`) before matching a
+`commandPrefix` is unknown, so the after-the-fact check below still applies
+to a gemini reader.
+
 `<run_dir>` is absolute, so claude's rule reads `Edit(//tmp/…/**)`. Never
 launch with `--dangerously-skip-permissions`, `--permission-mode
 bypassPermissions`, `--dangerously-bypass-approvals-and-sandbox`, codex
-`-a never`, or opencode or kilo `--auto`: `-a never` fails the action
+`-a never`, opencode or kilo `--auto`, gemini `--yolo`, `-y` or
+`--approval-mode yolo`, cursor `--force`, `-f` or `--yolo`, or pi without
+`-e <manager>/scripts/pi-permissions.mjs`: `-a never` fails the action
 silently and the others approve it silently — `--auto` even approves an ask
 rule, since it passes everything not explicitly denied — so no escalation
 case could reach you. Ask rules match a command as written, so a variant can
