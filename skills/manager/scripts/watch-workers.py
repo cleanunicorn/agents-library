@@ -70,8 +70,11 @@ PROMPT_PATTERNS = [re.compile(p, re.IGNORECASE) for p in (
     r"[\[(]y/n[\])]",
 )]
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07")
-# Spinners and timers redraw while a prompt waits; they must not change its identity.
-NOISE = re.compile(r"[⠀-⣿✠-❋⏵⏺·•●○◐◓◑◒|/\\-]+(?=\s)|\d+")
+# Spinners, elapsed timers and token counters redraw while a prompt waits; they
+# must not change its identity. Other digits are the prompt's own (a pid, a port,
+# a path) and stay, so a changed command is a new event.
+NOISE = re.compile(r"[⠀-⣿✠-❋⏵⏺·•●○◐◓◑◒|/\\-]+(?=\s)"
+                   r"|\b\d+(?:\.\d+)?\s?(?:ms|s|m|h)\b|\b\d+(?:\.\d+)?k?\s+tokens\b")
 
 
 class StoreError(Exception):
