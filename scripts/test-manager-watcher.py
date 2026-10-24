@@ -580,8 +580,19 @@ class LifecycleTests(unittest.TestCase):
         with sqlite3.connect(run.dir / "watcher.sqlite3") as db:
             db.execute("PRAGMA user_version = 99")
         result = run.cli("status")
-        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 3, "a refused store does not exit 3")
         self.assertIn("SCHEMA", result.stdout + result.stderr)
+
+    def test_a_corrupt_or_missing_store_exits_3_and_names_its_path(self):
+        run = Run(self)
+        (run.dir / "watcher.sqlite3").write_bytes(b"not a database" * 100)
+        corrupt = run.cli("status")
+        self.assertEqual(corrupt.returncode, 3, corrupt.stdout + corrupt.stderr)
+        self.assertRegex(corrupt.stdout, rf"^STORE_ERROR {re.escape(str(run.dir / 'watcher.sqlite3'))}: ")
+        missing = subprocess.run([sys.executable, str(WATCHER), "status", "--run-dir", str(run.dir / "no-such-dir")],
+                                 capture_output=True, text=True)
+        self.assertEqual(missing.returncode, 3, missing.stdout + missing.stderr)
+        self.assertIn("no-such-dir", missing.stdout)
 
 
 def flat(text):
