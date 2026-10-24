@@ -244,6 +244,26 @@ class DetectionTests(unittest.TestCase):
         run.sweep(now=1005)
         self.assertEqual([e["state"] for e in run.events()], ["cleared"])
 
+    def test_the_same_prompt_after_its_event_closed_is_a_new_event(self):
+        for close in ("cleared", "resolved"):
+            with self.subTest(close=close):
+                run = Run(self)
+                run.agent("coord", "blocked", CLAUDE_PROMPT)
+                run.register("coord")
+                run.sweep(now=1000)
+                first = run.events("pending")[0]["id"]
+                if close == "resolved":
+                    token = re.search(r"token=(\S+)", run.cli("claim", "--event", first, now=1001).stdout).group(1)
+                    run.cli("resolve", "--event", first, "--token", token, now=1002)
+                else:
+                    run.agent("coord", "working", WORKING_TEXT)
+                    run.sweep(now=1005)
+                run.agent("coord", "blocked", CLAUDE_PROMPT)
+                run.sweep(now=1010)
+                states = {e["id"]: e["state"] for e in run.events()}
+                self.assertEqual(states[first], close, "the closed event was reopened")
+                self.assertEqual(len(run.events("pending")), 1, "a re-asked prompt was swallowed or crashed the sweep")
+
     def test_one_hung_worker_does_not_stall_the_sweep(self):
         run = Run(self)
         run.agent("hung", "working", sleep=10)
