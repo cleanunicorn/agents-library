@@ -71,11 +71,13 @@ PROMPT_PATTERNS = [re.compile(p, re.IGNORECASE) for p in (
     r"[\[(]y/n[\])]",
 )]
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07")
-# Spinners, elapsed timers and token counters redraw while a prompt waits; they
-# must not change its identity. Other digits are the prompt's own (a pid, a port,
-# a path) and stay, so a changed command is a new event.
-NOISE = re.compile(r"[⠀-⣿✠-❋⏵⏺·•●○◐◓◑◒|/\\-]+(?=\s)"
-                   r"|\b\d+(?:\.\d+)?\s?(?:ms|s|m|h)\b|\b\d+(?:\.\d+)?k?\s+tokens\b")
+# A spinner line (one that starts with a spinner glyph) redraws its elapsed time
+# and token count while a prompt waits; that must not change the prompt's
+# identity. Every other line is the prompt's own — a pid, a `timeout 10s`, a
+# path — and is kept as is, so a changed command is a new event.
+SPINNER_LINE = re.compile(r"^\s*[\u2800-\u28ff\u2720-\u274b\u23f5\u23fa·•●○◐◓◑◒]+(?=\s)")
+DURATION = r"\d+(?:\.\d+)?\s?(?:ms|s|m|h)\b"
+REDRAWN = re.compile(rf"\b{DURATION}(?:\s*{DURATION})*|\b\d+(?:\.\d+)?k?\s+tokens\b")
 
 
 class StoreError(Exception):
@@ -142,10 +144,16 @@ def instance_key(agent):
     return str(value or agent.get("terminal_id") or "")
 
 
+def normalize(line):
+    if SPINNER_LINE.match(line):
+        line = REDRAWN.sub("#", SPINNER_LINE.sub("", line))
+    return " ".join(line.split())
+
+
 def prompt_identity(screen):
     """Hash the normalized screen; the text itself is discarded."""
-    lines = [NOISE.sub("#", ANSI.sub("", line)).split() for line in screen.splitlines()]
-    normalized = "\n".join(" ".join(words) for words in lines if words)
+    lines = [normalize(ANSI.sub("", line)) for line in screen.splitlines()]
+    normalized = "\n".join(line for line in lines if line)
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 

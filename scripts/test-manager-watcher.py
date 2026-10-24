@@ -224,26 +224,30 @@ class DetectionTests(unittest.TestCase):
 
     def test_a_spinner_or_timer_change_does_not_split_one_prompt(self):
         run = Run(self)
-        run.agent("coord", "blocked", "\x1b[33m✳\x1b[0m waiting 3s\n" + CLAUDE_PROMPT)
+        run.agent("coord", "blocked", "\x1b[33m✳\x1b[0m Thinking… (3s · ↓ 1.2k tokens)\n" + CLAUDE_PROMPT)
         run.register("coord")
         run.sweep(now=1000)
-        run.agent("coord", "blocked", "✶ waiting 41s\n" + CLAUDE_PROMPT)
+        run.agent("coord", "blocked", "✶ Thinking… (1m 41s · ↓ 3.4k tokens)\n" + CLAUDE_PROMPT)
         run.sweep(now=1005)
         self.assertEqual(len(run.events()), 1, "terminal noise changed the prompt identity")
 
     def test_a_prompt_that_differs_only_in_a_number_is_a_new_event(self):
-        run = Run(self)
-        run.agent("coord", "blocked", "Bash command\n  kill 1234\nDo you want to proceed?\n❯ 1. Yes\n")
-        run.register("coord")
-        run.sweep(now=1000)
-        first = run.events("pending")[0]["id"]
-        token = re.search(r"token=(\S+)", run.cli("claim", "--event", first, now=1001).stdout).group(1)
-        run.cli("await-user", "--event", first, "--token", token, now=1002)
-        run.agent("coord", "blocked", "Bash command\n  kill 5678\nDo you want to proceed?\n❯ 1. Yes\n")
-        run.sweep(now=1005)
-        states = {e["id"]: e["state"] for e in run.events()}
-        self.assertEqual(states[first], "superseded", "a changed pid stayed hidden behind the parked event")
-        self.assertEqual(len(run.events("pending")), 1, "a prompt for a different pid raised no event")
+        for before, after in [("kill 1234", "kill 5678"),
+                              ("timeout 10s ./deploy.sh", "timeout 20s ./deploy.sh"),
+                              ("cat /tmp/10s/report", "cat /tmp/20s/report")]:
+            with self.subTest(before=before):
+                run = Run(self)
+                run.agent("coord", "blocked", f"Bash command\n  {before}\nDo you want to proceed?\n❯ 1. Yes\n")
+                run.register("coord")
+                run.sweep(now=1000)
+                first = run.events("pending")[0]["id"]
+                token = re.search(r"token=(\S+)", run.cli("claim", "--event", first, now=1001).stdout).group(1)
+                run.cli("await-user", "--event", first, "--token", token, now=1002)
+                run.agent("coord", "blocked", f"Bash command\n  {after}\nDo you want to proceed?\n❯ 1. Yes\n")
+                run.sweep(now=1005)
+                states = {e["id"]: e["state"] for e in run.events()}
+                self.assertEqual(states[first], "superseded", "a changed command stayed hidden behind the parked event")
+                self.assertEqual(len(run.events("pending")), 1, "a prompt for a different command raised no event")
 
     def test_a_replacement_worker_does_not_inherit_old_events(self):
         run = Run(self)
