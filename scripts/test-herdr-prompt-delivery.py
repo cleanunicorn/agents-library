@@ -39,9 +39,21 @@ REQUIRED = [
      "a stalled gate is the non-delivery signal"),
     (r"still `idle`[^.]*\bread\b[^.]*re-prompt once",
      "still idle: read the pane, then re-prompt once"),
+    (r"shows no turn started[^.]*re-prompt once",
+     "re-prompt only when the pane shows no turn started"),
     (r"timeout after activity is not a reason",
      "a timeout after activity never triggers a resend"),
 ]
+
+# Where a second missed delivery goes: each skill installs on its own, so
+# the manager hands it to its member-failure rule and batch-merge to its own
+# fallback.
+SECOND_MISS = {
+    "manager": (r"second miss is a member that fails \(SKILL\.md rule 8\)",
+                "is a member that fails (SKILL.md rule 8)"),
+    "batch-merge-prs": (r"second miss fails that worker: use § Fallback",
+                        "fails that worker: use § Fallback"),
+}
 
 # An unconditional instruction to prompt without the gate must not return.
 FORBIDDEN = re.compile(r"prompt[^.]*\b(without|no)\s+`--wait`", re.IGNORECASE)
@@ -52,11 +64,13 @@ def flat(text):
     return " ".join(text.split())
 
 
-def problems(text):
+def problems(text, skill):
     """Return every way a Herdr reference breaks the delivery contract."""
     found = []
     body = flat(text)
-    for pattern, why in REQUIRED:
+    second_miss, _ = SECOND_MISS.get(skill, (r"second miss fails", ""))
+    required = REQUIRED + [(second_miss, "a second missed delivery fails the worker")]
+    for pattern, why in required:
         if not re.search(pattern, body):
             found.append(f"{why} — nothing matched {pattern!r}")
     if FORBIDDEN.search(body):
@@ -72,21 +86,29 @@ class HerdrPromptDeliveryTests(unittest.TestCase):
     def test_each_reference_gates_prompt_delivery(self):
         for path in REFERENCES:
             with self.subTest(path=str(path.relative_to(ROOT))):
-                self.assertEqual(problems(path.read_text(encoding="utf-8")), [])
+                text = path.read_text(encoding="utf-8")
+                self.assertEqual(problems(text, path.parent.parent.name), [])
 
     def test_checker_catches_regressions(self):
         """The checker must fail on the shapes that let #66 through."""
-        good = (ROOT / "skills/manager/references/herdr.md").read_text(encoding="utf-8")
-        mutations = {
-            "old no-wait bullet back": good + "\n- Prompt without `--wait`, then wait.\n",
-            "gate removed": good.replace("--wait --timeout", "--timeout"),
-            "retry unbounded": flat(good).replace("re-prompt once", "re-prompt"),
-            "resend after activity": flat(good).replace(
-                "timeout after activity is not a reason", "timeout is a reason"),
-        }
-        for label, text in mutations.items():
-            with self.subTest(mutation=label):
-                self.assertNotEqual(problems(text), [], "mutation went unnoticed")
+        for skill in sorted(EXPECTED):
+            good = flat((ROOT / "skills" / skill / "references/herdr.md")
+                        .read_text(encoding="utf-8"))
+            mutations = {
+                "old no-wait bullet back": good + " - Prompt without `--wait`, then wait.",
+                "gate removed": good.replace("--wait --timeout", "--timeout"),
+                "retry unbounded": good.replace("re-prompt once", "re-prompt"),
+                "resend after activity": good.replace(
+                    "timeout after activity is not a reason", "timeout is a reason"),
+                "no-turn condition dropped": good.replace(
+                    "if it shows no turn started, re-prompt", "re-prompt"),
+                "second miss ignored": good.replace(
+                    SECOND_MISS[skill][1], "is waited on"),
+            }
+            for label, text in mutations.items():
+                with self.subTest(skill=skill, mutation=label):
+                    self.assertNotEqual(text, good, "mutation changed nothing")
+                    self.assertNotEqual(problems(text, skill), [], "mutation went unnoticed")
 
 
 if __name__ == "__main__":
