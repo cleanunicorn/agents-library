@@ -91,7 +91,7 @@ def connect(run_dir):
                 id INTEGER PRIMARY KEY CHECK (id = 1), instance TEXT, pid INTEGER, started_at REAL,
                 heartbeat_at REAL, interval REAL, stop_requested INTEGER DEFAULT 0, stopped_at REAL);
             CREATE TABLE IF NOT EXISTS workers (
-                name TEXT PRIMARY KEY, item TEXT, role TEXT, instance_key TEXT,
+                name TEXT PRIMARY KEY, item TEXT, role TEXT, generation TEXT, instance_key TEXT,
                 last_status TEXT, status_streak INTEGER DEFAULT 0, failures INTEGER DEFAULT 0);
             CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY, worker TEXT, item TEXT, role TEXT, instance_key TEXT,
@@ -176,6 +176,9 @@ def observe(binary, worker, timeout):
 
 def record(db, worker, seen, now):
     """Fold one observation into the store; returns the id of a new event, if any."""
+    current = db.execute("SELECT generation FROM workers WHERE name = ?", (worker["name"],)).fetchone()
+    if current is None or current["generation"] != worker["generation"]:
+        return None  # unregistered or re-registered while this observation was in flight
     if seen["error"]:
         db.execute("UPDATE workers SET failures = failures + 1 WHERE name = ?", (seen["name"],))
         return None
@@ -394,8 +397,8 @@ def status(db, args):
 
 def register(db, args):
     with transaction(db):
-        db.execute("INSERT OR REPLACE INTO workers (name, item, role) VALUES (?, ?, ?)",
-                   (args.name, args.item, args.role))
+        db.execute("INSERT OR REPLACE INTO workers (name, item, role, generation) VALUES (?, ?, ?, ?)",
+                   (args.name, args.item, args.role, uuid.uuid4().hex[:12]))
     print(f"REGISTERED {args.name} item={args.item} role={args.role}")
     return 0
 

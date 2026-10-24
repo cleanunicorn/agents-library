@@ -433,6 +433,22 @@ class LifecycleTests(unittest.TestCase):
         run.sweep(now=1000)
         self.assertEqual(run.calls(), [], "a closed worker is still polled")
 
+    def test_an_observation_in_flight_across_unregister_is_dropped(self):
+        for reregister in (False, True):
+            with self.subTest(reregister=reregister):
+                run = Run(self)
+                run.agent("coord", "blocked", CLAUDE_PROMPT, sleep=0.6)
+                run.register("coord")
+                sweep = subprocess.Popen([sys.executable, str(WATCHER), "sweep", "--run-dir", str(run.dir),
+                                          "--herdr", str(run.herdr), "--now", "1000"],
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.assertTrue(self.until(lambda: any(c.startswith("agent get") for c in run.calls())))
+                run.cli("unregister", "--name", "coord")
+                if reregister:
+                    run.register("coord", item="item-b")
+                sweep.communicate(timeout=10)
+                self.assertEqual(run.events(), [], "a torn-down worker's late observation raised an event")
+
     def test_a_newer_store_is_refused_not_reset(self):
         run = Run(self)
         run.register("coord")
