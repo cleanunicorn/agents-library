@@ -553,6 +553,24 @@ class ManagerApprovalTests(unittest.TestCase):
                         got = gemini_decision(policies[name], tool, {"content": "x", "file_path": path})
                         self.assertEqual(got, want)
 
+    def test_pi_extension_fails_closed_in_its_source(self):
+        # Runs without node, so the skip below never leaves the contract unchecked.
+        source = PI_SCRIPT.read_text(encoding="utf-8")
+        flat = " ".join(source.split())
+        for label, pattern in {
+            "a bad role, run dir or main branch is a settings error": r"(?s)(return \{ error:.*){3}",
+            "a settings error blocks every call": r"if \(config\.error\) return `\$\{BLOCKED\}",
+            "an unknown tool asks": r'return "ask"; \} export default',
+            "no UI blocks an approval": r"if \(!ctx\.hasUI\) return \{ block: true",
+            "only an explicit Allow lets an approval through": r'if \(choice === "Allow once"\) return undefined; return \{ block: true',
+            "a reader write outside the run dir blocks": r"inside\(target, config\.runDir\)\) return \"allow\"; return `\$\{BLOCKED\}",
+        }.items():
+            with self.subTest(contract=label):
+                self.assertRegex(flat, pattern, f"pi-permissions.mjs: {label} — no longer in the source")
+        for shape in (r"push\b", r"gh\s+pr\s+(merge|ready)", r"branch\b", r"worktree\s+remove", "recursiveForceRm"):
+            with self.subTest(escalation=shape):
+                self.assertIn(shape, source, "an escalation shape left pi's extension")
+
     @unittest.skipUnless(shutil.which("node"), "node not on PATH: pi's extension is not exercised")
     def test_pi_extension_enforces_each_role(self):
         with tempfile.TemporaryDirectory() as scratch:
