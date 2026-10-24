@@ -619,6 +619,8 @@ class ProseContractTests(unittest.TestCase):
                         "the handling steps are missing or out of order: claim, re-read, answer, resolve")
         self.expect("herdr.md § Watch for prompts", steps, r"NOT_CLAIMABLE.{0,80}ignore it",
                     "a late or duplicate notice can trigger a second answer")
+        self.expect("herdr.md § Watch for prompts", steps, r"STALE_TOKEN.{0,120}claim it again.{0,80}without sending anything again",
+                    "a lapsed claim has no remedy, inviting a second answer")
         self.expect("herdr.md § Watch for prompts", steps, r"(?i)new event.{0,80}never by repeating keys",
                     "a confirmation dialog can be answered by replaying keys")
         self.expect("herdr.md § Watch for prompts", steps, r"await-user.{0,120}without further notices",

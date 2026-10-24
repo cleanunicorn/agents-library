@@ -164,8 +164,10 @@ directory of the header's `skill` path, and every call takes `--run-dir
      that screen is not raised again until it changes.
   3. Answer it as § Drive's `blocked` bullet says, then `herdr agent get`
      until the worker leaves `blocked`, and `<watcher> resolve --event <id>
-     --token <token>`. A confirmation dialog or the next prompt arrives as a
-     new event: handle it the same way, never by repeating keys.
+     --token <token>`. `STALE_TOKEN` means the claim lapsed while you
+     answered: claim it again and resolve with the new token, without
+     sending anything again. A confirmation dialog or the next prompt
+     arrives as a new event: handle it the same way, never by repeating keys.
   4. A prompt relayed to the user: `<watcher> await-user --event <id>
      --token <token>`. It stays on the board without further notices; with
      the user's answer, claim it again and go on from step 2.
