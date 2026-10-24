@@ -128,8 +128,8 @@ class Run:
         assert result.returncode == 0, result.stdout + result.stderr
         return result
 
-    def status(self, now=None):
-        result = self.cli("status", now=now)
+    def status(self):
+        result = self.cli("status")
         assert result.returncode == 0, result.stdout + result.stderr
         return json.loads(result.stdout)
 
