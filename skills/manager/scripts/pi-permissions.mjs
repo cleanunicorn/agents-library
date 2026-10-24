@@ -50,8 +50,8 @@ function escalations(main) {
     /\bgh\s+pr\s+(merge|ready)\b/,
     new RegExp(String.raw`${GIT}branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)`),
     new RegExp(String.raw`${GIT}worktree\s+remove\b`),
-    recursiveForceRm,
-  ].map((shape) => (typeof shape === "function" ? { test: shape } : shape));
+    { test: recursiveForceRm },
+  ];
 }
 
 // `rm -rf`, `rm -fr`, `rm -r -f`, `rm --recursive --force`, in any order.
