@@ -25,14 +25,14 @@ python3 scripts/test-plugin-layout.py
 echo "Checking every fix sweeps the whole repository..."
 python3 scripts/test-fix-everywhere.py
 
+echo "Checking batch-merge-prs answers routine worker approvals and relays the rare ones..."
+python3 scripts/test-batch-merge-approval.py
+
 echo "Checking the README table of contents and in-page links..."
 python3 scripts/test-readme-toc.py
 
 echo "Checking the manager answers routine approvals and relays the rare ones..."
 python3 scripts/test-manager-approval.py
-
-echo "Checking batch-merge-prs answers routine worker approvals and relays the rare ones..."
-python3 scripts/test-batch-merge-approval.py
 
 echo "Checking the manager stays a console for every later message..."
 python3 scripts/test-manager-console.py
