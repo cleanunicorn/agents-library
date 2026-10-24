@@ -56,6 +56,7 @@ OUTPUT_CAP = 64 * 1024
 LISTED_EVENTS = 50
 
 ACTIVE = ("pending", "claimed", "awaiting_user")
+IS_ACTIVE = f"state IN {ACTIVE}"
 # Statuses that end a turn: the worker's result file is the manager's signal,
 # so an unchanged idle or done status is never a reason to read the screen.
 FINISHED = ("idle", "done")
@@ -101,7 +102,7 @@ def connect(run_dir):
                 prompt_hash TEXT, kind TEXT, state TEXT, detected_at REAL, updated_at REAL,
                 claim_token TEXT, claimed_at REAL, notified_at REAL, notify_count INTEGER DEFAULT 0);
             CREATE UNIQUE INDEX IF NOT EXISTS one_active_prompt ON events (worker, instance_key, prompt_hash)
-                WHERE state IN ('pending', 'claimed', 'awaiting_user');
+                WHERE {IS_ACTIVE};
             PRAGMA user_version = {SCHEMA_VERSION};
             COMMIT;
         """)
@@ -191,9 +192,8 @@ def record(db, worker, seen, now):
         return None
     db.execute("UPDATE workers SET last_status = ?, status_streak = ?, failures = 0, instance_key = ?"
                " WHERE name = ?", (seen["status"], seen["streak"], seen["instance_key"], seen["name"]))
-    active = f"state IN {ACTIVE}"
     # A replacement worker under the same name never inherits its predecessor's prompts.
-    db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {active}"
+    db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {IS_ACTIVE}"
                " AND instance_key != ?", (now, seen["name"], seen["instance_key"]))
     # A suspected screen the manager resolved stays dismissed until the screen
     # changes; a `blocked` status always raises, since Herdr itself says so.
@@ -202,14 +202,14 @@ def record(db, worker, seen, now):
     db.execute("UPDATE workers SET dismissed_hash = NULL WHERE name = ?", (seen["name"],))
     if seen["prompt_hash"] is None:
         if seen["status"] not in ("blocked", "unknown"):
-            db.execute(f"UPDATE events SET state = 'cleared', updated_at = ? WHERE worker = ? AND {active}",
+            db.execute(f"UPDATE events SET state = 'cleared', updated_at = ? WHERE worker = ? AND {IS_ACTIVE}",
                        (now, seen["name"]))
         return None
     # A different prompt from the same worker (a follow-up dialog) replaces the old one.
-    db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {active}"
+    db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {IS_ACTIVE}"
                " AND prompt_hash != ?", (now, seen["name"], seen["prompt_hash"]))
     existing = db.execute(f"SELECT id FROM events WHERE worker = ? AND instance_key = ? AND prompt_hash = ?"
-                          f" AND {active}", (seen["name"], seen["instance_key"], seen["prompt_hash"])).fetchone()
+                          f" AND {IS_ACTIVE}", (seen["name"], seen["instance_key"], seen["prompt_hash"])).fetchone()
     if existing:
         db.execute("UPDATE events SET updated_at = ? WHERE id = ?", (now, existing["id"]))
         return None
@@ -393,7 +393,7 @@ def status(db, args):
         counts[row["state"]] = row["n"]
     events = [dict(row) for row in db.execute(
         "SELECT id, worker, item, role, kind, state FROM events ORDER BY"
-        f" state IN {ACTIVE} DESC, detected_at DESC LIMIT {LISTED_EVENTS}")]
+        f" {IS_ACTIVE} DESC, detected_at DESC LIMIT {LISTED_EVENTS}")]
     print(json.dumps({
         "watcher": {
             "instance": held["instance"] if held else None,
@@ -420,7 +420,7 @@ def register(db, args):
 def unregister(db, args):
     with transaction(db):
         db.execute("DELETE FROM workers WHERE name = ?", (args.name,))
-        db.execute(f"UPDATE events SET state = 'cleared', updated_at = ? WHERE worker = ? AND state IN {ACTIVE}",
+        db.execute(f"UPDATE events SET state = 'cleared', updated_at = ? WHERE worker = ? AND {IS_ACTIVE}",
                    (clock(args), args.name))
     print(f"UNREGISTERED {args.name}")
     return 0
