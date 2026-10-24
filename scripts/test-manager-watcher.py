@@ -650,6 +650,18 @@ def section(text, heading):
     return found.group(0)
 
 
+class StatusLineInventoryTests(unittest.TestCase):
+    def test_agents_md_lists_every_line_the_watcher_prints(self):
+        source = WATCHER.read_text(encoding="utf-8")
+        printed = set(re.findall(r'(?:print\(f?|append\()"([A-Z][A-Z_]+)', source))
+        printed |= {"EVENT", "RESOLVED", "AWAITING_USER"}  # built by event_line and settle's state.upper()
+        agents = flat((ROOT / "AGENTS.md").read_text(encoding="utf-8"))
+        inventory = re.search(r"`(START\|[^`]+)` lines from watch-workers\.py", agents)
+        self.assertIsNotNone(inventory, "AGENTS.md lost the watcher's status-line inventory")
+        listed = set(re.findall(r"[A-Z][A-Z_]+", inventory.group(1)))
+        self.assertEqual(printed - listed, set(), "AGENTS.md omits status lines the watcher prints")
+
+
 class ProseContractTests(unittest.TestCase):
     """The manager's side: the watcher is started, drained, and kept healthy."""
 

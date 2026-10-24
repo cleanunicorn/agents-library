@@ -393,9 +393,10 @@ loads and executes.
   (`PRAGMA user_version` 1: `lease`, `workers {name, item, role,
   instance_key, last_status, status_streak, failures}`, `events {id, worker,
   item, role, instance_key, prompt_hash, kind, state, …}` — never prompt
-  text) with its `START|ALREADY_RUNNING|STOPPED|SUPERSEDED|EVENT|CLAIMED|
-  NOT_CLAIMABLE|RESOLVED|AWAITING_USER|ALREADY|STALE_TOKEN|WATCHER stale|
-  TIMEOUT` lines from watch-workers.py.
+  text) with its `START|ALREADY_RUNNING|STOPPED|STOP_REQUESTED|NOT_RUNNING|
+  SUPERSEDED|EVENT|SWEEP|REGISTERED|UNREGISTERED|CLAIMED|NOT_CLAIMABLE|
+  RESOLVED|AWAITING_USER|ALREADY|STALE_TOKEN|UNKNOWN|WATCHER stale|TIMEOUT|
+  STORE_ERROR` lines from watch-workers.py.
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under
