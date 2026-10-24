@@ -639,10 +639,10 @@ class ManagerApprovalTests(unittest.TestCase):
             ]
             payload = [{"env": e, "tool": t, "input": i, "cwd": str(run_dir)} for e, t, i, _ in cases]
             # The registered hook: an escalation with no UI, or a denied one, blocks.
-            hooks = [({"ui": None}, "block"), ({"ui": "Deny"}, "block"), ({"ui": "Allow once"}, "allow")]
+            # Each hook case is the dialog's answer; an absent "ui" key means no UI at all.
+            hooks = [({}, "block"), ({"ui": "Deny"}, "block"), ({"ui": "Allow once"}, "allow")]
             payload += [{"hook": True, "env": coordinator, "tool": "bash", "input": bash("rm -rf x"),
                          "cwd": str(run_dir), **ui} for ui, _ in hooks]
-            payload[-3].pop("ui")
             result = subprocess.run(["node", "--input-type=module", "-e", PI_DRIVER, "--",
                                      PI_SCRIPT.as_uri(), json.dumps(payload)],
                                     capture_output=True, text=True)
