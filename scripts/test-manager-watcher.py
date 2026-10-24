@@ -443,6 +443,21 @@ class HandlingTests(unittest.TestCase):
         run.sweep(now=1025)
         self.assertEqual(len(run.events("pending")), 1, "the same prompt returning later was never raised")
 
+    def test_a_dismissal_does_not_carry_over_to_a_replacement_session(self):
+        for status in ("unknown", "working"):
+            with self.subTest(status=status):
+                run = Run(self)
+                run.agent("coord", "unknown", CLAUDE_PROMPT, session="ses-old")
+                run.register("coord")
+                run.sweep(now=1000)
+                event = run.events("pending")[0]["id"]
+                token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1001).stdout).group(1)
+                run.cli("resolve", "--event", event, "--token", token, now=1002)
+                run.agent("coord", status, CLAUDE_PROMPT, session="ses-new")
+                for now in (1005, 1010):
+                    run.sweep(now=now)
+                self.assertEqual(len(run.events("pending")), 1, "a new session inherited the old session's dismissal")
+
     def test_awaiting_the_user_stays_visible_without_notifications(self):
         run, event = self.blocked_run()
         token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1000).stdout).group(1)

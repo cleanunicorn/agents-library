@@ -161,7 +161,8 @@ directory of the header's `skill` path, and every call takes `--run-dir
   2. Re-read the current prompt (§ Drive, `blocked`) and check the worker
      and item still match the event before answering. A `suspected` event
      with no prompt on screen is resolved without sending anything;
-     that screen is not raised again until it changes.
+     that screen is not raised again until it or the worker's session
+     changes.
   3. Answer it as § Drive's `blocked` bullet says, then `herdr agent get`
      until the worker leaves `blocked`, and `<watcher> resolve --event <id>
      --token <token>`. `STALE_TOKEN` means the claim lapsed while you

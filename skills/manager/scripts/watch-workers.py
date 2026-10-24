@@ -191,7 +191,7 @@ def observe(binary, worker, timeout):
 
 def record(db, worker, seen, now):
     """Fold one observation into the store; returns the id of a new event, if any."""
-    current = db.execute("SELECT generation, dismissed_hash FROM workers WHERE name = ?",
+    current = db.execute("SELECT generation, instance_key, dismissed_hash FROM workers WHERE name = ?",
                          (worker["name"],)).fetchone()
     if current is None or current["generation"] != worker["generation"]:
         return None  # unregistered or re-registered while this observation was in flight
@@ -204,8 +204,10 @@ def record(db, worker, seen, now):
     db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {IS_ACTIVE}"
                " AND instance_key != ?", (now, seen["name"], seen["instance_key"]))
     # A suspected screen the manager resolved stays dismissed until the screen
-    # changes; a `blocked` status always raises, since Herdr itself says so.
-    if seen["kind"] == "suspected" and seen["prompt_hash"] == current["dismissed_hash"]:
+    # or the worker's session changes; a `blocked` status always raises, since
+    # Herdr itself says so.
+    same_session = current["instance_key"] == seen["instance_key"]
+    if seen["kind"] == "suspected" and same_session and seen["prompt_hash"] == current["dismissed_hash"]:
         return None
     db.execute("UPDATE workers SET dismissed_hash = NULL WHERE name = ?", (seen["name"],))
     if seen["prompt_hash"] is None:
