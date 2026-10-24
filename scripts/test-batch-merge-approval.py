@@ -28,8 +28,9 @@ MANAGER_REFERENCE = re.compile(r"skills/manager|\.\./manager|manager/references|
 
 # Each escalation case in herdr.md § Approvals, by the words that make it
 # that case. All of a case's words must sit in one numbered item, in any order.
+# Words match as substrings, so none may hide inside another ("push" in "force-push").
 ESCALATIONS = {
-    "merges and remote writes": ("merging", "push", "force-push", "pr write", "main branch"),
+    "merges and remote writes": ("merging", "a push", "force-push", "pr write", "main branch"),
     "destruction outside the run": ("rm -rf", "branch", "worktree", "this run did not create"),
     "secrets and global settings": ("secrets", "credentials", "global"),
     "the ask-first list": ("ask-first list",),
