@@ -372,7 +372,8 @@ def claim(db, args):
     return 0
 
 
-def settle(db, args, state):
+def settle(db, args):
+    state = "resolved" if args.command == "resolve" else "awaiting_user"
     with transaction(db):
         event = db.execute("SELECT * FROM events WHERE id = ?", (args.event,)).fetchone()
         if event is None:
@@ -479,8 +480,6 @@ def main(argv):
     except (StoreError, sqlite3.Error) as error:
         print(f"STORE_ERROR {Path(args.run_dir) / STORE}: {error}")
         return 3
-    if args.command in ("resolve", "await-user"):
-        return settle(db, args, "resolved" if args.command == "resolve" else "awaiting_user")
     return args.handler(db, args)
 
 
