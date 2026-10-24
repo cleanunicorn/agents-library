@@ -263,8 +263,12 @@ loads and executes.
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
-  issue work list), and install-agents has `install-agents.sh` (copies
-  `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  issue work list), install-agents has `install-agents.sh` (copies
+  `agents/*.md` into a host project's `.claude/agents/` and seeds journals),
+  and manager has `watch-workers.py` (Python 3.9+, stdlib: one background
+  watcher per Herdr run that polls every worker every 5 s, records prompts
+  as deduplicated events in `<run_dir>/watcher.sqlite3`, and wakes the
+  manager through a host background `wait`, never terminal input).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
@@ -315,8 +319,10 @@ loads and executes.
   (`references/console.md`). Inside Herdr (its `herdr` skill present,
   `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
   current workspace (`references/herdr.md`); otherwise as native subagents;
-  with neither, the manager refuses. Planners and reviewers only read; one
-  agent writes per worktree.
+  with neither, the manager refuses. On Herdr a watcher started before the
+  first worker detects prompts between turns (`references/herdr.md` §
+  Watch for prompts); the manager still claims, decides and answers them.
+  Planners and reviewers only read; one agent writes per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -383,7 +389,13 @@ loads and executes.
   `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
   `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
   exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
-  attribute-failure.sh).
+  attribute-failure.sh); and manager's watcher store `watcher.sqlite3`
+  (`PRAGMA user_version` 1: `lease`, `workers {name, item, role,
+  instance_key, last_status, status_streak, failures}`, `events {id, worker,
+  item, role, instance_key, prompt_hash, kind, state, …}` — never prompt
+  text) with its `START|ALREADY_RUNNING|STOPPED|SUPERSEDED|EVENT|CLAIMED|
+  NOT_CLAIMABLE|RESOLVED|AWAITING_USER|ALREADY|STALE_TOKEN|WATCHER stale|
+  TIMEOUT` lines from watch-workers.py.
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under
@@ -397,7 +409,9 @@ loads and executes.
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), the manager's approval contract
   (`scripts/test-manager-approval.py`), the manager's persistent console
-  (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
+  (`scripts/test-manager-console.py`), the manager's worker watcher against
+  a stub `herdr` and fixed clock (`scripts/test-manager-watcher.py`),
+  opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger

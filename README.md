@@ -198,6 +198,13 @@ reviewers use a different agent kind from the coordinator when available.
 
 With Herdr and its skill installed, each worker has a tab in your current
 workspace; otherwise it uses native subagents. With neither, it refuses.
+In Herdr, a background watcher polls every worker every five seconds and
+records each permission prompt or question as an event in the run
+directory, so a prompt raised between turns is not missed; the manager
+learns of it through a host background command and still decides every
+answer. Herdr 0.9.5 offers no safe way to message the manager's own
+terminal, so the watcher never types into it: wake-ups are as reliable as
+the host's background commands, and native subagents get no watcher.
 Transport instructions are local to each skill so either can be installed
 alone. The manager never merges a PR.
 
@@ -558,7 +565,8 @@ word ceilings on agent and skill roots), the fix-everywhere contract
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), the manager's approval contract
 (`scripts/test-manager-approval.py`), the manager's persistent console
-(`scripts/test-manager-console.py`), skill-installer write failures and ledger
+(`scripts/test-manager-console.py`), the manager's worker watcher against a
+stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), and eval cases with
 `run_evals.py --dry-run`.

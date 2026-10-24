@@ -27,12 +27,11 @@ approvals and recovery. Three items run concurrently and a fourth queues, each
 with its own slug, worktree, branch, PR and workers; tag relays `[<slug>]`.
 
 With a `herdr` skill and `test "${HERDR_ENV:-}" = 1 && command -v herdr`,
-use `references/herdr.md`; otherwise native subagents. With neither, refuse
+use `references/herdr.md`, starting its prompt watcher before the first
+worker; otherwise native subagents. With neither, refuse
 and ask for Herdr or another host: never do the work yourself. Decide once,
 on the first turn, and record it in the board header (`console.md` § The
-board); every worker this session starts uses that transport. On Herdr,
-start the prompt watcher on that same turn, before the first worker
-(`references/herdr.md` § Watch for prompts).
+board); every worker this session starts uses that transport.
 
 ## The team
 
@@ -102,8 +101,7 @@ the sibling skill's absolute path for a worker without it.
 2. **Ask** what the request and guidance cannot answer (rule 7) before any
    planner starts.
 3. **Start the coordinator** on setup: a fresh worktree from the main branch,
-   a baseline gate log, the project's conventions. No gate command → ask;
-   unattended, the item is `blocked`.
+   a baseline gate log, the project's conventions.
 4. **Pick the team**, add the board row, and show Progress — Phases 1–5 as
    `- [ ]`.
 

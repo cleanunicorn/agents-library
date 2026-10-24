@@ -469,7 +469,7 @@ class ProseContractTests(unittest.TestCase):
         return section(self.read("references/herdr.md"), "Watch for prompts")
 
     def test_the_watcher_starts_before_the_first_worker(self):
-        self.expect("SKILL.md", self.read("SKILL.md"), r"(?i)on herdr, start the prompt watcher.{0,40}before the first worker",
+        self.expect("SKILL.md", self.read("SKILL.md"), r"(?i)references/herdr\.md`, starting its prompt watcher before the first worker",
                     "workers can start before anything watches them")
         self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)start it before the first worker",
                     "the start step lost its ordering")
