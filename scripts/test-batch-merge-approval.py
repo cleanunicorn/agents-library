@@ -97,6 +97,8 @@ class BatchMergeApprovalTests(unittest.TestCase):
                     "auto-answers are not logged for the user to audit")
         self.expect(label, policy, r"(?i)time.{0,20}worker.{0,20}asked.{0,20}option",
                     "the approvals log no longer says what each row records")
+        self.expect(label, policy, r"(?i)own one-line summary.{0,80}never the prompt's text pasted in",
+                    "a prompt's text, secrets and all, could be pasted into the log")
         self.expect(label, policy, r"(?i)redact",
                     "a secret shown in a prompt could reach the log or the user")
         report = self.read("SKILL.md")

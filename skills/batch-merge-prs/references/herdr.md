@@ -47,7 +47,9 @@ target:
   prompt` is refused while blocked — confirm any follow-up dialog, then
   `herdr agent get <name>` until it is no longer `blocked`.
 - **Log each answer** as a `| time | worker | asked | option |` row in
-  `<run-dir>/approvals.md`, escalations and rejections included.
+  `<run-dir>/approvals.md`, escalations and rejections included. Its
+  `asked` cell is your own one-line summary of the action and target, with
+  pipes and newlines stripped, never the prompt's text pasted in.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it reaches the log or the user.
 - **Relay to the user only** these cases, verbatim with the host's options,
