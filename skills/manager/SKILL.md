@@ -30,7 +30,9 @@ With a `herdr` skill and `test "${HERDR_ENV:-}" = 1 && command -v herdr`,
 use `references/herdr.md`; otherwise native subagents. With neither, refuse
 and ask for Herdr or another host: never do the work yourself. Decide once,
 on the first turn, and record it in the board header (`console.md` § The
-board); every worker this session starts uses that transport.
+board); every worker this session starts uses that transport. On Herdr,
+start the prompt watcher on that same turn, before the first worker
+(`references/herdr.md` § Watch for prompts).
 
 ## The team
 

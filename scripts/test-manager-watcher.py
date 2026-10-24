@@ -443,5 +443,89 @@ class LifecycleTests(unittest.TestCase):
         self.assertIn("SCHEMA", result.stdout + result.stderr)
 
 
+def flat(text):
+    """Collapse whitespace so a rule wrapped across lines still matches."""
+    return " ".join(text.split())
+
+
+def section(text, heading):
+    found = re.search(rf"(?ms)^## {heading}\n.*?(?=^## |\Z)", text)
+    if not found:
+        raise AssertionError(f"no '## {heading}' section")
+    return found.group(0)
+
+
+class ProseContractTests(unittest.TestCase):
+    """The manager's side: the watcher is started, drained, and kept healthy."""
+
+    def read(self, relative):
+        return (MANAGER / relative).read_text(encoding="utf-8")
+
+    def expect(self, label, text, pattern, why):
+        if not re.search(pattern, flat(text)):
+            self.fail(f"{label}: {why} — nothing matched {pattern!r}")
+
+    def watch(self):
+        return section(self.read("references/herdr.md"), "Watch for prompts")
+
+    def test_the_watcher_starts_before_the_first_worker(self):
+        self.expect("SKILL.md", self.read("SKILL.md"), r"(?i)on herdr, start the prompt watcher.{0,40}before the first worker",
+                    "workers can start before anything watches them")
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)start it before the first worker",
+                    "the start step lost its ordering")
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)register every worker.{0,120}helpers and replacements",
+                    "helpers or replacement workers go unwatched")
+
+    def test_every_command_the_prose_names_exists(self):
+        named = set(re.findall(r"<watcher> ([a-z-]+)", flat(self.watch() + self.read("references/console.md"))))
+        named |= set(re.findall(r"\(`([a-z-]+) --name`\)", self.watch()))
+        self.assertTrue(named, "the prose names no watcher command")
+        usage = subprocess.run([sys.executable, str(WATCHER), "--help"], capture_output=True, text=True).stdout
+        offered = set(re.search(r"\{([a-z,-]+)\}", usage).group(1).split(","))
+        self.assertLessEqual(named, offered, f"the prose names commands the script lacks: {sorted(named - offered)}")
+
+    def test_the_manager_claims_rereads_and_verifies(self):
+        steps = flat(self.watch())
+        order = [steps.find(word) for word in ("claim --event", "Re-read the current prompt", "resolve --event")]
+        self.assertTrue(all(i >= 0 for i in order) and order == sorted(order),
+                        "the handling steps are missing or out of order: claim, re-read, answer, resolve")
+        self.expect("herdr.md § Watch for prompts", steps, r"NOT_CLAIMABLE.{0,80}ignore it",
+                    "a late or duplicate notice can trigger a second answer")
+        self.expect("herdr.md § Watch for prompts", steps, r"(?i)new event.{0,80}never by repeating keys",
+                    "a confirmation dialog can be answered by replaying keys")
+        self.expect("herdr.md § Watch for prompts", steps, r"await-user.{0,120}without further notices",
+                    "a prompt waiting on the user keeps nagging or drops off the board")
+        self.expect("console.md § The loop", section(self.read("references/console.md"), "The loop"),
+                    r"(?i)drain the watcher's events first, whether or not it woke you",
+                    "a manager that resumes on its own leaves pending events")
+
+    def test_the_watcher_only_detects_and_policy_stays_the_managers(self):
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)only detects and notifies",
+                    "the watcher's role grew past detection")
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)§ Approvals, unchanged",
+                    "the approval policy is no longer the manager's")
+        self.expect("herdr.md § Watch for prompts", self.watch(),
+                    r"(?i)only `herdr agent get` and `herdr agent read` and never writes to a terminal",
+                    "the watcher may type into a terminal")
+
+    def test_the_delivery_blocker_is_stated(self):
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)protocol 22\) has no queued or idle-conditional delivery",
+                    "the Herdr integration blocker is no longer documented")
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)wake-up is only as reliable as the host",
+                    "the docs claim reliable wake-ups")
+
+    def test_health_restart_and_stop_are_run_scoped(self):
+        board = section(self.read("references/console.md"), "The board")
+        self.assertRegex(board, r"watcher <instance> · heartbeat <age>s · pending <N>",
+                         "the board header lost the watcher's identity, heartbeat or pending count")
+        self.expect("herdr.md § Watch for prompts", self.watch(), r"(?i)never re-prompts a worker or resends a brief",
+                    "watcher recovery may resend task briefs")
+        self.expect("console.md § Ending the session", section(self.read("references/console.md"), "Ending the session"),
+                    r"(?i)stop this run's watcher.{0,80}never stops another run's", "ending may stop another run's watcher")
+        self.expect("console.md § Native subagents", section(self.read("references/console.md"), "Native subagents"),
+                    r"(?i)no watcher runs.{0,120}claim no continuous monitoring",
+                    "native runs claim monitoring they do not have")
+
+
 if __name__ == "__main__":
     unittest.main()
