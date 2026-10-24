@@ -73,6 +73,8 @@ write into the worktree was blocked and its run-directory write allowed —
 and Herdr reported the agent `done`, not `blocked`, while the dialog was up.
 Every prompt a pi worker shows is this dialog, so treat a pi worker's `done`
 with no saved result as § Drive's `blocked`: read the pane, then answer.
+Its menu offers no persistent option, so a routine one gets "Allow once" each
+time it returns.
 gemini's `--policy` file replaces the user's own policy directory for that
 process (gemini-cli `packages/core/src/policy/config.ts`), and an `ask_user`
 rule outranks the routine allow by priority. cursor reads permissions only
