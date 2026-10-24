@@ -344,7 +344,7 @@ def wait(db, args):
     """Exit when an event is due or the watcher has died — the manager's wake-up."""
     deadline = None if args.wait_timeout is None else time.monotonic() + args.wait_timeout
     while True:
-        now = args.now if args.now is not None else time.time()
+        now = clock(args)
         lines = [event_line(event) for event in take_due(db, now)]
         if not is_alive(lease(db), now) and args.now is None:
             lines.append("WATCHER stale")
