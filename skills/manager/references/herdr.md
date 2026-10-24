@@ -86,8 +86,8 @@ that reads `unknown — do not launch` rules that kind out for that role.
 `<main>` is the main branch:
 
 ```
-<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)","Bash(git -C * push*)","Bash(git -C * branch -D*)","Bash(git -C * worktree remove*)"]}}'
-<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask","git -C * push*":"ask","git -C * branch -D*":"ask","git -C * worktree remove*":"ask"}}}'
+<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)","Bash(git -C * push*)","Bash(git -C * branch -D*)","Bash(git -C * worktree remove*)","Bash(git push *+*)","Bash(git push *:<main>*)","Bash(rm -fr *)"]}}'
+<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask","git -C * push*":"ask","git -C * branch -D*":"ask","git -C * worktree remove*":"ask","git push*+*":"ask","git push*:<main>*":"ask","rm -fr*":"ask"}}}'
 ```
 
 ```toml

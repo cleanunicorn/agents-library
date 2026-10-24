@@ -57,17 +57,21 @@ VERIFIED = re.compile(r"^(smoke-checked \d{4}-\d{2}-\d{2}\b|--help-derived\b|in 
 ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "git push* <main>*", "gh pr merge*",
                        "gh pr ready*", "git branch -D*", "git worktree remove*", "rm -rf*",
                        # `git -C <dir>` puts an option between git and its subcommand.
-                       "git -C * push*", "git -C * branch -D*", "git -C * worktree remove*")
+                       "git -C * push*", "git -C * branch -D*", "git -C * worktree remove*",
+                       # A `+` refspec forces; `HEAD:<main>` pushes to the main branch.
+                       "git push*+*", "git push*:<main>*", "rm -fr*")
 
-# Concrete commands for the recipes that match by pattern (gemini's policy, pi's
-# extension): every ESCALATING one must ask, no ROUTINE one may. `main` stands
-# in for <main>.
+# Concrete commands every recipe must ask for — the glob rules above (claude,
+# opencode, kilo) and the patterns (gemini's policy, pi's extension) — and
+# none may ask for a ROUTINE one. `main` stands in for <main>.
 ESCALATING = ("git push --force origin feat/x", "git push origin feat/x -f", "git push origin +feat/x",
               "git push origin main", "git push origin HEAD:main", "gh pr merge 12 --squash",
               "gh pr ready 12", "git branch -D feat/x", "git worktree remove ../wt",
-              "rm -rf /tmp/run/x", "cd /tmp && rm -fr x", "git -C ../wt push --force origin feat/x",
-              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other",
-              "git --no-pager -C ../wt push origin main")
+              "rm -rf /tmp/run/x", "rm -fr x", "git -C ../wt push --force origin feat/x",
+              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other")
+# Shapes a rule matching the command as written cannot see, so only the
+# pattern recipes ask for them; console.md § Approvals' check catches the rest.
+ESCALATING_BY_PATTERN = ("cd /tmp && rm -fr x", "git --no-pager -C ../wt push origin main")
 ROUTINE = ("git push origin feat/x", "git push -u origin feat/main-fix", "git status",
            "git -C ../wt log --grep push",
            "gh pr view 12", "git branch -d feat/x", "rm notes.txt")
@@ -163,6 +167,23 @@ def launch_rows(text):
         if cells[0] != "kind" and not set(cells[0]) <= set("-"):
             rows[cells[0]] = tuple(cells[1:])
     return rows
+
+
+def glob_rules(text):
+    """Return {host: [ask glob]} from herdr.md's <claude ask> and <opencode ask> blocks."""
+    claude = json.loads(re.search(r"<claude ask> = '(\{.*\})'", text).group(1))["permissions"]["ask"]
+    opencode = json.loads(re.search(r"<opencode ask> = '(\{.*\})'", text).group(1))["permission"]["bash"]
+    return {"claude": [re.fullmatch(r"Bash\((.*)\)", rule).group(1) for rule in claude],
+            "opencode, kilo": [glob for glob, decision in opencode.items() if decision == "ask"]}
+
+
+def glob_asks(globs, command):
+    """Whether a host's as-written glob ask rules match a command; `*` spans anything."""
+    for glob in globs:
+        pattern = ".*".join(re.escape(part) for part in glob.replace("<main>", "main").split("*"))
+        if re.fullmatch(pattern, command):
+            return True
+    return False
 
 
 def gemini_policies(text):
@@ -442,6 +463,15 @@ class ManagerApprovalTests(unittest.TestCase):
         self.assertIn("PI_MANAGER_ROLE=coordinator", rows["pi"][0])
         self.assertRegex(rows["pi"][1], r"PI_MANAGER_ROLE=planner.*reviewer")
 
+    def test_glob_hosts_ask_for_every_escalation(self):
+        # One vocabulary for every host: the glob recipes face the same probes as
+        # the patterns. Globs over-ask (`git push*-f*` matches `feat/main-fix`),
+        # the safe direction, so ROUTINE is pinned only for the pattern recipes.
+        for host, globs in glob_rules(self.read("references/herdr.md")).items():
+            for command in ESCALATING:
+                with self.subTest(host=host, command=command):
+                    self.assertTrue(glob_asks(globs, command), f"{host} runs {command!r} unasked")
+
     def test_gemini_policies_ask_for_every_escalation(self):
         text = self.read("references/herdr.md")
         policies = gemini_policies(text)
@@ -451,7 +481,7 @@ class ManagerApprovalTests(unittest.TestCase):
         self.assertIn("<gemini reader policy>", rows["gemini"][1])
         # The reader policy is the coordinator's ask rule plus its own rules.
         ask = policies["gemini coordinator policy"]
-        for command in ESCALATING:
+        for command in ESCALATING + ESCALATING_BY_PATTERN:
             with self.subTest(command=command):
                 self.assertTrue(gemini_asks(ask, command), f"gemini runs {command!r} unasked")
         for command in ROUTINE:
@@ -486,8 +516,8 @@ class ManagerApprovalTests(unittest.TestCase):
             reviewer = {**env, "PI_MANAGER_ROLE": "reviewer"}
             bash = lambda command: {"command": command}
             path = lambda target: {"path": str(target)}
-            cases = [(coordinator, "bash", bash(c), "ask") for c in ESCALATING]
-            cases += [(reviewer, "bash", bash(c), "ask") for c in ESCALATING]
+            cases = [(coordinator, "bash", bash(c), "ask") for c in ESCALATING + ESCALATING_BY_PATTERN]
+            cases += [(reviewer, "bash", bash(c), "ask") for c in ESCALATING + ESCALATING_BY_PATTERN]
             cases += [(coordinator, "bash", bash(c), "allow") for c in ROUTINE]
             cases += [
                 (coordinator, "write", path(worktree / "a.py"), "allow"),
