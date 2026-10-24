@@ -459,6 +459,27 @@ class LifecycleTests(unittest.TestCase):
         time.sleep(0.5)
         self.assertEqual(len(run.events()), 1, "a restart lost or duplicated the pending event")
 
+    def test_a_real_wait_blocks_until_an_event_and_honors_its_timeout(self):
+        run = Run(self)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.register("coord")
+        run.start("--interval", self.INTERVAL)
+        self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
+        started = time.monotonic()
+        idle = run.cli("wait", "--timeout", "1", timeout=10)
+        self.assertEqual((idle.returncode, idle.stdout.strip()), (2, "TIMEOUT"), "a quiet run did not time out")
+        self.assertGreaterEqual(time.monotonic() - started, 1, "wait gave up before its timeout")
+        waiting = subprocess.Popen([sys.executable, str(WATCHER), "wait", "--run-dir", str(run.dir)],
+                                   stdout=subprocess.PIPE, text=True)
+        self.addCleanup(lambda: waiting.poll() is None and waiting.kill())
+        time.sleep(0.5)
+        self.assertIsNone(waiting.poll(), "wait returned with nothing due")
+        run.agent("coord", "blocked", CLAUDE_PROMPT)
+        out, _ = waiting.communicate(timeout=5)
+        self.assertEqual(waiting.returncode, 0)
+        self.assertRegex(out, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=blocked$",
+                         "a blocking wait never woke for the new prompt")
+
     def test_a_superseded_watcher_exits_instead_of_competing(self):
         run = Run(self)
         run.agent("coord", "working", WORKING_TEXT)

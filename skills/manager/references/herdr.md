@@ -180,7 +180,8 @@ directory of the header's `skill` path, and every call takes `--run-dir
   a status check before it still races your own resumption. So the watcher
   calls only `herdr agent get` and `herdr agent read` and never writes to a
   terminal, yours included. Where the host does not wake you when a
-  background command exits, read `status` each turn instead: detection is
+  background command exits, read `status` each turn instead, or run `wait
+  --timeout <seconds>` where the host lets you wait with a timeout: detection is
   continuous, wake-up is only as reliable as the host's background
   commands.
 
