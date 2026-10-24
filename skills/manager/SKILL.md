@@ -30,8 +30,8 @@ use `references/herdr.md`; otherwise native subagents. With neither, refuse
 and ask for Herdr or another host: never do the work yourself. Decide once,
 on the first turn, and record it in the board header (`console.md` § The
 board); every worker this session starts uses that transport. Then label
-your tab: `bash scripts/rename-herdr-tab.sh manager` from this skill's
-directory (`references/herdr.md` § Your tab).
+your tab from the project: `bash <skill>/scripts/rename-herdr-tab.sh
+manager` (`references/herdr.md` § Your tab).
 
 ## The team
 

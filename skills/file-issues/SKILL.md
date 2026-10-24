@@ -29,8 +29,10 @@ Two guardrails frame everything below:
 
 ## Startup
 
-1. **Label the tab.** Run `bash scripts/rename-herdr-tab.sh issues` from this
-   skill's directory. Inside Herdr (`HERDR_ENV=1`, `HERDR_TAB_ID` set) it
+1. **Label the tab.** Run `bash <skill>/scripts/rename-herdr-tab.sh issues`,
+   `<skill>` being this skill's directory, from the project's working
+   directory — never `cd` into the skill first, or the label names the
+   skill. Inside Herdr (`HERDR_ENV=1`, `HERDR_TAB_ID` set) it
    renames the tab to `issues <project>`, `<project>` being the git toplevel
    directory's name, else the working directory's. Outside Herdr it does
    nothing; a failed rename prints one warning and never blocks startup. Run

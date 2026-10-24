@@ -112,5 +112,26 @@ for copy in "${COPIES[@]}"; do
   assert_equal $'tab\nrename\nw1:t2\nissues plain dir' "$calls" 'standalone copy runs'
 done
 
+# A plugin install puts the skill in its own git checkout (the plugin cache).
+# Called by path from the project, the label must name the project.
+case_name=plugin-cache
+git init -q "$tmp/plugin-cache"
+cp -R "$ROOT/skills/manager" "$tmp/plugin-cache/manager"
+run "$tmp/plugin-cache/manager/scripts/rename-herdr-tab.sh" "$tmp/my project/src" manager "${in_herdr[@]}"
+assert_equal $'tab\nrename\nw1:t2\nmanager my project' "$calls" 'project, not the skill checkout'
+
+# The callers' wording is the other half of the contract: run from the
+# project by the skill's path. "Run it from this skill's directory" labeled
+# every installed session after the skill (`manager manager`).
+for caller in "manager:skills/manager/SKILL.md" "manager:skills/manager/references/herdr.md" \
+              "issues:skills/file-issues/SKILL.md"; do
+  case_name="caller:${caller#*:}"
+  text=$(tr -s ' \n' '  ' < "$ROOT/${caller#*:}")
+  code=0; grep -qF "bash <skill>/scripts/rename-herdr-tab.sh ${caller%%:*}" <<< "$text" || code=$?
+  assert_equal 0 "$code" 'calls the helper by the skill path'
+  code=0; grep -qiE "rename-herdr-tab\.sh [a-z]+\`? from this skill's directory" <<< "$text" || code=$?
+  assert_equal 1 "$code" 'never runs it from the skill directory'
+done
+
 printf '\nResults: %s passed, %s failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]
