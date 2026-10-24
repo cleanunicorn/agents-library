@@ -102,6 +102,9 @@ class Run:
         self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep}
         self.save()
 
+    def reads(self, name=""):
+        return [c for c in self.calls() if c.startswith(f"agent read {name}".rstrip())]
+
     def calls(self):
         log = self.bin / "calls.log"
         return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
@@ -162,7 +165,7 @@ class DetectionTests(unittest.TestCase):
         run.register("coord")
         run.sweep(now=1000)
         self.assertEqual(run.events(), [], "one working observation already triggered inspection")
-        self.assertFalse(any(" read " in f" {c} " for c in run.calls()), "a fresh working status was read")
+        self.assertFalse(run.reads(), "a fresh working status was read")
         run.sweep(now=1005)
         self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"],
                          "a prompt behind an unchanged working status was never found")
@@ -183,7 +186,7 @@ class DetectionTests(unittest.TestCase):
         for now in (1000, 1005, 1010):
             run.sweep(now=now)
         self.assertEqual(run.events(), [], "ordinary output or a finished turn raised an event")
-        self.assertFalse(any(c.startswith("agent read idle") for c in run.calls()),
+        self.assertFalse(run.reads("idle"),
                          "a finished turn was inspected; its result file is the manager's signal")
 
     def test_the_same_prompt_is_one_event_and_a_new_one_supersedes_it(self):
@@ -504,11 +507,11 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(self.until(lambda: not run.status()["watcher"]["alive"]), "a dead watcher still looks alive")
         stale = run.cli("wait", timeout=10)
         self.assertIn("WATCHER stale", stale.stdout, "a waiting manager is never told its watcher died")
-        reads_before = len([c for c in run.calls() if c.startswith("agent read")])
+        reads_before = len(run.reads())
         run.start("--interval", self.INTERVAL)
         self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
         self.assertNotEqual(run.status()["watcher"]["instance"], old)
-        self.assertTrue(self.until(lambda: len([c for c in run.calls() if c.startswith("agent read")]) >= reads_before + 2),
+        self.assertTrue(self.until(lambda: len(run.reads()) >= reads_before + 2),
                         "the replacement watcher never swept")
         self.assertEqual([e["state"] for e in run.events()], ["pending"], "a restart lost or duplicated the pending event")
         first = run.events()[0]["id"]
