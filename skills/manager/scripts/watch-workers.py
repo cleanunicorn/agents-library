@@ -94,7 +94,7 @@ def connect(run_dir):
                 id INTEGER PRIMARY KEY CHECK (id = 1), instance TEXT, pid INTEGER, started_at REAL,
                 heartbeat_at REAL, interval REAL, stop_requested INTEGER DEFAULT 0, stopped_at REAL);
             CREATE TABLE IF NOT EXISTS workers (
-                name TEXT PRIMARY KEY, item TEXT, role TEXT, generation TEXT, instance_key TEXT,
+                name TEXT PRIMARY KEY, item TEXT, role TEXT, generation TEXT, instance_key TEXT, dismissed_hash TEXT,
                 last_status TEXT, status_streak INTEGER DEFAULT 0, failures INTEGER DEFAULT 0);
             CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY, worker TEXT, item TEXT, role TEXT, instance_key TEXT,
@@ -179,7 +179,8 @@ def observe(binary, worker, timeout):
 
 def record(db, worker, seen, now):
     """Fold one observation into the store; returns the id of a new event, if any."""
-    current = db.execute("SELECT generation FROM workers WHERE name = ?", (worker["name"],)).fetchone()
+    current = db.execute("SELECT generation, dismissed_hash FROM workers WHERE name = ?",
+                         (worker["name"],)).fetchone()
     if current is None or current["generation"] != worker["generation"]:
         return None  # unregistered or re-registered while this observation was in flight
     if seen["error"]:
@@ -191,6 +192,11 @@ def record(db, worker, seen, now):
     # A replacement worker under the same name never inherits its predecessor's prompts.
     db.execute(f"UPDATE events SET state = 'superseded', updated_at = ? WHERE worker = ? AND {active}"
                " AND instance_key != ?", (now, seen["name"], seen["instance_key"]))
+    # A suspected screen the manager resolved stays dismissed until the screen
+    # changes; a `blocked` status always raises, since Herdr itself says so.
+    if seen["kind"] == "suspected" and seen["prompt_hash"] == current["dismissed_hash"]:
+        return None
+    db.execute("UPDATE workers SET dismissed_hash = NULL WHERE name = ?", (seen["name"],))
     if seen["prompt_hash"] is None:
         if seen["status"] not in ("blocked", "unknown"):
             db.execute(f"UPDATE events SET state = 'cleared', updated_at = ? WHERE worker = ? AND {active}",
@@ -370,6 +376,8 @@ def settle(db, args, state):
             print(f"STALE_TOKEN {args.event} state={event['state']}")
             return 1
         db.execute("UPDATE events SET state = ?, updated_at = ? WHERE id = ?", (state, clock(args), args.event))
+        if state == "resolved" and event["kind"] == "suspected":
+            db.execute("UPDATE workers SET dismissed_hash = ? WHERE name = ?", (event["prompt_hash"], event["worker"]))
     print(f"{state.upper()} {args.event}")
     return 0
 
