@@ -146,7 +146,10 @@ priority = 300
 
 Write each policy file into `<run_dir>/<slug>/` from its block, placeholders
 filled, before starting the gemini worker that loads it; the reader's policy
-denies it a `.toml` write, so it cannot rewrite its own.
+denies it a `.toml` write, so it cannot rewrite its own. gemini matches
+`file_path` as written: unlike pi's extension it resolves no symlink inside
+`<run_dir>/<slug>/` and no `//` or `..` spelling of a sibling worktree, so
+this args matching is not an OS sandbox.
 
 `<run_dir>` is absolute, so claude's rule reads `Edit(//tmp/…/**)`. Never
 launch with `--dangerously-skip-permissions`, `--permission-mode
