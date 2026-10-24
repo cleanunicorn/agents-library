@@ -100,7 +100,7 @@ class BatchMergeApprovalTests(unittest.TestCase):
                     "the approvals log no longer says what each row records")
         self.expect(label, policy, r"(?i)own one-line summary.{0,80}never the prompt's text pasted in",
                     "a prompt's text, secrets and all, could be pasted into the log")
-        self.expect(label, policy, r"(?i)redact",
+        self.expect(label, policy, r"(?i)redact any secret.{0,120}log.{0,40}user",
                     "a secret shown in a prompt could reach the log or the user")
         report = self.read("SKILL.md")
         self.expect("SKILL.md", report, r"approvals\.md",
