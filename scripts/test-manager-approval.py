@@ -446,6 +446,8 @@ class ManagerApprovalTests(unittest.TestCase):
     def test_unproven_cells_rule_the_kind_out(self):
         # An unknown read-only grant must not degrade to a plain, prompt-free launch.
         rows = launch_rows(self.read("references/herdr.md"))
+        self.assertRegex(rows["cursor"][0], r"^unknown — do not launch",
+                         "cursor cannot override a user allow per process, yet its coordinator launches")
         self.assertRegex(rows["cursor"][1], r"^unknown — do not launch",
                          "cursor has no per-process write limit, yet its reader cell launches")
         self.assertRegex(rows["gemini"][2], r"unknown[^|]*do not launch",
@@ -586,7 +588,7 @@ class ManagerApprovalTests(unittest.TestCase):
             "opencode, kilo": (r"OPENCODE_CONFIG_CONTENT", r'"edit":"ask"'),
             "pi": (re.escape(PI_EXTENSION), re.escape(PI_EXTENSION)),
             "gemini": (r"--approval-mode auto_edit .*--policy", r"--approval-mode default .*--policy"),
-            "cursor": (r"--workspace <repo>", r"^unknown — do not launch"),
+            "cursor": (r"^unknown — do not launch", r"^unknown — do not launch"),
         }
         for kind, (coordinator, role) in expected.items():
             with self.subTest(kind=kind, role="coordinator"):
