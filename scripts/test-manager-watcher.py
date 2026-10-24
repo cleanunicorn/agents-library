@@ -392,6 +392,12 @@ class HandlingTests(unittest.TestCase):
         again = run.cli("claim", "--event", event, now=2001)
         self.assertEqual(again.returncode, 0, "the user's answer cannot be applied")
 
+    def test_unregister_clears_the_workers_open_events(self):
+        run, event = self.blocked_run()
+        run.cli("unregister", "--name", "coord", now=1001)
+        self.assertEqual([e["state"] for e in run.events()], ["cleared"], "a closed worker's event stayed open")
+        self.assertEqual(event_ids(run.wait(now=1100).stdout), [], "a closed worker's event is still notified")
+
     def test_wait_times_out_without_events(self):
         run = Run(self)
         run.agent("coord", "working", WORKING_TEXT)
