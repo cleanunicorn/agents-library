@@ -504,6 +504,9 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertIn("PI_MANAGER_RUN_DIR=<run_dir>", cell, "pi's extension has no run directory")
                 self.assertIn("PI_MANAGER_MAIN=<main>", cell, "a pi push to the main branch runs unasked")
         self.assertIn("PI_MANAGER_ROLE=coordinator", rows["pi"][0])
+        # settings() splits PI_MANAGER_DENY on ':'; another join disarms the guard silently.
+        self.assertIn("PI_MANAGER_DENY=<other worktrees, ':'-separated>", rows["pi"][0])
+        self.assertIn('split(":")', PI_SCRIPT.read_text(encoding="utf-8"))
         self.assertRegex(rows["pi"][1], r"PI_MANAGER_ROLE=planner.*reviewer")
 
     def test_glob_hosts_ask_for_every_escalation(self):
