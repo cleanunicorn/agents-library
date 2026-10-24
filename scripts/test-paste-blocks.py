@@ -29,7 +29,9 @@ SLASH_COMMAND = re.compile(r"^\s*/[a-z][a-z0-9:_-]*(\s|$)")
 def fenced_blocks(text):
     """Yield (opening line number, [lines]) for each fenced code block.
 
-    Blockquote markers are stripped first so a quoted fence is seen as one.
+    Blockquote markers are stripped first so a quoted fence is seen as one. A
+    fence left open at the end of the file still renders as code to the end,
+    so it is yielded too.
     """
     fence, start, body = None, 0, []
     for number, raw in enumerate(text.splitlines(), start=1):
@@ -45,6 +47,8 @@ def fenced_blocks(text):
             fence = None
             continue
         body.append(line)
+    if fence is not None:
+        yield start, body
 
 
 def paste_problems(text):
@@ -88,6 +92,10 @@ class PasteProblemTests(unittest.TestCase):
         text = ("1. Add the marketplace:\n\n   ```\n   /plugin marketplace add o/r\n   ```\n\n"
                 "2. Install:\n\n   ```\n   /plugin install p@p\n   ```\n")
         self.assertEqual(paste_problems(text), [])
+
+    def test_fence_left_open_at_end_of_file_fails(self):
+        text = "```\n/plugin marketplace add o/r\n/plugin install p@p\n"
+        self.assertEqual(len(paste_problems(text)), 1)
 
     def test_fence_inside_blockquote_fails(self):
         text = "> Install:\n>\n> ```\n> /plugin marketplace add o/r\n> /plugin install p@p\n> ```\n"
