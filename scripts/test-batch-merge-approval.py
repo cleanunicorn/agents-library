@@ -107,6 +107,10 @@ class BatchMergeApprovalTests(unittest.TestCase):
 
     def test_every_escalation_case_is_relayed(self):
         policy = section(self.read("references/herdr.md"), "Approvals")
+        # The user must see "Allow always" was on offer, and get the scope they chose.
+        self.expect("herdr.md § Approvals", policy,
+                    r"(?i)verbatim with the host's options.{0,80}exactly the option the user names",
+                    "an escalated prompt loses its menu, or the user's answer is widened")
         items = [" ".join(item.split()).lower()
                  for item in re.split(r"(?m)^  \d+\. ", relay_list(policy))[1:]]
         for case, words in ESCALATIONS.items():
