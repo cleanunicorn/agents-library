@@ -423,6 +423,11 @@ class HandlingTests(unittest.TestCase):
         self.assertEqual([e["state"] for e in run.events()], ["cleared"], "a closed worker's event stayed open")
         self.assertEqual(event_ids(run.wait(now=1100).stdout), [], "a closed worker's event is still notified")
 
+    def test_claiming_an_unknown_event_is_refused(self):
+        run = Run(self)
+        result = run.cli("claim", "--event", "nosuchevent", now=1000)
+        self.assertEqual((result.returncode, result.stdout.strip()), (1, "NOT_CLAIMABLE nosuchevent state=unknown"))
+
     def test_wait_times_out_without_events(self):
         run = Run(self)
         run.agent("coord", "working", WORKING_TEXT)
