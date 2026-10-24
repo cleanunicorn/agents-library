@@ -263,8 +263,10 @@ loads and executes.
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
-  issue work list), and install-agents has `install-agents.sh` (copies
-  `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  issue work list), install-agents has `install-agents.sh` (copies
+  `agents/*.md` into a host project's `.claude/agents/` and seeds journals),
+  and manager has `pi-permissions.mjs` (the pi extension that is a pi
+  worker's only permission prompt, loaded with `pi -e`).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
@@ -395,15 +397,17 @@ loads and executes.
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
-  links (`scripts/test-readme-toc.py`), the manager's approval contract
-  (`scripts/test-manager-approval.py`), the manager's persistent console
+  links (`scripts/test-readme-toc.py`), the manager's approval contract and
+  its pi permission extension (`scripts/test-manager-approval.py`; the
+  extension cases run under `node` and report a skip without it), the
+  manager's persistent console
   (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
   tests (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
-  Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
+  Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
   validation. Lint/format/build: no separate tools. Behavioral skill

@@ -556,8 +556,9 @@ required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-fi
 word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
-(`scripts/test-readme-toc.py`), the manager's approval contract
-(`scripts/test-manager-approval.py`), the manager's persistent console
+(`scripts/test-readme-toc.py`), the manager's approval contract and its pi
+permission extension (`scripts/test-manager-approval.py`; the extension cases
+need `node` and report a skip without it), the manager's persistent console
 (`scripts/test-manager-console.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), and eval cases with
