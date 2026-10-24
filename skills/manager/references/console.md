@@ -12,7 +12,8 @@ the user names, else the host's scratch directory, else
 | `board.md`, `<slug>/brief-<role>-<label>.md` (the exact text sent) | you |
 | `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `merged-plan`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
 | `<slug>/gate-<role>-<short-sha>.log`, `<slug>/ci-coordinator-<short-sha>.log` | the worker that ran it |
-| `watcher.sqlite3`, `watcher.log` — Herdr transport only: worker registry, prompt events (ids and hashes, never prompt text), watcher heartbeat | `scripts/watch-workers.py` (`references/herdr.md` § Watch for prompts) |
+| `watcher.sqlite3` — Herdr transport only: worker registry, prompt events (ids and hashes, never prompt text), watcher heartbeat | `scripts/watch-workers.py` (`references/herdr.md` § Watch for prompts) |
+| `watcher.log` — the watcher's START, EVENT and STOPPED lines | your shell redirect of its `run` command |
 
 **A gate log** starts with `command: <exact command>` and `head: <full SHA>`,
 then the raw output, then `exit: <code>`. **A CI log** has the same shape:
