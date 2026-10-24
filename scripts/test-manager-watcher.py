@@ -485,7 +485,8 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(self.until(lambda: run.status()["counts"]["pending"] == 1))
         run.cli("stop", timeout=10)
         log = watcher.communicate(timeout=5)[0]
-        self.assertRegex(log, r"(?m)^EVENT ", "the run log never recorded the event")
+        self.assertRegex(log, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=blocked$",
+                         "the run log's EVENT line differs from wait's")
         self.assertNotIn(SECRET, log, "prompt text leaked into watcher.log")
         self.assertNotIn("curl", log, "prompt text leaked into watcher.log")
 

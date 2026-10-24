@@ -233,7 +233,8 @@ def sweep(db, binary, now, timeout):
         for worker, observation in zip(workers, seen):
             event = record(db, worker, observation, now)
             if event:
-                new.append((event, worker["name"]))
+                new.append({"id": event, "worker": worker["name"], "item": worker["item"],
+                            "role": worker["role"], "kind": observation["kind"]})
     return {"workers": len(workers), "new": new, "failures": sum(1 for s in seen if s["error"])}
 
 
@@ -292,8 +293,8 @@ def run(db, args):
             print(f"SUPERSEDED {instance}", flush=True)
             return 0
         result = sweep(db, args.herdr, time.time(), args.timeout)
-        for event, worker in result["new"]:
-            print(f"EVENT {event} worker={worker}", flush=True)
+        for event in result["new"]:
+            print(event_line(event), flush=True)
         time.sleep(max(0.0, args.interval - (time.monotonic() - started)))
 
 
@@ -333,13 +334,18 @@ def take_due(db, now):
     return due
 
 
+def event_line(event):
+    """One event as the manager reads it: ids and identities, never prompt text."""
+    return (f"EVENT {event['id']} worker={event['worker']} item={event['item']} role={event['role']}"
+            f" kind={event['kind']}")
+
+
 def wait(db, args):
     """Exit when an event is due or the watcher has died — the manager's wake-up."""
     deadline = None if args.wait_timeout is None else time.monotonic() + args.wait_timeout
     while True:
         now = args.now if args.now is not None else time.time()
-        lines = [f"EVENT {e['id']} worker={e['worker']} item={e['item']} role={e['role']} kind={e['kind']}"
-                 for e in take_due(db, now)]
+        lines = [event_line(event) for event in take_due(db, now)]
         if not is_alive(lease(db), now) and args.now is None:
             lines.append("WATCHER stale")
         if lines:
