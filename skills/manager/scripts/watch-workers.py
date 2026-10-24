@@ -399,12 +399,13 @@ def status(db, args):
     for row in db.execute("SELECT state, COUNT(*) AS n FROM events GROUP BY state"):
         counts[row["state"]] = row["n"]
     events = [dict(row) for row in db.execute(
-        "SELECT id, worker, item, role, kind, state FROM events ORDER BY"
+        "SELECT id, worker, item, role, kind, state, detected_at, updated_at FROM events ORDER BY"
         f" {IS_ACTIVE} DESC, detected_at DESC LIMIT {LISTED_EVENTS}")]
     print(json.dumps({
         "watcher": {
             "instance": held["instance"] if held else None,
             "pid": held["pid"] if held else None,
+            "started_at": held["started_at"] if held else None,
             "heartbeat_age": round(now - held["heartbeat_at"], 1) if held else None,
             "alive": is_alive(held, now),
         },

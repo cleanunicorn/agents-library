@@ -373,7 +373,8 @@ class HandlingTests(unittest.TestCase):
         token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1000).stdout).group(1)
         self.assertNotEqual(run.cli("resolve", "--event", event, "--token", "wrong", now=1001).returncode, 0)
         self.assertEqual(run.cli("resolve", "--event", event, "--token", token, now=1001).returncode, 0)
-        self.assertEqual([e["state"] for e in run.events()], ["resolved"])
+        self.assertEqual([(e["state"], e["detected_at"], e["updated_at"]) for e in run.events()],
+                         [("resolved", 1000, 1001)], "status hides when an event was raised and settled")
         self.assertEqual(event_ids(run.wait(now=1100).stdout), [])
 
     def test_an_answered_prompt_that_cleared_resolves_quietly(self):
@@ -474,6 +475,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(self.until(lambda: run.status()["counts"]["pending"] == 1), "the running watcher found nothing")
         watcher = run.status()["watcher"]
         self.assertRegex(watcher["instance"], r"^[0-9a-f]{8}$")
+        self.assertLessEqual(watcher["started_at"], time.time())
         self.assertLess(watcher["heartbeat_age"], 2)
         self.assertTrue(watcher["alive"])
 
