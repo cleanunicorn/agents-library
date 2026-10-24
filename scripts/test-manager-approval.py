@@ -602,6 +602,10 @@ class ManagerApprovalTests(unittest.TestCase):
                 (reviewer, "edit", {"path": "../wt/a.py"}, "block"),
                 (reviewer, "bash", bash("git diff main...HEAD | head -n 40"), "allow"),
                 (reviewer, "bash", bash("bash scripts/check.sh"), "allow"),
+                # The gate is matched whole: nothing may ride along after it.
+                (reviewer, "bash", bash(" bash scripts/check.sh "), "allow"),
+                (reviewer, "bash", bash("bash scripts/check.sh && git push origin feat/x"), "ask"),
+                (reviewer, "bash", bash("bash scripts/check.sh; touch x"), "ask"),
                 (reviewer, "bash", bash("git log > notes.md"), "ask"),
                 (reviewer, "bash", bash("cat $(echo x)"), "ask"),
                 (reviewer, "bash", bash("find . -delete"), "ask"),
