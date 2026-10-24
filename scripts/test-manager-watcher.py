@@ -178,6 +178,24 @@ class DetectionTests(unittest.TestCase):
         run.sweep(now=1000)
         self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"])
 
+    def test_each_hosts_prompt_wording_is_recognized(self):
+        screens = {
+            "claude": "Edit file\nDo you want to make this edit to app.py?\n❯ 1. Yes\n",
+            "opencode-once": "Bash: rm build/\n  Allow once   Reject\n",
+            "opencode-always": "Edit src/app.py\n  → Always allow until restart\n",
+            "claude-session": "  2. Yes, don't ask again for this command\n",
+            "kilo": "Permission required: write to /tmp/x\n",
+            "codex": "Overwrite build/out.txt? [y/N]\n",
+        }
+        for host, screen in screens.items():
+            with self.subTest(host=host):
+                run = Run(self)
+                run.agent("coord", "unknown", WORKING_TEXT + screen)
+                run.register("coord")
+                run.sweep(now=1000)
+                self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"],
+                                 f"{host}'s prompt wording is not recognized")
+
     def test_plain_work_and_finished_turns_raise_nothing(self):
         run = Run(self)
         run.agent("busy", "working", WORKING_TEXT)
