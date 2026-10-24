@@ -45,7 +45,7 @@ const GIT = String.raw`\bgit(\s+-\S+(\s+[^-\s]\S*)?)*\s+`;
 function escalations(main) {
   const branch = main.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return [
-    new RegExp(String.raw`${GIT}push\b.*\s(--force(-with-lease|-if-includes)?\b|-[a-zA-Z]*f\b|\+\S)`),
+    new RegExp(String.raw`${GIT}push\b.*\s(--force(-with-lease|-if-includes)?\b|--all\b|--mirror\b|-[a-zA-Z]*f\b|\+\S)`),
     new RegExp(String.raw`${GIT}push\b.*\s(\S*:)?(refs/heads/)?${branch}(\s|$)`),
     /\bgh\s+pr\s+(merge|ready)\b/,
     new RegExp(String.raw`${GIT}branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)`),

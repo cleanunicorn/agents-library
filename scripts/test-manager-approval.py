@@ -59,7 +59,9 @@ ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "git push* <main>*",
                        # `git -C <dir>` puts an option between git and its subcommand.
                        "git -C * push*", "git -C * branch -D*", "git -C * worktree remove*",
                        # A `+` refspec forces; `HEAD:<main>` pushes to the main branch.
-                       "git push*+*", "git push*:<main>*", "rm -fr*")
+                       "git push*+*", "git push*:<main>*", "rm -fr*",
+                       # --all and --mirror update the main branch along with the rest.
+                       "git push*--all*", "git push*--mirror*")
 
 # Concrete commands every recipe must ask for — the glob rules above (claude,
 # opencode, kilo) and the patterns (gemini's policy, pi's extension) — and
@@ -68,10 +70,16 @@ ESCALATING = ("git push --force origin feat/x", "git push origin feat/x -f", "gi
               "git push origin main", "git push origin HEAD:main", "gh pr merge 12 --squash",
               "gh pr ready 12", "git branch -D feat/x", "git worktree remove ../wt",
               "rm -rf /tmp/run/x", "rm -fr x", "git -C ../wt push --force origin feat/x",
-              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other")
-# Shapes a rule matching the command as written cannot see, so only the
-# pattern recipes ask for them; console.md § Approvals' check catches the rest.
-ESCALATING_BY_PATTERN = ("cd /tmp && rm -fr x", "git --no-pager -C ../wt push origin main")
+              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other",
+              "git push --force-with-lease origin feat/x", "git push --all origin",
+              "git push --mirror origin", "git branch -Da feat/x")
+# Shapes only the pattern recipes ask for: a chained command, or a spelling the
+# glob rules do not list. console.md § Approvals' check catches these afterwards
+# on the glob hosts.
+ESCALATING_BY_PATTERN = ("cd /tmp && rm -fr x", "git --no-pager -C ../wt push origin main",
+                         "git branch --delete --force feat/x", "git branch --force --delete feat/x",
+                         "rm -r -f x", "rm -f -r x", "rm --recursive --force x", "rm -Rf x",
+                         "rm --force -R x")
 ROUTINE = ("git push origin feat/x", "git push -u origin feat/main-fix", "git status",
            "git -C ../wt log --grep push",
            "gh pr view 12", "git branch -d feat/x", "rm notes.txt")
