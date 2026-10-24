@@ -90,10 +90,16 @@ a listing.
   (`references/console.md` § Results) there and reply with that path. Read
   only that file: never the record, and never the pane's scrollback for a
   result.
-- **Do not block the console.** Prompt without `--wait`, then wait in the
-  background where the host can — `herdr agent wait <name>` as a background
-  command that wakes you when it exits — and return to the user. Same-role
-  workers start together: prompt both before waiting on either.
+- **Confirm delivery, then do not block the console.** Send every prompt,
+  first or follow-up, through a short gate: `herdr agent prompt <name>
+  <brief> --wait --timeout 10000`. Delivery is confirmed when the agent
+  leaves `idle` — the gate settles, or it times out and `herdr agent get
+  <name>` shows `working` or `blocked`. A freshly started agent can drop a
+  prompt sent before its input box is ready, and an unconfirmed send leaves
+  you waiting on an idle worker. Then wait in the background where the host
+  can — `herdr agent wait <name>` as a background command that wakes you
+  when it exits — and return to the user. Same-role workers start together:
+  gate each in turn, then wait on both.
 - **The board reads live state.** Before showing it, `herdr agent get
   <name>` for each recorded worker: `working`, `idle`, `done`, `blocked`, or
   `unknown`. `unknown` is not done.
@@ -120,8 +126,12 @@ a listing.
     send exactly the option the user names with `send-keys`. Unattended,
     answer an escalation with reject and mark it `assumed`; the worker
     continues.
-- **A timeout is not a failure to deliver.** Read the agent before sending
-  anything again.
+- **Re-prompt only an undelivered prompt.** When the gate returns
+  `agent_prompt_stalled`, or times out with the agent still `idle`, read the
+  pane (`herdr agent read <name> --source recent-unwrapped --lines 40`); if
+  it shows no turn started, re-prompt once through the same gate. A second
+  miss is a member that fails (SKILL.md rule 8). A timeout after activity is
+  not a reason to send again: the worker has the prompt.
 
 ## Tear down
 

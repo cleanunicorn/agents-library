@@ -34,6 +34,9 @@ python3 scripts/test-manager-approval.py
 echo "Checking the manager stays a console for every later message..."
 python3 scripts/test-manager-console.py
 
+echo "Checking every Herdr prompt is confirmed delivered before it is waited on..."
+python3 scripts/test-herdr-prompt-delivery.py
+
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
 python3 scripts/test-install.py
