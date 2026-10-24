@@ -397,7 +397,8 @@ loads and executes.
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), the manager's approval contract
   (`scripts/test-manager-approval.py`), the manager's persistent console
-  (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
+  (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
+  (`scripts/test-herdr-prompt-delivery.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger

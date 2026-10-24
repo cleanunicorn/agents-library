@@ -558,7 +558,8 @@ word ceilings on agent and skill roots), the fix-everywhere contract
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), the manager's approval contract
 (`scripts/test-manager-approval.py`), the manager's persistent console
-(`scripts/test-manager-console.py`), skill-installer write failures and ledger
+(`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
+(`scripts/test-herdr-prompt-delivery.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), and eval cases with
 `run_evals.py --dry-run`.
