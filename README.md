@@ -250,8 +250,9 @@ the PR behind each failure and reviews the merged branch with `review-pr`.
 Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
 native subagents and the shell. Its transport guide needs no manager install.
 It answers its Herdr workers' routine permission prompts itself, logging each
-answer, and relays to you only merges, pushes, destruction outside the run,
-secrets or global settings, and prompts it cannot classify.
+answer, and relays to you only merges, pushes and other GitHub writes,
+main-branch commits, destruction outside the run, secrets or global
+settings, the project's ask-first list, and prompts it cannot classify.
 Without a PR list it shows open PRs and waits for your selection. Nothing is
 pushed or changed on GitHub. Requires the `gh` CLI.
 

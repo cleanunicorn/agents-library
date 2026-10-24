@@ -126,6 +126,24 @@ class BatchMergeApprovalTests(unittest.TestCase):
                     r"(?i)no github writes:\*\* never push, merge, close, or comment",
                     "the skill-level ban on GitHub writes is gone")
 
+    def test_readme_names_every_escalation_case(self):
+        # The README says "only", so a case it leaves out reads as auto-answered.
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        found = re.search(r"(?s)### The Batch PR Merge Skill\n.*?(?=\n### )", readme)
+        self.assertIsNotNone(found, "README has no batch-merge-prs section")
+        label = "README batch-merge-prs"
+        text = found.group(0)
+        self.expect(label, text, r"(?i)answers its herdr workers' routine permission prompts itself",
+                    "README no longer says the skill answers routine approvals")
+        relayed = re.search(r"(?i)relays to you only(.*?)\.", " ".join(text.split()))
+        self.assertIsNotNone(relayed, f"{label}: no 'relays to you only' list")
+        for words in (("merges", "pushes", "github writes"), ("main-branch",),
+                      ("destruction outside the run",), ("secrets", "global settings"),
+                      ("ask-first list",), ("cannot classify",)):
+            with self.subTest(words=words):
+                self.assertTrue(all(word in relayed.group(1).lower() for word in words),
+                                f"{label}: relay list omits {words}")
+
 
 if __name__ == "__main__":
     unittest.main()
