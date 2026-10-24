@@ -50,7 +50,7 @@ after the coordinator creates it, so only later workers start there.
 | codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write asks once and you answer it for the session, and so does a reviewer's gate that writes only to the run directory (`TMPDIR=<run_dir>`) | in use |
 | opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else | in use |
 | pi | `tab create --env PI_MANAGER_ROLE=coordinator --env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main> --env PI_MANAGER_DENY=<other worktrees>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs` | `tab create --env PI_MANAGER_ROLE=planner` (or `reviewer`, adding `--env PI_MANAGER_GATE=<gate command>`) `--env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs`; a write outside `<run_dir>` is blocked, and a command other than a read or the gate asks | smoke-checked 2026-10-24, pi 1.2.0 |
-| gemini | `--approval-mode auto_edit --include-directories <run_dir>,<repo> --policy <run_dir>/<slug>/gemini-coordinator.toml`, that file holding `<gemini coordinator policy>` | `--approval-mode default --include-directories <run_dir> --policy <run_dir>/<slug>/gemini-reader.toml`, that file holding `<gemini reader policy>`; writes outside `<run_dir>/<slug>/` are denied | --help-derived; unknown whether the installed release has `--policy` — when `gemini --help` does not list it, both cells are unknown: do not launch |
+| gemini | `--approval-mode auto_edit --include-directories <run_dir>,<repo> --policy <run_dir>/<slug>/gemini-coordinator.toml`, that file holding `<gemini coordinator policy>` | `--approval-mode default --include-directories <run_dir> --policy <run_dir>/<slug>/gemini-reader.toml`, that file holding `<gemini reader policy>`; only a top-level `.md`, `.result` or `.log` write in `<run_dir>/<slug>/` is allowed, every other write is denied, and every shell command asks | --help-derived; unknown whether the installed release has `--policy` — when `gemini --help` does not list it, both cells are unknown: do not launch |
 | cursor | unknown — do not launch under this role: no per-process rule can make an escalation ask, so an allow in the user's own `~/.cursor/cli-config.json` (`Shell(git)`, say) runs a force-push unasked | unknown — do not launch under this role: no per-process way to limit writes to the run directory | --help-derived |
 | any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory | fallback |
 
@@ -111,7 +111,7 @@ priority = 950
 ```
 
 ```toml
-# <gemini reader policy> = the ask_user rule above, then:
+# <gemini reader policy>; no shell allow, so every other command asks
 [[rule]]
 toolName = ["read_file", "grep_search", "glob", "list_directory"]
 decision = "allow"
@@ -119,9 +119,9 @@ priority = 100
 
 [[rule]]
 toolName = "run_shell_command"
-commandPrefix = ["git log", "git diff", "git show", "git status"]
-decision = "allow"
-priority = 100
+commandRegex = '.*\b(git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(--force|--all\b|--mirror\b|-[a-zA-Z]*f\b|\+\S)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+worktree\s+remove\b|rm\s+(.*\s)?((-[a-zA-Z]*[rR]\S*|--recursive)\s+(.*\s)?(-[a-zA-Z]*f\S*|--force)|(-[a-zA-Z]*f\S*|--force)\s+(.*\s)?(-[a-zA-Z]*[rR]\S*|--recursive)|-[a-zA-Z]*([rR][a-zA-Z]*f|f[a-zA-Z]*[rR])))'
+decision = "ask_user"
+priority = 900
 
 [[rule]]
 toolName = ["write_file", "replace"]
@@ -141,9 +141,9 @@ decision = "deny"
 priority = 300
 ```
 
-Whether gemini splits a chained command (`git log && …`) before matching a
-`commandPrefix` is unknown, so the after-the-fact check below still applies
-to a gemini reader.
+Write each policy file into `<run_dir>/<slug>/` from its block, placeholders
+filled, before starting the gemini worker that loads it; the reader's policy
+denies it a `.toml` write, so it cannot rewrite its own.
 
 `<run_dir>` is absolute, so claude's rule reads `Edit(//tmp/…/**)`. Never
 launch with `--dangerously-skip-permissions`, `--permission-mode

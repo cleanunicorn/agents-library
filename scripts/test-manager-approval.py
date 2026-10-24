@@ -522,11 +522,16 @@ class ManagerApprovalTests(unittest.TestCase):
         rows = launch_rows(text)
         self.assertIn("<gemini coordinator policy>", rows["gemini"][0])
         self.assertIn("<gemini reader policy>", rows["gemini"][1])
-        # The reader policy is the coordinator's ask rule plus its own rules.
         ask = policies["gemini coordinator policy"]
-        for command in ESCALATING + ESCALATING_BY_PATTERN:
-            with self.subTest(command=command):
-                self.assertTrue(gemini_asks(ask, command), f"gemini runs {command!r} unasked")
+        for name, policy in policies.items():
+            for command in ESCALATING + ESCALATING_BY_PATTERN:
+                with self.subTest(policy=name, command=command):
+                    self.assertTrue(gemini_asks(policy, command), f"{name} runs {command!r} unasked")
+        # A reader allows no shell command, so a write-capable read option still asks.
+        reader = policies["gemini reader policy"]
+        for command in ("git diff --output=/tmp/x", "git log 2>/tmp/x", "git status & touch x"):
+            with self.subTest(policy="reader", command=command):
+                self.assertNotEqual(gemini_decision(reader, "run_shell_command", {"command": command}), "allow")
         for command in ROUTINE:
             with self.subTest(command=command):
                 self.assertEqual(gemini_decision(ask, "run_shell_command", {"command": command}), "allow",
