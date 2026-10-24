@@ -70,8 +70,9 @@ missing; `--no-extensions` keeps other extensions from answering first.
 Smoke check (herdr 0.9.5, pi 1.2.0): `rm -rf` raised the extension's
 "Allow once / Deny" dialog and Deny left the target intact, a planner's
 write into the worktree was blocked and its run-directory write allowed —
-and Herdr reported the agent `done`, not `blocked`, while the dialog was up,
-so read a pi pane before trusting `done`.
+and Herdr reported the agent `done`, not `blocked`, while the dialog was up.
+Every prompt a pi worker shows is this dialog, so treat a pi worker's `done`
+with no saved result as § Drive's `blocked`: read the pane, then answer.
 gemini's `--policy` file replaces the user's own policy directory for that
 process (gemini-cli `packages/core/src/policy/config.ts`), and an `ask_user`
 rule outranks the routine allow by priority. cursor reads permissions only
