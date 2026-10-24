@@ -111,16 +111,18 @@ function readOnlyCommand(command, config) {
   return segments(command).every((part) => READ_COMMANDS.some((allowed) => allowed.test(part)));
 }
 
-// One verdict per tool call: "allow", "ask", or "block: <reason>".
+const BLOCKED = "block: ";
+
+// One verdict per tool call: "allow", "ask", or BLOCKED followed by the reason.
 export function decide(config, toolName, input, cwd) {
-  if (config.error) return `block: pi-permissions misconfigured — ${config.error}`;
+  if (config.error) return `${BLOCKED}pi-permissions misconfigured — ${config.error}`;
   if (READ_TOOLS.has(toolName)) return "allow";
 
   if (WRITE_TOOLS.has(toolName)) {
     const target = canonical(resolve(cwd, String(input?.path ?? "")));
-    if (config.deny.some((dir) => inside(target, dir))) return `block: ${target} is another item's worktree`;
+    if (config.deny.some((dir) => inside(target, dir))) return `${BLOCKED}${target} is another item's worktree`;
     if (config.role === "coordinator" || inside(target, config.runDir)) return "allow";
-    return `block: a ${config.role} writes only to the run directory`;
+    return `${BLOCKED}a ${config.role} writes only to the run directory`;
   }
 
   if (toolName === "bash") {
@@ -139,7 +141,7 @@ export default function (pi) {
   pi.on("tool_call", async (event, ctx) => {
     const verdict = decide(config, event.toolName, event.input, ctx.cwd ?? process.cwd());
     if (verdict === "allow") return undefined;
-    if (verdict.startsWith("block: ")) return { block: true, reason: verdict.slice(7) };
+    if (verdict.startsWith(BLOCKED)) return { block: true, reason: verdict.slice(BLOCKED.length) };
 
     if (!ctx.hasUI) return { block: true, reason: "approval needed and no UI to ask" };
     const shown = event.toolName === "bash" ? event.input.command : JSON.stringify(event.input);
