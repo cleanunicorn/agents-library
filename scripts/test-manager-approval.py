@@ -200,14 +200,47 @@ def gemini_policies(text):
     return dict(blocks)
 
 
+def gemini_rules(policy):
+    """Parse a policy's [[rule]] tables into {key: str | [str] | int}, `<main>` as `main`."""
+    rules = []
+    for body in re.split(r"(?m)^\[\[rule\]\]$", policy)[1:]:
+        rule = {}
+        for key, value in re.findall(r"(?m)^(\w+) = (.*)$", body):
+            if value.startswith("["):
+                rule[key] = re.findall(r'"([^"]*)"', value)
+            elif value.isdigit():
+                rule[key] = int(value)
+            else:
+                rule[key] = value[1:-1].replace("<main>", "main")
+        rules.append(rule)
+    return rules
+
+
+def gemini_decision(policy, tool, args):
+    """The decision of the highest-priority rule matching one call, as gemini resolves it.
+
+    commandRegex and argsPattern are matched against the call's args as a
+    compact JSON string; commandRegex starts at the command's first character.
+    """
+    serialized = json.dumps(args, sort_keys=True, separators=(",", ":"))
+    best = (-1, "default")
+    for rule in gemini_rules(policy):
+        tools = rule["toolName"] if isinstance(rule["toolName"], list) else [rule["toolName"]]
+        if tool not in tools:
+            continue
+        if "commandRegex" in rule and not re.match(rule["commandRegex"], args.get("command", "")):
+            continue
+        if "commandPrefix" in rule and not args.get("command", "").startswith(tuple(rule["commandPrefix"])):
+            continue
+        if "argsPattern" in rule and not re.search(rule["argsPattern"], serialized):
+            continue
+        best = max(best, (rule["priority"], rule["decision"]))
+    return best[1]
+
+
 def gemini_asks(policy, command):
-    """Whether one of the policy's ask_user rules matches a shell command."""
-    rules = re.split(r"(?m)^\[\[rule\]\]$", policy)
-    for body in rules:
-        regex = re.search(r"(?m)^commandRegex = '(.*)'$", body)
-        if regex and 'decision = "ask_user"' in body and re.match(regex.group(1).replace("<main>", "main"), command):
-            return True
-    return False
+    """Whether gemini would ask before running a shell command under this policy."""
+    return gemini_decision(policy, "run_shell_command", {"command": command}) == "ask_user"
 
 
 # Drives the extension's default export the way pi does, with a fake `pi.on`.
@@ -496,21 +529,24 @@ class ManagerApprovalTests(unittest.TestCase):
                 self.assertTrue(gemini_asks(ask, command), f"gemini runs {command!r} unasked")
         for command in ROUTINE:
             with self.subTest(command=command):
-                self.assertFalse(gemini_asks(ask, command), f"gemini asks for routine {command!r}")
+                self.assertEqual(gemini_decision(ask, "run_shell_command", {"command": command}), "allow",
+                                 f"gemini does not allow routine {command!r}")
 
     def test_gemini_reader_writes_only_to_the_run_directory(self):
-        reader = gemini_policies(self.read("references/herdr.md"))["gemini reader policy"]
-        rules = [body for body in re.split(r"(?m)^\[\[rule\]\]$", reader) if "write_file" in body]
-        allows = [body for body in rules if 'decision = "allow"' in body]
-        self.assertEqual(len(allows), 1, "gemini reader has more than one write allow")
-        self.assertIn('"file_path":"<run_dir>/<slug>/', allows[0], "gemini reader writes outside the run dir")
-        allow_priority = int(re.search(r"priority = (\d+)", allows[0]).group(1))
-        denies = [int(re.search(r"priority = (\d+)", body).group(1))
-                  for body in rules if 'decision = "deny"' in body]
-        self.assertTrue(any(p < allow_priority for p in denies), "gemini reader writes default to allowed")
-        self.assertTrue(any(p > allow_priority and r"\.\." in body for p, body in
-                            zip(denies, [b for b in rules if 'decision = "deny"' in b])),
-                        "a ../ path escapes gemini's run-directory allow")
+        policies = gemini_policies(self.read("references/herdr.md"))
+        record = "<run_dir>/<slug>/reviewer-a.md"
+        writes = {
+            "gemini reader policy": {record: "allow", "<run_dir>/<slug>/../../repo/x.md": "deny",
+                                     "<run_dir>/<slug>/sub/x.md": "deny", "/repo/src/x.py": "deny",
+                                     "<run_dir>/<slug>/gemini-reader.toml": "deny"},
+            "gemini coordinator policy": {"<other worktree>/src/x.py": "deny", "/repo/src/x.py": "default"},
+        }
+        for name, cases in writes.items():
+            for tool in ("write_file", "replace"):
+                for path, want in cases.items():
+                    with self.subTest(policy=name, tool=tool, path=path):
+                        got = gemini_decision(policies[name], tool, {"content": "x", "file_path": path})
+                        self.assertEqual(got, want)
 
     @unittest.skipUnless(shutil.which("node"), "node not on PATH: pi's extension is not exercised")
     def test_pi_extension_enforces_each_role(self):
