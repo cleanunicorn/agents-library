@@ -477,7 +477,7 @@ def main(argv):
     try:
         db = connect(args.run_dir)
     except (StoreError, sqlite3.Error) as error:
-        print(f"STORE_ERROR {error}")
+        print(f"STORE_ERROR {Path(args.run_dir) / STORE}: {error}")
         return 3
     if args.command in ("resolve", "await-user"):
         return settle(db, args, "resolved" if args.command == "resolve" else "awaiting_user")
