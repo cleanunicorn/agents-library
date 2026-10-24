@@ -19,14 +19,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# Any indentation: a fence nested under a list item or a blockquote is still
+# one copyable block, and so is a fence indented into an indented code block.
+FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+BLOCKQUOTE = re.compile(r"^\s*(>\s?)+")
 SLASH_COMMAND = re.compile(r"^\s*/[a-z][a-z0-9:_-]*(\s|$)")
 
 
 def fenced_blocks(text):
-    """Yield (opening line number, [lines]) for each fenced code block."""
+    """Yield (opening line number, [lines]) for each fenced code block.
+
+    Blockquote markers are stripped first so a quoted fence is seen as one.
+    """
     fence, start, body = None, 0, []
-    for number, line in enumerate(text.splitlines(), start=1):
+    for number, raw in enumerate(text.splitlines(), start=1):
+        line = BLOCKQUOTE.sub("", raw)
         if fence is None:
             opener = FENCE.match(line)
             if opener:
@@ -81,6 +88,15 @@ class PasteProblemTests(unittest.TestCase):
         text = ("1. Add the marketplace:\n\n   ```\n   /plugin marketplace add o/r\n   ```\n\n"
                 "2. Install:\n\n   ```\n   /plugin install p@p\n   ```\n")
         self.assertEqual(paste_problems(text), [])
+
+    def test_fence_inside_blockquote_fails(self):
+        text = "> Install:\n>\n> ```\n> /plugin marketplace add o/r\n> /plugin install p@p\n> ```\n"
+        self.assertEqual(len(paste_problems(text)), 1)
+
+    def test_fence_indented_four_spaces_under_list_item_fails(self):
+        text = ("1.  Install:\n\n    ```\n    /plugin marketplace add o/r\n"
+                "    /plugin install p@p\n    ```\n")
+        self.assertEqual(len(paste_problems(text)), 1)
 
     def test_paths_and_shell_commands_are_not_slash_commands(self):
         text = ("```sh\n/path/to/agents-library/install.py --project\n"
