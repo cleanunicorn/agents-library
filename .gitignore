@@ -47,3 +47,4 @@ node_modules/
 *.bak
 tmp/
 eval-results/
+.claude/worktrees
