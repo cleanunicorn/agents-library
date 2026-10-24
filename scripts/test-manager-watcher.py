@@ -17,6 +17,7 @@ policy stays the manager's alone.
 
 import json
 import re
+import shutil
 import signal
 import sqlite3
 import subprocess
@@ -93,7 +94,7 @@ class Run:
             if process.poll() is None:
                 process.kill()
                 process.wait()
-        subprocess.run(["rm", "-rf", str(self.dir)], check=False)
+        shutil.rmtree(self.dir, ignore_errors=True)
 
     def save(self):
         (self.bin / "scenario.json").write_text(json.dumps(self.agents), encoding="utf-8")
