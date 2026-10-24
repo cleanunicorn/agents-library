@@ -560,8 +560,9 @@ in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-manager-approval.py`), the manager's persistent console
 (`scripts/test-manager-console.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
-regressions (`scripts/test-diff-target.sh`), and eval cases with
-`run_evals.py --dry-run`.
+regressions (`scripts/test-diff-target.sh`), the eval runner's offline
+transcript parsing and delegation traces (`scripts/test-run-evals.py`), and
+eval cases with `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.

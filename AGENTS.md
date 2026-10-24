@@ -402,7 +402,9 @@ loads and executes.
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
+  tests (`scripts/test-diff-target.sh`), the eval runner's offline transcript
+  parsing and delegation traces (`scripts/test-run-evals.py`), and eval case
+  validation (`--dry-run`).
   Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
