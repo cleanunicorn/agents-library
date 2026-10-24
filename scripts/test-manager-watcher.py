@@ -469,11 +469,18 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(self.until(lambda: not run.status()["watcher"]["alive"]), "a dead watcher still looks alive")
         stale = run.cli("wait", timeout=10)
         self.assertIn("WATCHER stale", stale.stdout, "a waiting manager is never told its watcher died")
+        reads_before = len([c for c in run.calls() if c.startswith("agent read")])
         run.start("--interval", self.INTERVAL)
         self.assertTrue(self.until(lambda: run.status()["watcher"]["alive"]))
         self.assertNotEqual(run.status()["watcher"]["instance"], old)
-        time.sleep(0.5)
-        self.assertEqual(len(run.events()), 1, "a restart lost or duplicated the pending event")
+        self.assertTrue(self.until(lambda: len([c for c in run.calls() if c.startswith("agent read")]) >= reads_before + 2),
+                        "the replacement watcher never swept")
+        self.assertEqual([e["state"] for e in run.events()], ["pending"], "a restart lost or duplicated the pending event")
+        first = run.events()[0]["id"]
+        run.agent("coord", "blocked", CLAUDE_PROMPT, session="ses-new")
+        self.assertTrue(self.until(lambda: {e["id"]: e["state"] for e in run.events()}.get(first) == "superseded"),
+                        "the replacement watcher does not record what it sees")
+        self.assertEqual(len(run.events("pending")), 1)
 
     def test_a_real_wait_blocks_until_an_event_and_honors_its_timeout(self):
         run = Run(self)
