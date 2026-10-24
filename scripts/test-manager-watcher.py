@@ -99,8 +99,8 @@ class Run:
     def save(self):
         (self.bin / "scenario.json").write_text(json.dumps(self.agents), encoding="utf-8")
 
-    def agent(self, name, status, read="", session="ses-1", sleep=0):
-        self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep}
+    def agent(self, name, status, read="", session="ses-1", sleep=0, terminal="term_1"):
+        self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep, "terminal": terminal}
         self.save()
 
     def reads(self, name=""):
@@ -255,6 +255,20 @@ class DetectionTests(unittest.TestCase):
         run.sweep(now=1005)
         states = {e["id"]: e["state"] for e in run.events()}
         self.assertEqual(states[old], "superseded", "a replacement worker inherited its predecessor's event")
+        self.assertEqual(len(run.events("pending")), 1)
+
+    def test_without_a_session_id_the_terminal_identifies_the_worker(self):
+        run = Run(self)
+        run.agent("coord", "blocked", CLAUDE_PROMPT, session=None, terminal="term_a")
+        run.register("coord")
+        run.sweep(now=1000)
+        run.sweep(now=1005)
+        self.assertEqual(len(run.events()), 1, "a session-less worker's prompt split into two events")
+        old = run.events()[0]["id"]
+        run.agent("coord", "blocked", CLAUDE_PROMPT, session=None, terminal="term_b")
+        run.sweep(now=1010)
+        states = {e["id"]: e["state"] for e in run.events()}
+        self.assertEqual(states[old], "superseded", "a session-less replacement inherited the old event")
         self.assertEqual(len(run.events("pending")), 1)
 
     def test_a_prompt_that_goes_away_is_cleared(self):
