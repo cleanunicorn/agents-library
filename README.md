@@ -249,6 +249,9 @@ marked as touching live or shared resources unless you authorize it. It names
 the PR behind each failure and reviews the merged branch with `review-pr`.
 Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
 native subagents and the shell. Its transport guide needs no manager install.
+It answers its Herdr workers' routine permission prompts itself, logging each
+answer, and relays to you only merges, pushes, destruction outside the run,
+secrets or global settings, and prompts it cannot classify.
 Without a PR list it shows open PRs and waits for your selection. Nothing is
 pushed or changed on GitHub. Requires the `gh` CLI.
 
@@ -554,7 +557,8 @@ The same command covers all four supported hosts:
 It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
 word ceilings on agent and skill roots), the fix-everywhere contract
-(`scripts/test-fix-everywhere.py`), this README's table of contents and the
+(`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
+(`scripts/test-batch-merge-approval.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), the manager's approval contract
 (`scripts/test-manager-approval.py`), the manager's persistent console

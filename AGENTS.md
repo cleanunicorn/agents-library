@@ -291,7 +291,9 @@ loads and executes.
   classify → merge onto a new local branch → test under the project's rules,
   attributing failures → review with review-pr → report; inside Herdr its
   reviewer and helpers run in tabs and its tests in a pane
-  (`references/herdr.md`, self-contained for standalone installation),
+  (`references/herdr.md`, self-contained for standalone installation,
+  including its approval rule: routine worker prompts answered and logged,
+  escalations relayed),
   otherwise as native subagents and plain shell.
   install-agents is a linear installer with no fan-out (orient → one
   confirmation → install via script → schedule → ledger). manager turns
@@ -383,7 +385,8 @@ loads and executes.
   `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
   `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
   exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
-  attribute-failure.sh).
+  attribute-failure.sh — plus its `{time, worker, asked, option}` rows in
+  `<run-dir>/approvals.md`).
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under
@@ -394,7 +397,8 @@ loads and executes.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
-  (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
+  (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
+  (`scripts/test-batch-merge-approval.py`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), the manager's approval contract
   (`scripts/test-manager-approval.py`), the manager's persistent console
   (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
