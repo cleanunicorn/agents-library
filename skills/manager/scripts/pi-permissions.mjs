@@ -23,16 +23,21 @@ const READ_TOOLS = new Set(["read", "grep", "find", "ls"]);
 const WRITE_TOOLS = new Set(["write", "edit"]);
 
 // Commands a reader may run unasked: each segment of a pipeline or chain must
-// start with one of these.
+// match one of these. Each excludes the options that make its command write a
+// file or run a program: git's --output and --ext-diff, rg's --pre, find's
+// -exec and -fprint families; sed is limited to printing a line range, since
+// a sed script can write (`w`) or execute (`e`).
 const READ_COMMANDS = [
-  /^git (log|diff|show|status|rev-parse|blame|branch --show-current)\b/,
-  /^(ls|cat|head|tail|grep|rg|wc|pwd)\b/,
-  /^sed -n\b/,
-  /^find\b(?!.*\s-(exec|execdir|delete|ok)\b)/,
+  /^git (log|diff|show|status|rev-parse|blame|branch --show-current)\b(?!.*\s--(output|ext-diff)\b)/,
+  /^(ls|cat|head|tail|grep|wc|pwd)\b/,
+  /^rg\b(?!.*\s--pre\b)/,
+  /^sed -n ['"]?\d+(,\d+)?p['"]?(\s+[^\s'"]+)*$/,
+  /^find\b(?!.*\s-(exec|execdir|delete|ok|okdir|fprint|fprint0|fprintf|fls)\b)/,
 ];
 
-// Shell features that can write or run hidden commands. `2>&1` is harmless.
-const SHELL_WRITES = /(?<![0-9])>|\$\(|`|<\(|>\(/;
+// Shell features that can write or run hidden commands. Only fd duplication
+// (`2>&1`, `>&2`) is harmless; every other `>` writes a file.
+const SHELL_WRITES = />(?!&\d)|\$\(|`|<\(/;
 
 function escalations(main) {
   const branch = main.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -93,7 +98,8 @@ function inside(path, dir) {
 }
 
 function segments(command) {
-  return command.split(/\|\||&&|[|;\n]/).map((part) => part.trim()).filter(Boolean);
+  // A lone `&` backgrounds one command and starts the next; the `&` of `2>&1` does not.
+  return command.split(/\|\||&&|[|;\n]|(?<![>&])&(?![>&])/).map((part) => part.trim()).filter(Boolean);
 }
 
 function readOnlyCommand(command, config) {
