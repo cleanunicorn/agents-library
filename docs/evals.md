@@ -18,6 +18,7 @@ runs. Run it by hand, scoped, when you change a skill or update the model.
 
 ```
 run_evals.py                      # the shared runner (stdlib Python 3)
+scripts/test-run-evals.py         # offline tests of its transcript parsing
 skills/<name>/evals/cases.json    # at least 5 positive and 5 negative cases per skill
 eval-results/                     # JSON results per run (gitignored)
 ```
@@ -46,7 +47,8 @@ For each trial the runner:
 A case passes a trial iff all its assertions pass. Default is 3 trials per
 case; per-case and per-skill pass rates are printed and written to
 `eval-results/<timestamp>.json` (which also records per-trial failures and the
-skills each trial invoked).
+skills each trial invoked, plus a delegation trace per trial with `--trace` —
+see [Delegation traces](#delegation-traces)).
 
 ## Running
 
@@ -81,7 +83,13 @@ python3 run_evals.py --build-only --keep-workspaces --case bm-h1 --skill batch-m
 
 # keep workspaces after a real run to inspect what the agent did
 python3 run_evals.py --skill triage-issues --case ti-h5 --trials 1 --keep-workspaces
+
+# also record which sub-agents each trial launched (telemetry, never graded)
+python3 run_evals.py --skill manager --case mg-h3 --trials 1 --trace
 ```
+
+The transcript parser and the trace are tested offline, on synthetic
+transcripts, by `scripts/test-run-evals.py` in the local gate — no agent runs.
 
 **Cost note:** for a normal sweep, multiply the case counts printed by
 `--dry-run` by `--trials` (default 3) to get the number of agent runs. Ablation
@@ -107,6 +115,58 @@ ablation.
   the skill under test is a cross-triggering signal even when the trial passed.
 - `!` lines — the assertion (or agent error) that failed, per trial.
 - `FLAKY` = some trials passed; `FAIL` = none did.
+
+### Delegation traces
+
+With `--trace`, each trial in the results JSON gains a `trace` object built
+from the agent's stream-json transcript. It is telemetry only: no assertion,
+pass rate, or `trigger-ok` reads it, and without the flag the report is
+unchanged.
+
+```jsonc
+"trace": {
+  "version": 1,
+  "verdict": "delegated",          // | "self-executed" | "unknown"
+  "launches": [                    // one per sub-agent tool call, in order
+    {"name": "Agent", "message": 0, "tool_use_id": "toolu_…",
+     "subagent_type": "Plan", "run_in_background": true, "error": false}
+  ],
+  "max_launch_batch": 2,           // most launches in one assistant message
+  "subagent_events": 14,           // events sub-agents emitted
+  "tool_counts": {"Agent": 3, "Read": 2}   // top-level agent's tool calls
+}
+```
+
+`subagent_type`, `run_in_background`, and `error` appear only when the
+transcript carries them with the expected type.
+
+**Host events read** (Claude Code `--output-format stream-json`, checked
+against CLI 2.1.310); everything else is ignored, as are lines that are not
+JSON objects:
+
+- assistant `tool_use` blocks — every name is counted; `Agent` (and `Task`,
+  its earlier name) is recorded as a launch;
+- user `tool_result` blocks whose `tool_use_id` matches a launch — their
+  `is_error` becomes the launch's `error`;
+- any event whose `parent_tool_use_id` is set — a sub-agent's own traffic,
+  counted in `subagent_events` and kept out of `tool_counts`.
+
+**Verdict.** `delegated`: a launch that did not report an error, or any
+sub-agent event. `self-executed`: the agent called tools, and no launch
+succeeded. `unknown`: no tool call and no sub-agent event — an empty,
+text-only, or unparseable transcript, a timeout, or a missing CLI. Prose that
+*says* it delegated is never evidence.
+
+**What it does not prove.** A launch shows the sub-agent was started, not
+that its work was good. `max_launch_batch` shows launches issued together,
+not that they ran concurrently; isolation between workers is not observable
+in the transcript at all.
+
+**Retention.** The trace keeps no prompt, description, tool input, text, or
+result body — only the fields above. It lives in the gitignored
+`eval-results/<timestamp>.json` beside the rest of the report, for as long as
+you keep that file (no automatic expiry); `--keep-workspaces` does not
+affect it, and the raw transcript is never saved.
 
 ## Case file schema
 
@@ -212,8 +272,11 @@ closing it: their prompts set the run directory to `.worktrees/manager-run`
 setup record, the review and re-check records, and a gate log ending
 `exit: 0` exist there. A manager that did the work alone would have to forge
 every one of those files to pass. Nothing proves planners and reviewers ran
-in parallel and in isolation; that still needs a persisted delegation trace
-per trial, which the runner does not have yet.
+in parallel and in isolation. `--trace` now records, per trial, which
+sub-agents were launched, how many in one message, and whether sub-agent
+events appeared ([Delegation traces](#delegation-traces)) — evidence a solo
+manager cannot produce by writing files. It stays telemetry: no case asserts
+on it yet, and concurrency and isolation remain unobservable.
 
 The approval cases `mg-h19`–`mg-h21` have the same limit. The runner starts
 the manager with `--dangerously-skip-permissions`, so no real host dialog
