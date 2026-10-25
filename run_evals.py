@@ -20,6 +20,8 @@ Usage:
                                                 # flags retirement candidates
   python3 run_evals.py --without-skill review-pr --skill review-pr
                                                 # single ablation arm
+  python3 run_evals.py --skill manager --trace  # also record per-trial
+                                                # delegation traces
   python3 run_evals.py --dry-run                # validate case files only
   python3 run_evals.py --build-only --case bm-h1 --keep-workspaces
                                                 # materialize fixtures, no agent
@@ -68,6 +70,10 @@ SKILLS_DIR = REPO / "skills"
 RESULTS_DIR = REPO / "eval-results"
 
 DEFAULT_TIMEOUT = 900  # seconds per trial
+
+# The host's sub-agent tool; "Task" is its name before Claude Code renamed it.
+DELEGATION_TOOLS = {"Agent", "Task"}
+TRACE_VERSION = 1
 
 ASSERTION_TYPES = {
     "output_regex", "output_not_regex",
@@ -189,6 +195,107 @@ def claude_supports(flag):
     return flag in helptext
 
 
+def _transcript_events(stdout):
+    """Yield each stream-json event; the transcript is untrusted, so lines
+    that are not JSON objects are skipped rather than allowed to crash a run."""
+    for line in stdout.splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(ev, dict):
+            yield ev
+
+
+def _content_blocks(ev):
+    message = ev.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    if not isinstance(content, list):
+        return []
+    return [b for b in content if isinstance(b, dict)]
+
+
+def parse_transcript(stdout):
+    texts, skills_used = [], set()
+    for ev in _transcript_events(stdout):
+        if ev.get("type") == "assistant":
+            for block in _content_blocks(ev):
+                if block.get("type") == "text":
+                    texts.append(block.get("text", ""))
+                elif block.get("type") == "tool_use" and block.get("name") == "Skill":
+                    name = str(block.get("input", {}).get("skill", ""))
+                    skills_used.add(name.split(":")[-1])
+        elif ev.get("type") == "result" and ev.get("result"):
+            texts.append(str(ev["result"]))
+    return "\n".join(texts), skills_used
+
+
+def unknown_trace():
+    return {"version": TRACE_VERSION, "verdict": "unknown", "launches": [],
+            "max_launch_batch": 0, "subagent_events": 0, "tool_counts": {}}
+
+
+def parse_delegation_trace(stdout):
+    """Summarize the delegation evidence a transcript exposes — launches of
+    the sub-agent tool and events sub-agents emitted — without keeping any
+    prompt, tool input, or text. Missing evidence stays "unknown"."""
+    trace = unknown_trace()
+    launches_by_id = {}
+    message_index = 0
+    for ev in _transcript_events(stdout):
+        if isinstance(ev.get("parent_tool_use_id"), str) and ev["parent_tool_use_id"]:
+            # A sub-agent's own traffic; its tools are not the top-level agent's.
+            trace["subagent_events"] += 1
+            continue
+        if ev.get("type") == "assistant":
+            batch = 0
+            for block in _content_blocks(ev):
+                if block.get("type") != "tool_use":
+                    continue
+                name = str(block.get("name", ""))
+                trace["tool_counts"][name] = trace["tool_counts"].get(name, 0) + 1
+                if name not in DELEGATION_TOOLS:
+                    continue
+                batch += 1
+                launch = _launch_record(block, name, message_index)
+                trace["launches"].append(launch)
+                if "tool_use_id" in launch:
+                    launches_by_id[launch["tool_use_id"]] = launch
+            trace["max_launch_batch"] = max(trace["max_launch_batch"], batch)
+            message_index += 1
+        elif ev.get("type") == "user":
+            for block in _content_blocks(ev):
+                tool_use_id = block.get("tool_use_id")
+                if block.get("type") != "tool_result" or not isinstance(tool_use_id, str):
+                    continue
+                launch = launches_by_id.get(tool_use_id)
+                if launch is not None and isinstance(block.get("is_error"), bool):
+                    launch["error"] = block["is_error"]
+    trace["verdict"] = _delegation_verdict(trace)
+    return trace
+
+
+def _launch_record(block, name, message_index):
+    launch = {"name": name, "message": message_index}
+    if isinstance(block.get("id"), str):
+        launch["tool_use_id"] = block["id"]
+    tool_input = block.get("input") if isinstance(block.get("input"), dict) else {}
+    if isinstance(tool_input.get("subagent_type"), str):
+        launch["subagent_type"] = tool_input["subagent_type"]
+    if isinstance(tool_input.get("run_in_background"), bool):
+        launch["run_in_background"] = tool_input["run_in_background"]
+    return launch
+
+
+def _delegation_verdict(trace):
+    launched = any(not launch.get("error") for launch in trace["launches"])
+    if launched or trace["subagent_events"]:
+        return "delegated"
+    if trace["tool_counts"]:
+        return "self-executed"
+    return "unknown"
+
+
 def run_agent(ws, prompt, model, timeout, isolate_settings):
     cmd = [
         "claude", "-p", prompt,
@@ -205,26 +312,13 @@ def run_agent(ws, prompt, model, timeout, isolate_settings):
             capture_output=True, text=True, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
-        return "", set(), "timeout"
+        return "", set(), unknown_trace(), "timeout"
     except FileNotFoundError:
-        return "", set(), "claude CLI not found on PATH"
-    texts, skills_used = [], set()
-    for line in r.stdout.splitlines():
-        try:
-            ev = json.loads(line)
-        except ValueError:
-            continue
-        if ev.get("type") == "assistant":
-            for block in ev.get("message", {}).get("content", []):
-                if block.get("type") == "text":
-                    texts.append(block.get("text", ""))
-                elif block.get("type") == "tool_use" and block.get("name") == "Skill":
-                    name = str(block.get("input", {}).get("skill", ""))
-                    skills_used.add(name.split(":")[-1])
-        elif ev.get("type") == "result" and ev.get("result"):
-            texts.append(str(ev["result"]))
+        return "", set(), unknown_trace(), "claude CLI not found on PATH"
+    output, skills_used = parse_transcript(r.stdout)
+    trace = parse_delegation_trace(r.stdout)
     err = "" if r.returncode == 0 else f"claude exited {r.returncode}: {r.stderr[-500:]}"
-    return "\n".join(texts), skills_used, err
+    return output, skills_used, trace, err
 
 
 def check_assertion(a, output, ws):
@@ -271,7 +365,7 @@ def run_case(args, tmp_root, suite, case, loaded_skills, isolate_settings):
             print(f"  built {case['id']} trial {i + 1}: {ws}")
             trials.append({"workspace": str(ws), "built": True})
             continue
-        output, skills_used, err = run_agent(
+        output, skills_used, trace, err = run_agent(
             ws, case["prompt"], args.model, trial_timeout(args.timeout, case),
             isolate_settings
         )
@@ -293,7 +387,7 @@ def run_case(args, tmp_root, suite, case, loaded_skills, isolate_settings):
             trigger_ok = exp in skills_used
         else:
             trigger_ok = under_test not in skills_used
-        trials.append({
+        trial = {
             "workspace": str(ws),
             "passed": not failures,
             "failures": failures,
@@ -301,7 +395,11 @@ def run_case(args, tmp_root, suite, case, loaded_skills, isolate_settings):
             "trigger_ok": trigger_ok,
             # tail of the agent's output, for debugging failed assertions
             "output_tail": output[-4000:],
-        })
+        }
+        if args.trace:
+            # telemetry only: grading above never reads it
+            trial["trace"] = trace
+        trials.append(trial)
         if not args.keep_workspaces:
             shutil.rmtree(ws, ignore_errors=True)
     return trials
@@ -368,6 +466,9 @@ def main():
     ap.add_argument("--build-only", action="store_true",
                     help="materialize fixtures without invoking the agent")
     ap.add_argument("--keep-workspaces", action="store_true")
+    ap.add_argument("--trace", action="store_true",
+                    help="record each trial's delegation trace in the report "
+                         "(telemetry only; see docs/evals.md)")
     args = ap.parse_args()
 
     skills = args.skill or all_skills()

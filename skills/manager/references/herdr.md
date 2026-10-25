@@ -10,6 +10,19 @@ by the Herdr skill: one full-size, watchable tab per worker in the current
 workspace, grouped by `<slug>-` labels. Herdr supplies transport and live
 context, with the same roles and rules as native workers.
 
+## Your tab
+
+On the first turn, once, label your own tab so the user can find the console
+among the workers' tabs: run `bash <skill>/scripts/rename-herdr-tab.sh
+manager`, `<skill>` being this skill's directory, from the project's working
+directory — never `cd` into the skill first, or the label names the skill.
+It renames `$HERDR_TAB_ID` to `manager <project>`,
+where `<project>` is the git toplevel directory's name, else the working
+directory's. It needs only `HERDR_ENV=1` and `HERDR_TAB_ID`, not this file's
+precondition, so it also runs when workers are native. Outside Herdr it does
+nothing; a failed rename prints one warning and never blocks startup. Do not
+retry it or rename it per item.
+
 ## Start a worker
 
 1. **Pick kinds.** `herdr agent` lists the kinds this Herdr knows; use the
@@ -44,12 +57,15 @@ worktree's commits land in `<repo>/.git` (`git rev-parse --git-common-dir`),
 outside the worktree. `<worktree>` is the item's worktree, which exists only
 after the coordinator creates it, so only later workers start there.
 
-| kind | coordinator | planner, reviewer — writes only to the run directory |
-|------|-------------|------------------------------------------------------|
-| claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` |
-| codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write asks once and you answer it for the session, and so does a reviewer's gate that writes only to the run directory (`TMPDIR=<run_dir>`) |
-| opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else |
-| any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory |
+| kind | coordinator | planner, reviewer — writes only to the run directory | verified |
+|------|-------------|------------------------------------------------------|----------|
+| claude | `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>` | `--permission-mode dontAsk --add-dir <run_dir> --allowedTools Read Grep Glob "Edit(/<run_dir>/**)" "Write(/<run_dir>/**)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)"`; a reviewer adds `"Bash(<gate command>)"` | in use |
+| codex | `-C <repo> -s workspace-write -a on-request --add-dir <run_dir> --add-dir <repo>/.git`; every push, `gh` call and fetch then asks, and so does the first write to a worktree outside `<repo>`, which you answer for the session | `-C <worktree> -s read-only -a on-request`; its record write asks once and you answer it for the session, and so does a reviewer's gate that writes only to the run directory (`TMPDIR=<run_dir>`) | in use |
+| opencode, kilo | none; `tab create --env OPENCODE_CONFIG_CONTENT=<opencode ask>` (kilo: `KILO_CONFIG_CONTENT`) | the same `--env` with `"edit":"ask"` added; answer the run directory's prompts with **Allow always** (it lasts until that agent restarts) and reject a write anywhere else | in use |
+| pi | `tab create --env PI_MANAGER_ROLE=coordinator --env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main> --env PI_MANAGER_DENY=<other worktrees, ':'-separated>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs` | `tab create --env PI_MANAGER_ROLE=planner` (or `reviewer`, adding `--env PI_MANAGER_GATE=<gate command>`) `--env PI_MANAGER_RUN_DIR=<run_dir> --env PI_MANAGER_MAIN=<main>`; args `--no-extensions --no-mcp --no-approve -e <manager>/scripts/pi-permissions.mjs`; a write outside `<run_dir>` is blocked, and a command other than a read or the gate asks | smoke-checked 2026-10-24, pi 1.2.0 |
+| gemini | `--approval-mode auto_edit --include-directories <run_dir>,<repo> --policy <run_dir>/<slug>/gemini-coordinator.toml`, that file holding `<gemini coordinator policy>` | `--approval-mode default --include-directories <run_dir> --policy <run_dir>/<slug>/gemini-reader.toml`, that file holding `<gemini reader policy>`; only a top-level `.md`, `.result` or `.log` write in `<run_dir>/<slug>/` is allowed, every other write is denied, and every shell command asks | --help-derived; unknown whether the installed release has `--policy` — when `gemini --help` does not list it, both cells are unknown: do not launch |
+| cursor | unknown — do not launch under this role: no per-process rule can make an escalation ask, so an allow in the user's own `~/.cursor/cli-config.json` (`Shell(git)`, say) runs a force-push unasked | unknown — do not launch under this role: no per-process way to limit writes to the run directory | --help-derived |
+| any other kind | read `<kind> --help` at launch and use its persistent-allow or sandbox flags; with none, start it plain and answer its prompts | same, keeping writes to the run directory | fallback |
 
 Why: claude's `auto` mode would approve a push to the main branch, so an ask
 rule forces the prompt, loaded for that session only by `--settings`; its
@@ -58,17 +74,105 @@ none. opencode and kilo allow every tool by default, so their ask rules come
 in through the environment, for that agent only. codex has no per-command ask
 rule and `-a on-request` leaves asking to the model, so its sandbox is the
 prompt surface: without network, a remote write cannot run unasked.
+pi asks before no tool call at all (its `docs/security.md`), so the
+skill's own extension `<manager>/scripts/pi-permissions.mjs` (`<manager>` is
+this skill's directory) is the prompt surface: it reads the role from the
+tab's environment, asks for each escalation command every time, blocks a
+reader's write outside `<run_dir>`, and blocks every call when a setting is
+missing; `--no-extensions` keeps other extensions from answering first.
+Smoke check (herdr 0.9.5, pi 1.2.0): `rm -rf` raised the extension's
+"Allow once / Deny" dialog and Deny left the target intact, a planner's
+write into the worktree was blocked and its run-directory write allowed —
+and Herdr reported the agent `done`, not `blocked`, while the dialog was up.
+Every prompt a pi worker shows is this dialog, so treat a pi worker's `done`
+with no saved result as § Drive's `blocked`: read the pane, then answer.
+The watcher reads a pi worker's `done` screen for the same reason and raises
+this dialog as a `suspected` event, so claim it first like any other
+(§ Watch for prompts).
+Its menu offers no persistent option, so a routine one gets "Allow once" each
+time it returns.
+gemini's `--policy` file replaces the user's own policy directory for that
+process (gemini-cli `packages/core/src/policy/config.ts`), and an `ask_user`
+rule outranks the routine allow by priority. cursor reads permissions only
+from `~/.cursor/cli-config.json` or the project's `.cursor/cli.json`, a
+global file and a checked-in one, so nothing per-process can grant or limit
+it. **verified** says how far each row is proven: `smoke-checked` — started
+in a Herdr tab, prompted, and an escalation surfaced as a prompt;
+`--help-derived` — read from the kind's help, source or official docs,
+never run here, with every cell those do not settle reading `unknown`; `in
+use` — the recipe the manager already runs; `fallback` — no recipe. A cell
+that reads `unknown — do not launch` rules that kind out for that role.
 `<main>` is the main branch:
 
 ```
-<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D *)","Bash(git worktree remove *)","Bash(rm -rf *)"]}}'
-<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask"}}}'
+<claude ask> = '{"permissions":{"deny":["Edit(/<other worktree>/**)","Write(/<other worktree>/**)"],"ask":["Bash(git push *--force*)","Bash(git push *-f*)","Bash(git push * <main>*)","Bash(gh pr merge *)","Bash(gh pr ready *)","Bash(git branch -D*)","Bash(git worktree remove *)","Bash(rm -rf *)","Bash(git -C * push*)","Bash(git -C * branch -D*)","Bash(git -C * worktree remove*)","Bash(git push *+*)","Bash(git push *:<main>*)","Bash(rm -fr *)","Bash(git push *--all*)","Bash(git push *--mirror*)"]}}'
+<opencode ask> = '{"permission":{"bash":{"git push*--force*":"ask","git push*-f*":"ask","git push* <main>*":"ask","gh pr merge*":"ask","gh pr ready*":"ask","git branch -D*":"ask","git worktree remove*":"ask","rm -rf*":"ask","git -C * push*":"ask","git -C * branch -D*":"ask","git -C * worktree remove*":"ask","git push*+*":"ask","git push*:<main>*":"ask","rm -fr*":"ask","git push*--all*":"ask","git push*--mirror*":"ask"}}}'
 ```
+
+```toml
+# <gemini coordinator policy>
+[[rule]]
+toolName = "run_shell_command"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '.*\b(git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(--force|--all\b|--mirror\b|-[a-zA-Z]*f\b|\+\S)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+worktree\s+remove\b|rm\s+(.*\s)?((-[a-zA-Z]*[rR]\S*|--recursive)\s+(.*\s)?(-[a-zA-Z]*f\S*|--force)|(-[a-zA-Z]*f\S*|--force)\s+(.*\s)?(-[a-zA-Z]*[rR]\S*|--recursive)|-[a-zA-Z]*([rR][a-zA-Z]*f|f[a-zA-Z]*[rR])))'
+decision = "ask_user"
+priority = 900
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"<other worktree>/'
+decision = "deny"
+priority = 950
+```
+
+```toml
+# <gemini reader policy>; no shell allow, so every other command asks
+[[rule]]
+toolName = ["read_file", "grep_search", "glob", "list_directory"]
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '.*\b(git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(--force|--all\b|--mirror\b|-[a-zA-Z]*f\b|\+\S)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+push\b.*\s(\S*:)?<main>(\s|$)|gh\s+pr\s+(merge|ready)\b|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+branch\b.*\s(-[a-zA-Z]*D[a-zA-Z]*|--delete\s+--force|--force\s+--delete)(\s|$)|git(\s+-\S+(\s+[^-\s]\S*)?)*\s+worktree\s+remove\b|rm\s+(.*\s)?((-[a-zA-Z]*[rR]\S*|--recursive)\s+(.*\s)?(-[a-zA-Z]*f\S*|--force)|(-[a-zA-Z]*f\S*|--force)\s+(.*\s)?(-[a-zA-Z]*[rR]\S*|--recursive)|-[a-zA-Z]*([rR][a-zA-Z]*f|f[a-zA-Z]*[rR])))'
+decision = "ask_user"
+priority = 900
+
+[[rule]]
+toolName = ["write_file", "replace"]
+decision = "deny"
+priority = 150
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"<run_dir>/<slug>/[^"/]+\.(md|result|log)"'
+decision = "allow"
+priority = 200
+
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = '"file_path":"[^"]*\.\.'
+decision = "deny"
+priority = 300
+```
+
+Write each policy file into `<run_dir>/<slug>/` from its block, placeholders
+filled, before starting the gemini worker that loads it; the reader's policy
+denies it a `.toml` write, so it cannot rewrite its own. gemini matches
+`file_path` as written: unlike pi's extension it resolves no symlink inside
+`<run_dir>/<slug>/` and no `//` or `..` spelling of a sibling worktree, so
+this args matching is not an OS sandbox.
 
 `<run_dir>` is absolute, so claude's rule reads `Edit(//tmp/…/**)`. Never
 launch with `--dangerously-skip-permissions`, `--permission-mode
 bypassPermissions`, `--dangerously-bypass-approvals-and-sandbox`, codex
-`-a never`, or opencode or kilo `--auto`: `-a never` fails the action
+`-a never`, opencode or kilo `--auto`, gemini `--yolo`, `-y` or
+`--approval-mode yolo`, cursor `--force`, `-f` or `--yolo`, or pi without
+`-e <manager>/scripts/pi-permissions.mjs`: `-a never` fails the action
 silently and the others approve it silently — `--auto` even approves an ask
 rule, since it passes everything not explicitly denied — so no escalation
 case could reach you. Ask rules match a command as written, so a variant can
@@ -90,10 +194,16 @@ a listing.
   (`references/console.md` § Results) there and reply with that path. Read
   only that file: never the record, and never the pane's scrollback for a
   result.
-- **Do not block the console.** Prompt without `--wait`, then wait in the
-  background where the host can — `herdr agent wait <name>` as a background
-  command that wakes you when it exits — and return to the user. Same-role
-  workers start together: prompt both before waiting on either.
+- **Confirm delivery, then do not block the console.** Send every prompt,
+  first or follow-up, through a short gate: `herdr agent prompt <name>
+  <brief> --wait --timeout 10000`. Delivery is confirmed when the agent
+  leaves `idle` — the gate settles, or it times out and `herdr agent get
+  <name>` shows `working` or `blocked`. A freshly started agent can drop a
+  prompt sent before its input box is ready, and an unconfirmed send leaves
+  you waiting on an idle worker. Then wait in the background where the host
+  can — `herdr agent wait <name>` as a background command that wakes you
+  when it exits — and return to the user. Same-role workers start together:
+  gate each in turn, then wait on both.
 - **The board reads live state.** Before showing it, `herdr agent get
   <name>` for each recorded worker: `working`, `idle`, `done`, `blocked`, or
   `unknown`. `unknown` is not done.
@@ -103,7 +213,8 @@ a listing.
 - **Planners are done after Phase 1.** Close the tabs you recorded for them
   once their records are saved, so reviewers never share scrollback with a
   plan and the tab bar shows only live workers.
-- **`blocked`** means an approval or a question UI. Read just the prompt with
+- **`blocked`** means an approval or a question UI. The watcher reports it
+  as an event: claim it first (§ Watch for prompts). Read just the prompt with
   `herdr agent read <name> --source recent-unwrapped --lines 40` and classify it — role, action,
   target — against `references/console.md` § Approvals:
   - **Routine:** choose the persistent option the menu offers ("Allow
@@ -120,12 +231,81 @@ a listing.
     send exactly the option the user names with `send-keys`. Unattended,
     answer an escalation with reject and mark it `assumed`; the worker
     continues.
-- **A timeout is not a failure to deliver.** Read the agent before sending
-  anything again.
+- **Re-prompt only an undelivered prompt.** When the gate returns
+  `agent_prompt_stalled`, or times out with the agent still `idle`, read the
+  pane (`herdr agent read <name> --source recent-unwrapped --lines 40`); if
+  it shows no turn started, re-prompt once through the same gate. A second
+  miss is a member that fails (SKILL.md rule 8). A timeout after activity is
+  not a reason to send again: the worker has the prompt.
+
+## Watch for prompts
+
+A worker can raise a permission prompt or a question between your turns, and
+a prompt nobody reads stalls its item. One watcher per run polls every
+worker and helper every five seconds, records each prompt as an event in the
+run directory, and wakes you; it only detects and notifies. Classifying,
+answering and the approvals-answered row stay yours, under
+`references/console.md` § Approvals, unchanged. `<watcher>` below is
+`python3 <skill dir>/scripts/watch-workers.py`, where `<skill dir>` is the
+directory of the header's `skill` path, and every call takes `--run-dir
+<run_dir>`.
+
+- **Start it before the first worker**, on the turn you record the
+  transport: `<watcher> run --run-dir <run_dir> > <run_dir>/watcher.log 2>&1
+  &` as a plain background shell command. A second `run` prints
+  `ALREADY_RUNNING` and exits, so one watcher serves the run.
+- **Register every worker** right after its `agent start`, helpers and
+  replacements too: `<watcher> register --run-dir <run_dir> --name <agent
+  name> --item <slug> --role <role>`. Unregister it (`unregister --name`)
+  when you close its tab.
+- **Keep one wait armed** beside the worker waits: `<watcher> wait --run-dir
+  <run_dir>` as a background command that wakes you when it exits, re-armed
+  each time it does. It prints `EVENT <id> worker=<name> item=<slug>
+  role=<role> kind=blocked|suspected` per due event, ids and identities only,
+  never prompt text; `WATCHER stale` means the watcher died. An event nobody
+  claims is printed again after 5, 10, 20, then every 30 seconds: printing is
+  not acknowledgment.
+- **Drain on every resume**, woken or not: `<watcher> status --run-dir
+  <run_dir>` lists the events, open ones first. For each `pending` one, and
+  each EVENT line:
+  1. `<watcher> claim --event <id>`. `NOT_CLAIMABLE` means it was already
+     handled, cleared or replaced: ignore it, so a late or duplicate
+     notice is harmless. `CLAIMED … token=<token>` makes it yours for 30
+     seconds; unresolved after that, it is due again.
+  2. Re-read the current prompt (§ Drive, `blocked`) and check the worker
+     and item still match the event before answering. A `suspected` event
+     with no prompt on screen is resolved without sending anything;
+     that screen is not raised again until it or the worker's session
+     changes.
+  3. Answer it as § Drive's `blocked` bullet says, then `herdr agent get`
+     until the worker leaves `blocked`, and `<watcher> resolve --event <id>
+     --token <token>`. `STALE_TOKEN` means the claim lapsed while you
+     answered: claim it again and resolve with the new token, without
+     sending anything again. A confirmation dialog or the next prompt
+     arrives as a new event: handle it the same way, never by repeating keys.
+  4. A prompt relayed to the user: `<watcher> await-user --event <id>
+     --token <token>`. It stays on the board without further notices; with
+     the user's answer, claim it again and go on from step 2.
+- **Record its health** on every board rewrite from `status`: the header's
+  `watcher <instance> · heartbeat <age>s · pending <N>`. `alive: false` or
+  `WATCHER stale` → start it again with the same `run` command; it takes
+  over the run's store and keeps every event. Recovering the watcher never
+  re-prompts a worker or resends a brief.
+- **Wake-ups ride the host, not Herdr.** Herdr 0.9.5 (protocol 22) has no
+  queued or idle-conditional delivery: `agent prompt` types text and Enter
+  into the terminal, which can submit whatever sits in your input buffer, and
+  a status check before it still races your own resumption. So the watcher
+  calls only `herdr agent get` and `herdr agent read` and never writes to a
+  terminal, yours included. Where the host does not wake you when a
+  background command exits, read `status` each turn instead, or run `wait
+  --timeout <seconds>` where the host lets you wait with a timeout: detection is
+  continuous, wake-up is only as reliable as the host's background
+  commands.
 
 ## Tear down
 
 At an item's Phase 5, after its records are in the run directory: `herdr tab
-close <recorded tab id>` for each of its tabs still open. Other items' tabs
+close <recorded tab id>` for each of its tabs still open, and `unregister`
+each of its workers from the watcher. Other items' tabs
 stay. Close only tabs you created and recorded — never by label, never from a
 listing, never a workspace, never `herdr server stop`.

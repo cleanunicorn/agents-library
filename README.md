@@ -38,7 +38,7 @@ cd agents-library
 
 1. **Hosts**: Claude Code, Codex, opencode, and Kilo Code. Hosts whose CLI
    is on your `PATH` start checked.
-2. **Agents and skills**: the eight agents and ten skills. Uncheck any you
+2. **Agents and skills**: the eight agents and eleven skills. Uncheck any you
    don't want. This screen appears only when opencode or Kilo is checked,
    because Claude Code and Codex install the plugin as a whole.
 
@@ -54,7 +54,7 @@ reported as `KEPT`.
 
 | Host | What the installer does | Item checklist applies |
 | --- | --- | --- |
-| Claude Code | `claude plugin install agents-library --marketplace cleanunicorn/agents-library` | No: whole plugin |
+| Claude Code | `claude plugin install agents-library --marketplace cleanunicorn/agents-library`, which registers the marketplace and installs the plugin in one command | No: whole plugin |
 | Codex | `codex plugin marketplace add cleanunicorn/agents-library`, then `codex plugin add agents-library@agents-library` | No: whole plugin |
 | opencode | Symlinks into `~/.config/opencode/{agents,skills}/` | Yes |
 | Kilo Code | Symlinks into `~/.config/kilo/{agents,skills}/` | Yes |
@@ -62,7 +62,7 @@ reported as `KEPT`.
 Restart the host afterwards (a new Claude Code session, a new Codex thread).
 In Claude Code the agents become subagents (e.g. `architect`, `refactor`,
 `testforge`) and the skills are available as `/review-pr`, `/review-design`,
-`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`,
+`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`, `/file-issues`,
 `/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`,
 and `/manager`.
 
@@ -99,8 +99,9 @@ Something failed? See [Troubleshooting](#troubleshooting).
 
 ### Install without cloning (Claude Code, Codex)
 
-The plugin hosts don't need the clone. These are the commands the installer
-runs, and you can run them directly.
+The plugin hosts don't need the clone. Each host takes two steps, registering
+the marketplace and then installing the plugin from it. Registering the
+marketplace does not install the plugin.
 
 Claude Code 2.1.286 uses SSH for this plugin by default, both here and through
 the installer. Provide a GitHub SSH key **or**
@@ -108,27 +109,48 @@ the installer. Provide a GitHub SSH key **or**
 run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting `claude` if you
 want HTTPS.
 
-```
-/plugin marketplace add cleanunicorn/agents-library
-/plugin install agents-library@agents-library
-```
+In Claude Code, run these one at a time. Pasting both together fails: the
+prompt reads them as one command, and the second line becomes part of the
+first command's argument.
+
+1. Register the marketplace:
+
+   ```
+   /plugin marketplace add cleanunicorn/agents-library
+   ```
+
+2. Install the plugin from it:
+
+   ```
+   /plugin install agents-library@agents-library
+   ```
 
 The same from the CLI is
 `claude plugin marketplace add cleanunicorn/agents-library` then
-`claude plugin install agents-library@agents-library`.
+`claude plugin install agents-library@agents-library`. The installer runs
+`claude plugin install agents-library --marketplace cleanunicorn/agents-library`,
+which does both in one command.
 
-Codex takes two steps, registering the marketplace and then installing the
-plugin from it:
+In Codex, the same two steps:
 
-```
-codex plugin marketplace add cleanunicorn/agents-library
-codex plugin add agents-library@agents-library
-```
+1. Register the marketplace:
+
+   ```
+   codex plugin marketplace add cleanunicorn/agents-library
+   ```
+
+2. Install the plugin from it:
+
+   ```
+   codex plugin add agents-library@agents-library
+   ```
+
+These are the commands the installer runs.
 
 Codex's in-thread plugin UI takes this repository's URL,
 `https://github.com/cleanunicorn/agents-library`, in place of the first command.
-Registering the marketplace does not install the plugin. Check installation
-with `codex plugin list -m agents-library --json`. The manifests are
+Check installation with `claude plugin list --json` in Claude Code and
+`codex plugin list -m agents-library --json` in Codex. The manifests are
 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) and
 [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 
@@ -136,7 +158,7 @@ with `codex plugin list -m agents-library --json`. The manifests are
 
 Running `opencode` or `kilo` in the clone's root needs no install. They
 auto-discover `.opencode/` and `.kilo/`, whose `agents/*.md` (eight subagents,
-each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (ten skills,
+each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (eleven skills,
 loaded on demand via the `skill` tool) are symlinks to the canonical `agents/`
 and `skills/` at the repo root, so there is a single source of truth.
 
@@ -146,7 +168,7 @@ Pick the skill that matches the job:
 
 - **Deliver work:** [`/manager`](#the-manager-skill) or [`/plan-feature`](#the-feature-planning-skill).
 - **Review or improve:** [`/review-pr`](#the-pr-review-skill), [`/review-design`](#the-review-design-skill), [`/review-ux-psychology`](#the-ux-psychology-review-skill), or [`/simplify-sweep`](#the-simplify-sweep-skill).
-- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), or [`/install-agents`](#the-install-agents-skill).
+- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), [`/file-issues`](#the-issue-filing-skill), or [`/install-agents`](#the-install-agents-skill).
 - **Understand a codebase:** [`/describe-codebase`](#the-describe-codebase-skill).
 
 ### The Manager Skill
@@ -198,6 +220,13 @@ reviewers use a different agent kind from the coordinator when available.
 
 With Herdr and its skill installed, each worker has a tab in your current
 workspace; otherwise it uses native subagents. With neither, it refuses.
+In Herdr, a background watcher polls every worker every five seconds and
+records each permission prompt or question as an event in the run
+directory, so a prompt raised between turns is not missed; the manager
+learns of it through a host background command and still decides every
+answer. Herdr 0.9.5 offers no safe way to message the manager's own
+terminal, so the watcher never types into it: wake-ups are as reliable as
+the host's background commands, and native subagents get no watcher.
 Transport instructions are local to each skill so either can be installed
 alone. The manager never merges a PR.
 
@@ -249,6 +278,10 @@ marked as touching live or shared resources unless you authorize it. It names
 the PR behind each failure and reviews the merged branch with `review-pr`.
 Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
 native subagents and the shell. Its transport guide needs no manager install.
+It answers its Herdr workers' routine permission prompts itself, logging each
+answer, and relays to you only merges, pushes and other GitHub writes,
+main-branch commits, destruction outside the run, secrets or global
+settings, the project's ask-first list, and prompts it cannot classify.
 Without a PR list it shows open PRs and waits for your selection. Nothing is
 pushed or changed on GitHub. Requires the `gh` CLI.
 
@@ -259,6 +292,17 @@ GitHub issues into a code-grounded action plan covering duplicates, easy wins,
 needs-info cases, and larger work. Every GitHub write needs per-action approval;
 approved easy wins are fixed in separate worktrees and pull requests behind the
 project's lint and test gate. Requires the `gh` CLI.
+
+### The Issue Filing Skill
+
+[`/file-issues`](skills/file-issues/SKILL.md) keeps a long-lived session that
+turns each description you give into one well-formed GitHub issue, reports its
+URL, and waits for the next. It searches open and closed issues first and
+links the existing one instead of filing a duplicate, grounds the issue in
+permalinks to the code, and follows the repository's title convention and
+existing labels. It files issues only: no code edits, branches, commits, or
+pull requests. Inside Herdr it labels its tab `issues <project>`, as the
+manager labels its own `manager <project>`. Requires the `gh` CLI.
 
 ### The Simplify Sweep Skill
 
@@ -554,14 +598,22 @@ The same command covers all four supported hosts:
 It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
 word ceilings on agent and skill roots), the fix-everywhere contract
-(`scripts/test-fix-everywhere.py`), this README's table of contents and the
+(`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
+(`scripts/test-batch-merge-approval.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
-(`scripts/test-readme-toc.py`), the manager's approval contract
-(`scripts/test-manager-approval.py`), the manager's persistent console
-(`scripts/test-manager-console.py`), skill-installer write failures and ledger
+(`scripts/test-readme-toc.py`), one slash command per fenced block in every
+Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
+and its pi permission extension (`scripts/test-manager-approval.py`; the
+extension cases need `node` and report a skip without it), the manager's
+persistent console
+(`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
+(`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
+stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
-regressions (`scripts/test-diff-target.sh`), and eval cases with
-`run_evals.py --dry-run`.
+regressions (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
+against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), the eval runner's
+offline transcript parsing and delegation traces (`scripts/test-run-evals.py`),
+and eval cases with `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.

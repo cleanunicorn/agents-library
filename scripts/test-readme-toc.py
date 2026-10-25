@@ -11,6 +11,10 @@ Every shared definition must also appear in README.md: each agent gets its own
 subsection under *Choose a skill*, so a component added without its README
 section fails here too.
 
+AGENTS.md's Commands bullet is the agent's inventory of the gate, so every
+script `scripts/check.sh` runs must be named there; a check added to the gate
+without its line fails here.
+
 Anchors follow GitHub's slug rule for the headings these guides use: lowercase,
 drop punctuation other than hyphens and underscores, turn each space into a
 hyphen, and suffix repeats with -1, -2 in document order. This models the
@@ -307,6 +311,27 @@ class TocDriftTests(unittest.TestCase):
         problems = link_problems(FIXTURE.replace("See [Updating](#updating)",
                                                  "See [Updating](#update)"))
         self.assertEqual(problems, ["line 19: link #update matches no heading"])
+
+
+
+GATE_SCRIPT = re.compile(r"scripts/[\w-]+\.(?:py|sh)|run_evals\.py")
+
+
+def unnamed_gate_scripts(check_sh, guide):
+    """Return each script the gate runs that the guide never names."""
+    return sorted(set(GATE_SCRIPT.findall(check_sh)) - set(GATE_SCRIPT.findall(guide)))
+
+
+class GateInventoryTests(unittest.TestCase):
+    def test_agents_md_names_every_gate_script(self):
+        check_sh = (ROOT / "scripts" / "check.sh").read_text(encoding="utf-8")
+        guide = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertEqual(unnamed_gate_scripts(check_sh, guide), [])
+
+    def test_unnamed_gate_script_fails(self):
+        check_sh = "python3 scripts/test-a.py\npython3 scripts/test-b.py\n"
+        guide = "runs `scripts/test-a.py`"
+        self.assertEqual(unnamed_gate_scripts(check_sh, guide), ["scripts/test-b.py"])
 
 
 if __name__ == "__main__":

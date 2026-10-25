@@ -23,6 +23,7 @@ AGENT_WORD_CEILING = 1800
 SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 700,
     "describe-codebase": 1000,
+    "file-issues": 1100,
     "install-agents": 1400,
     "manager": 1550,
     "plan-feature": 1300,

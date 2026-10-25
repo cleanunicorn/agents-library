@@ -250,7 +250,7 @@ loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode and Kilo register them as
-  subagents). `skills/<name>/SKILL.md` are 10 orchestrators that fan out to
+  subagents). `skills/<name>/SKILL.md` are 11 skills; all but file-issues are orchestrators that fan out to
   sub-prompt files in `domains/` (review-pr, review-design,
   review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
   plan-feature), or
@@ -263,8 +263,18 @@ loads and executes.
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
-  issue work list), and install-agents has `install-agents.sh` (copies
-  `agents/*.md` into a host project's `.claude/agents/` and seeds journals).
+  issue work list), install-agents has `install-agents.sh` (copies
+  `agents/*.md` into a host project's `.claude/agents/` and seeds journals),
+  manager has `watch-workers.py` (Python 3.9+, stdlib: one background
+  watcher per Herdr run that polls every worker every 5 s, records prompts
+  as deduplicated events in `<run_dir>/watcher.sqlite3`, and wakes the
+  manager through a host background `wait`, never terminal input) and
+  `pi-permissions.mjs` (the pi extension that is a pi worker's only
+  permission prompt, loaded with `pi -e`), and manager and file-issues each
+  ship a byte-identical `rename-herdr-tab.sh` (labels the session's Herdr tab
+  `<prefix> <project>`; the manager copy is canonical, and
+  `scripts/test-rename-herdr-tab.sh` fails when a copy drifts, since a skill
+  installed alone carries only its own directory).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
@@ -291,10 +301,15 @@ loads and executes.
   classify → merge onto a new local branch → test under the project's rules,
   attributing failures → review with review-pr → report; inside Herdr its
   reviewer and helpers run in tabs and its tests in a pane
-  (`references/herdr.md`, self-contained for standalone installation),
+  (`references/herdr.md`, self-contained for standalone installation,
+  including its approval rule: routine worker prompts answered and logged,
+  escalations relayed),
   otherwise as native subagents and plain shell.
   install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger). manager turns
+  confirmation → install via script → schedule → ledger). file-issues is a
+  long-lived linear loop with no fan-out (accept a description → search
+  open and closed issues → ground it in code → `gh issue create` → report
+  the URL → wait) that files issues and never implements. manager turns
   the invoking session into a console that does no work itself: it reads the
   request, project guidance, git state, and workers' short result blocks —
   never their full records or transcripts, which pass between workers by
@@ -315,8 +330,10 @@ loads and executes.
   (`references/console.md`). Inside Herdr (its `herdr` skill present,
   `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
   current workspace (`references/herdr.md`); otherwise as native subagents;
-  with neither, the manager refuses. Planners and reviewers only read; one
-  agent writes per worktree.
+  with neither, the manager refuses. On Herdr a watcher started before the
+  first worker detects prompts between turns (`references/herdr.md` §
+  Watch for prompts); the manager still claims, decides and answers them.
+  Planners and reviewers only read; one agent writes per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -383,7 +400,15 @@ loads and executes.
   `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
   `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
   exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
-  attribute-failure.sh).
+  attribute-failure.sh — plus its `{time, worker, asked, option}` rows in
+  `<run-dir>/approvals.md`); and manager's watcher store `watcher.sqlite3`
+  (`PRAGMA user_version` 1: `lease`, `workers {name, item, role,
+  instance_key, last_status, status_streak, failures}`, `events {id, worker,
+  item, role, instance_key, prompt_hash, kind, state, …}` — never prompt
+  text) with its `START|ALREADY_RUNNING|STOPPED|STOP_REQUESTED|NOT_RUNNING|
+  SUPERSEDED|EVENT|SWEEP|REGISTERED|UNREGISTERED|CLAIMED|NOT_CLAIMABLE|
+  RESOLVED|AWAITING_USER|ALREADY|STALE_TOKEN|UNKNOWN|WATCHER stale|TIMEOUT|
+  STORE_ERROR` lines from watch-workers.py.
 - **Adding a component** — agents/skills are auto-discovered by directory; create
   the file(s), add a README section (each agent gets its own `##` section,
   listed in the table of contents; each skill its `###` subsection under
@@ -394,16 +419,26 @@ loads and executes.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
-  (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
-  links (`scripts/test-readme-toc.py`), the manager's approval contract
-  (`scripts/test-manager-approval.py`), the manager's persistent console
-  (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
+  (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
+  (`scripts/test-batch-merge-approval.py`), the README table of contents and in-page
+  links (`scripts/test-readme-toc.py`), one slash command per fenced block in
+  every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval
+  contract and its pi permission extension (`scripts/test-manager-approval.py`;
+  the extension cases run under `node` and report a skip without it), the
+  manager's persistent console
+  (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
+  (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against
+  a stub `herdr` and fixed clock (`scripts/test-manager-watcher.py`),
+  opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), and eval case validation (`--dry-run`).
-  Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
+  tests (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
+  against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), the eval
+  runner's offline transcript parsing and delegation traces
+  (`scripts/test-run-evals.py`), and eval case validation (`--dry-run`).
+  Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
   validation. Lint/format/build: no separate tools. Behavioral skill
