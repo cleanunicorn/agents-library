@@ -141,6 +141,9 @@ TRANSCRIPTS = {
         {"type": "assistant", "message": {"content": "not a list"}},
         {"type": "assistant", "message": {"content": ["not a block", 3]}},
         {"type": "user", "message": {"content": [{"type": "tool_result"}]}},
+        # An unhashable id cannot key a lookup; it must be ignored like a missing one.
+        tool_result([]),
+        tool_result({}),
         assistant(text("survivor")),
     ),
 }

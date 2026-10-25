@@ -265,9 +265,11 @@ def parse_delegation_trace(stdout):
             message_index += 1
         elif ev.get("type") == "user":
             for block in _content_blocks(ev):
-                launch = launches_by_id.get(block.get("tool_use_id"))
-                if (launch is not None and block.get("type") == "tool_result"
-                        and isinstance(block.get("is_error"), bool)):
+                tool_use_id = block.get("tool_use_id")
+                if block.get("type") != "tool_result" or not isinstance(tool_use_id, str):
+                    continue
+                launch = launches_by_id.get(tool_use_id)
+                if launch is not None and isinstance(block.get("is_error"), bool):
                     launch["error"] = block["is_error"]
     trace["verdict"] = _delegation_verdict(trace)
     return trace
