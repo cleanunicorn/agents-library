@@ -171,11 +171,27 @@
         },
         {
           "type": "shell",
-          "cmd": "! git log batch-1 --oneline | grep -qE 'Merge PR #(2|3)'"
+          "cmd": "git log batch-1 --oneline | grep -q 'Merge PR #2'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git log batch-1 --oneline | grep -q 'Merge PR #3'"
+        },
+        {
+          "type": "shell",
+          "cmd": "git show batch-1:README.md | grep -q 'Welcome to the demo project'"
+        },
+        {
+          "type": "shell",
+          "cmd": "git show batch-1:README.md | grep -q 'tiny sample repository'"
+        },
+        {
+          "type": "shell",
+          "cmd": "! git show batch-1:README.md | grep -qE '^(<<<<<<<|=======|>>>>>>>)'"
         },
         {
           "type": "output_regex",
-          "pattern": "(?is)(#2|PR 2).{0,300}conflict|conflict.{0,300}(#2|PR 2)"
+          "pattern": "(?is)(#2|PR 2).{0,300}resolv|resolv.{0,300}(#2|PR 2)"
         },
         {
           "type": "output_regex",

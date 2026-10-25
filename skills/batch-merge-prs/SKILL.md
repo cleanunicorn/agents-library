@@ -51,8 +51,8 @@ No `TODO`s → report the ledger and stop.
 
 ## Phase 1 — Merge onto a local branch
 
-Use the requested name, else `auto` for `batch/<YYYYMMDD-HHMM>`. Tell the
-user if a named branch already exists: the script uses it as-is.
+Use the requested name, else `auto` for `batch/<YYYYMMDD-HHMM>`. The script
+refuses an existing branch: ask the user for an unused name.
 
 ```
 bash <skill>/scripts/merge-prs.sh <remote> <main> <target>|auto <n>...
@@ -61,11 +61,11 @@ bash <skill>/scripts/merge-prs.sh <remote> <main> <target>|auto <n>...
 The script requires a clean tree; if dirty, ask the user to commit or stash.
 It creates a new branch from freshly fetched `<remote>/<main>` and merges
 `--no-ff`, keeping each PR separately revertable. Retain `TARGET`,
-`MERGED <n> <merge-sha>`, and `SKIPPED <n> <reason>`.
+`MERGED <n> <merge-sha>`, `RESOLVED`, and `SKIPPED <n> <reason>`.
 
-Conflicts are aborted and recorded as `SKIPPED <n> conflicts <files>`;
-never resolve them yourself. Continue with the rest: independent PRs can
-still land, and tests expose a dependency on a skipped PR.
+Exit `3` is a conflict: resolve it on this branch, or skip it with a reason,
+per `references/conflicts.md`, then resume with `--continue` or `--skip`.
+Never guess; tests expose a dependency on a skipped PR.
 
 Nothing merged → report and stop.
 
@@ -92,7 +92,8 @@ Return one ledger:
 
 - **Branch:** `TARGET`, base `<remote>/<main>` and SHA, local and unpushed.
 - **Merged:** each PR's number, title, and merge commit.
-- **Skipped:** already-in-main evidence, or fetch/conflict reason and files.
+- **Resolved:** each conflicted PR's files and how each was combined.
+- **Skipped:** already-in-main evidence, fetch failure, or unresolved reason.
 - **Tests:** command, source, exit status, passed/failed counts; skipped suites
   and reasons; each failure's culprit PR, `pre-existing`, or `none`.
 - **Review:** ranked verified findings and review-pr's filtered-out tally.
