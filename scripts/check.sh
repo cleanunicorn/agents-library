@@ -28,6 +28,9 @@ python3 scripts/test-fix-everywhere.py
 echo "Checking batch-merge-prs answers routine worker approvals and relays the rare ones..."
 python3 scripts/test-batch-merge-approval.py
 
+echo "Checking batch-merge-prs pauses on conflicts and resumes only its own merge..."
+bash scripts/test-batch-merge-prs.sh
+
 echo "Checking the README table of contents and in-page links..."
 python3 scripts/test-readme-toc.py
 

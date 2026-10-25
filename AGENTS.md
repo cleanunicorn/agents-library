@@ -420,7 +420,9 @@ loads and executes.
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
-  (`scripts/test-batch-merge-approval.py`), the README table of contents and in-page
+  (`scripts/test-batch-merge-approval.py`), merge-prs.sh's conflict pause,
+  `--continue` and `--skip` against real temporary repositories
+  (`scripts/test-batch-merge-prs.sh`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), one slash command per fenced block in
   every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval
   contract and its pi permission extension (`scripts/test-manager-approval.py`;

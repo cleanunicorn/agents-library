@@ -599,7 +599,9 @@ It also checks shell and manifest JSON syntax, shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
 word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
-(`scripts/test-batch-merge-approval.py`), this README's table of contents and the
+(`scripts/test-batch-merge-approval.py`), its conflict pause and resume against
+real temporary repositories (`scripts/test-batch-merge-prs.sh`), this README's
+table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), one slash command per fenced block in every
 Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
