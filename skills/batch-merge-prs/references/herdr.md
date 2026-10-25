@@ -19,13 +19,24 @@ Use one tab per read-only reviewer or investigator in the current workspace:
    On `agent_not_ready`, read the pane before prompting.
 4. Prompt with the brief and `<run-dir>/<role>.md` for the full report;
    request a path-only reply because scrollback can truncate records.
-   Prompt parallel workers before waiting; use background waits where
-   supported. Read the saved report when finished.
+   Send it through a short gate, `herdr agent prompt <name> <brief> --wait
+   --timeout 10000`: delivery is confirmed when the agent leaves `idle` —
+   the gate settles, or it times out and `herdr agent get <name>` shows
+   `working` or `blocked`. A freshly started agent can drop a prompt sent
+   before its input box is ready.
+5. Gate parallel workers in turn, then wait for completion with
+   `herdr agent wait <name>` in the background where supported. Read the
+   saved report when finished.
+
+When the gate returns `agent_prompt_stalled`, or times out with the agent
+still `idle`, read the pane with `herdr agent read <name> --source
+recent-unwrapped`; if it shows no turn started, re-prompt once through the
+same gate. A second miss fails that worker: use § Fallback for it and note
+it in the report. A timeout after activity is not a reason to send again.
 
 A blocked agent needs its UI read with `herdr agent read <name> --source
 recent-unwrapped`; relay any question or approval to the user and send back
 the answer with `agent send-keys` or `agent prompt`. Never approve for them.
-A timeout is not failure: read the agent before retrying.
 
 After reports are saved, close only recorded tabs you created with
 `herdr tab close <tab-id>`, never a workspace or server.
