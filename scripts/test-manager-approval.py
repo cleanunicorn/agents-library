@@ -13,6 +13,7 @@ that keeps the rule keeps these green.
 
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -34,15 +35,54 @@ ESCALATIONS = {
     "an unclassifiable prompt": ("cannot classify",),
 }
 
-# Launch flags that remove every prompt, so no escalation case can surface.
+# Launch flags that remove every prompt, so no escalation case can surface:
+# claude, codex, opencode/kilo, then gemini's and cursor's equivalents.
 BYPASS = re.compile(r"--dangerously-skip-permissions|bypassPermissions"
-                    r"|--dangerously-bypass-approvals-and-sandbox|-a never\b|--auto\b")
+                    r"|--dangerously-bypass-approvals-and-sandbox|-a never\b|--auto\b"
+                    r"|--yolo\b|(?<![\w-])-y\b|approval-mode[ =]yolo|--force\b|(?<![\w-])-f\b")
+BANNED_FLAGS = ("--dangerously-skip-permissions", "bypassPermissions",
+                "--dangerously-bypass-approvals-and-sandbox", "-a never", "--auto",
+                "--yolo", "-y", "--approval-mode yolo", "--force", "-f")
+
+# pi asks for nothing on its own; this extension is its only prompt surface.
+PI_EXTENSION = "-e <manager>/scripts/pi-permissions.mjs"
+PI_SCRIPT = MANAGER / "scripts" / "pi-permissions.mjs"
+
+# How far each launch row is proven (herdr.md § Pre-grants per kind).
+VERIFIED = re.compile(r"^(smoke-checked \d{4}-\d{2}-\d{2}\b|--help-derived\b|in use$|fallback$)")
 
 # The escalation commands every launch recipe must keep prompting for, as each
 # host's ask rule writes them. A host default that allows everything (opencode,
 # kilo) otherwise lets these run silently even with no bypass flag.
-ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "gh pr merge*", "gh pr ready*",
-                       "git branch -D*", "git worktree remove*", "rm -rf*")
+ESCALATION_COMMANDS = ("git push*--force*", "git push*-f*", "git push* <main>*", "gh pr merge*",
+                       "gh pr ready*", "git branch -D*", "git worktree remove*", "rm -rf*",
+                       # `git -C <dir>` puts an option between git and its subcommand.
+                       "git -C * push*", "git -C * branch -D*", "git -C * worktree remove*",
+                       # A `+` refspec forces; `HEAD:<main>` pushes to the main branch.
+                       "git push*+*", "git push*:<main>*", "rm -fr*",
+                       # --all and --mirror update the main branch along with the rest.
+                       "git push*--all*", "git push*--mirror*")
+
+# Concrete commands every recipe must ask for — the glob rules above (claude,
+# opencode, kilo) and the patterns (gemini's policy, pi's extension) — and
+# none may ask for a ROUTINE one. `main` stands in for <main>.
+ESCALATING = ("git push --force origin feat/x", "git push origin feat/x -f", "git push origin +feat/x",
+              "git push origin main", "git push origin HEAD:main", "gh pr merge 12 --squash",
+              "gh pr ready 12", "git branch -D feat/x", "git worktree remove ../wt",
+              "rm -rf /tmp/run/x", "rm -fr x", "git -C ../wt push --force origin feat/x",
+              "git -C ../wt branch -D feat/x", "git -C ../wt worktree remove ../other",
+              "git push --force-with-lease origin feat/x", "git push --all origin",
+              "git push --mirror origin", "git branch -Da feat/x")
+# Shapes only the pattern recipes ask for: a chained command, or a spelling the
+# glob rules do not list. console.md § Approvals' check catches these afterwards
+# on the glob hosts.
+ESCALATING_BY_PATTERN = ("cd /tmp && rm -fr x", "git --no-pager -C ../wt push origin main",
+                         "git branch --delete --force feat/x", "git branch --force --delete feat/x",
+                         "rm -r -f x", "rm -f -r x", "rm --recursive --force x", "rm -Rf x",
+                         "rm --force -R x")
+ROUTINE = ("git push origin feat/x", "git push -u origin feat/main-fix", "git status",
+           "git -C ../wt log --grep push",
+           "gh pr view 12", "git branch -d feat/x", "rm notes.txt")
 
 
 # Board rows for the approval evals: what a correct manager writes, and what a
@@ -111,14 +151,117 @@ def section(text, heading):
     return found.group(0)
 
 
+def pre_grants(text):
+    """Return herdr.md's § Pre-grants per kind, up to the next heading."""
+    found = re.search(r"(?ms)^### Pre-grants per kind\n.*?(?=^#{2,3} |\Z)", text)
+    if not found:
+        raise AssertionError("herdr.md has no '### Pre-grants per kind' section")
+    return found.group(0)
+
+
 def launch_rows(text):
-    """Return herdr.md's pre-grant table as {kind: (coordinator cell, planner/reviewer cell)}."""
+    """Return herdr.md's pre-grant table as {kind: (coordinator, planner/reviewer, verified)}.
+
+    A table row with the wrong cell count fails instead of silently dropping out
+    of every check below.
+    """
     rows = {}
-    for line in text.splitlines():
+    for line in pre_grants(text).splitlines():
+        if not line.startswith("|"):
+            continue
         cells = [cell.strip() for cell in line.split("|")[1:-1]]
-        if len(cells) == 3 and cells[0] not in ("kind", "") and not set(cells[0]) <= set("-"):
-            rows[cells[0]] = (cells[1], cells[2])
+        if len(cells) != 4:
+            raise AssertionError(f"herdr.md launch row has {len(cells)} cells, not 4: {line[:60]}")
+        if cells[0] != "kind" and not set(cells[0]) <= set("-"):
+            rows[cells[0]] = tuple(cells[1:])
     return rows
+
+
+def glob_rules(text):
+    """Return {host: [ask glob]} from herdr.md's <claude ask> and <opencode ask> blocks."""
+    claude = json.loads(re.search(r"<claude ask> = '(\{.*\})'", text).group(1))["permissions"]["ask"]
+    opencode = json.loads(re.search(r"<opencode ask> = '(\{.*\})'", text).group(1))["permission"]["bash"]
+    return {"claude": [re.fullmatch(r"Bash\((.*)\)", rule).group(1) for rule in claude],
+            "opencode, kilo": [glob for glob, decision in opencode.items() if decision == "ask"]}
+
+
+def glob_asks(globs, command):
+    """Whether a host's as-written glob ask rules match a command; `*` spans anything."""
+    for glob in globs:
+        pattern = ".*".join(re.escape(part) for part in glob.replace("<main>", "main").split("*"))
+        if re.fullmatch(pattern, command):
+            return True
+    return False
+
+
+def gemini_policies(text):
+    """Return {name: TOML text} for herdr.md's gemini policy blocks."""
+    blocks = re.findall(r"(?ms)^```toml\n# <(gemini \w+ policy)>[^\n]*\n(.*?)^```", text)
+    return dict(blocks)
+
+
+def gemini_rules(policy):
+    """Parse a policy's [[rule]] tables into {key: str | [str] | int}, `<main>` as `main`."""
+    rules = []
+    for body in re.split(r"(?m)^\[\[rule\]\]$", policy)[1:]:
+        rule = {}
+        for key, value in re.findall(r"(?m)^(\w+) = (.*)$", body):
+            if value.startswith("["):
+                rule[key] = re.findall(r'"([^"]*)"', value)
+            elif value.isdigit():
+                rule[key] = int(value)
+            else:
+                rule[key] = value[1:-1].replace("<main>", "main")
+        rules.append(rule)
+    return rules
+
+
+def gemini_decision(policy, tool, args):
+    """The decision of the highest-priority rule matching one call, as gemini resolves it.
+
+    commandRegex and argsPattern are matched against the call's args as a
+    compact JSON string; commandRegex starts at the command's first character.
+    """
+    serialized = json.dumps(args, sort_keys=True, separators=(",", ":"))
+    best = (-1, "default")
+    for rule in gemini_rules(policy):
+        tools = rule["toolName"] if isinstance(rule["toolName"], list) else [rule["toolName"]]
+        if tool not in tools:
+            continue
+        if "commandRegex" in rule and not re.match(rule["commandRegex"], args.get("command", "")):
+            continue
+        if "commandPrefix" in rule and not args.get("command", "").startswith(tuple(rule["commandPrefix"])):
+            continue
+        if "argsPattern" in rule and not re.search(rule["argsPattern"], serialized):
+            continue
+        best = max(best, (rule["priority"], rule["decision"]))
+    return best[1]
+
+
+def gemini_asks(policy, command):
+    """Whether gemini would ask before running a shell command under this policy."""
+    return gemini_decision(policy, "run_shell_command", {"command": command}) == "ask_user"
+
+
+# Drives the extension's default export the way pi does, with a fake `pi.on`.
+PI_DRIVER = """
+const [script, cases] = process.argv.slice(-2);
+const { default: register, decide, settings } = await import(script);
+const out = [];
+for (const c of JSON.parse(cases)) {
+  if (c.hook) {
+    let handler;
+    Object.assign(process.env, c.env);
+    register({ on: (name, fn) => { if (name === "tool_call") handler = fn; } });
+    const ctx = { hasUI: c.ui !== undefined, cwd: c.cwd, ui: { select: async () => c.ui } };
+    const result = await handler({ toolName: c.tool, input: c.input }, ctx);
+    out.push(result?.block ? "block" : "allow");
+  } else {
+    out.push(decide(settings(c.env), c.tool, c.input, c.cwd).split(":")[0]);
+  }
+}
+console.log(JSON.stringify(out));
+"""
 
 
 class ManagerApprovalTests(unittest.TestCase):
@@ -286,7 +429,7 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("herdr.md", text, r"herdr agent start .*--pane.* -- <",
                     "agent start no longer forwards pre-grant args after --")
         rows = launch_rows(text)
-        for kind in ("claude", "codex", "opencode, kilo"):
+        for kind in ("claude", "codex", "opencode, kilo", "pi", "gemini", "cursor", "any other kind"):
             with self.subTest(kind=kind):
                 self.assertIn(kind, rows, f"herdr.md: no launch row for {kind}")
         self.expect("herdr.md", text, r"(?i)always allow",
@@ -312,13 +455,210 @@ class ManagerApprovalTests(unittest.TestCase):
     def test_herdr_names_every_banned_flag(self):
         # The table check cannot see the prose ban; anchor it on its reason
         # and require it to name each flag BYPASS rejects.
-        text = " ".join(self.read("references/herdr.md").split())
-        ban = re.search(r"(?i)never launch with.{0,600}?no escalation case could reach you", text)
+        text = " ".join(pre_grants(self.read("references/herdr.md")).split())
+        ban = re.search(r"(?i)never launch with.*?no escalation case could reach you", text)
         self.assertIsNotNone(ban, "herdr.md no longer bans the prompt-removing flags")
-        for flag in ("--dangerously-skip-permissions", "bypassPermissions",
-                     "--dangerously-bypass-approvals-and-sandbox", "-a never", "--auto"):
+        for flag in BANNED_FLAGS + (f"pi without `{PI_EXTENSION}`",):
             with self.subTest(flag=flag):
-                self.assertIn(flag, ban.group(0), f"herdr.md's ban omits {flag}")
+                # A dash flag is a substring of longer ones (`-f` sits inside `--force`),
+                # so it must appear opening its own code span.
+                named = f"`{flag}" if flag.startswith("-") else flag
+                self.assertIn(named, ban.group(0), f"herdr.md's ban omits {flag}")
+
+    def test_bypass_matches_every_banned_flag_and_spares_the_recipes(self):
+        # The cell scan is only as wide as BYPASS; prove it sees each banned shape.
+        for flag in BANNED_FLAGS + ("--approval-mode=yolo",):
+            with self.subTest(flag=flag):
+                self.assertRegex(f"agent {flag} --model x", BYPASS, f"BYPASS misses {flag}")
+        for allowed in ("--permission-mode auto", "--approval-mode auto_edit", "--no-approve",
+                        "--include-directories <run_dir>"):
+            with self.subTest(allowed=allowed):
+                self.assertNotRegex(allowed, BYPASS, f"BYPASS rejects the approved {allowed}")
+
+    def test_every_launch_row_names_its_verification(self):
+        rows = launch_rows(self.read("references/herdr.md"))
+        for kind, (_, _, verified) in rows.items():
+            with self.subTest(kind=kind):
+                self.assertRegex(verified, VERIFIED, f"{kind}: verified column is {verified!r}")
+        self.assertRegex(rows["pi"][2], r"^smoke-checked", "pi's row is no longer live-verified")
+        for kind in ("gemini", "cursor"):
+            with self.subTest(kind=kind):
+                self.assertRegex(rows[kind][2], r"^--help-derived", f"{kind} claims more than its docs")
+        self.assertEqual(rows["any other kind"][2], "fallback", "the fallback row is gone")
+
+    def test_unproven_cells_rule_the_kind_out(self):
+        # An unknown read-only grant must not degrade to a plain, prompt-free launch.
+        rows = launch_rows(self.read("references/herdr.md"))
+        self.assertRegex(rows["cursor"][0], r"^unknown — do not launch",
+                         "cursor cannot override a user allow per process, yet its coordinator launches")
+        self.assertRegex(rows["cursor"][1], r"^unknown — do not launch",
+                         "cursor has no per-process write limit, yet its reader cell launches")
+        self.assertRegex(rows["gemini"][2], r"unknown[^|]*do not launch",
+                         "gemini's --policy availability is unverified, yet nothing rules it out")
+
+    def test_every_pi_launch_loads_the_permission_extension(self):
+        rows = launch_rows(self.read("references/herdr.md"))
+        self.assertTrue(PI_SCRIPT.is_file(), f"{PI_SCRIPT.relative_to(ROOT)} is missing")
+        for role, cell in zip(("coordinator", "planner, reviewer"), rows["pi"]):
+            with self.subTest(role=role):
+                self.assertIn(PI_EXTENSION, cell, "pi starts with no prompt surface")
+                self.assertIn("--no-extensions", cell, "another extension could answer pi's calls first")
+                self.assertIn("PI_MANAGER_RUN_DIR=<run_dir>", cell, "pi's extension has no run directory")
+                self.assertIn("PI_MANAGER_MAIN=<main>", cell, "a pi push to the main branch runs unasked")
+        self.assertIn("PI_MANAGER_ROLE=coordinator", rows["pi"][0])
+        # settings() splits PI_MANAGER_DENY on ':'; another join disarms the guard silently.
+        self.assertIn("PI_MANAGER_DENY=<other worktrees, ':'-separated>", rows["pi"][0])
+        self.assertIn('split(":")', PI_SCRIPT.read_text(encoding="utf-8"))
+        self.assertRegex(rows["pi"][1], r"PI_MANAGER_ROLE=planner.*reviewer")
+
+    def test_glob_hosts_ask_for_every_escalation(self):
+        # One vocabulary for every host: the glob recipes face the same probes as
+        # the patterns. Globs over-ask (`git push*-f*` matches `feat/main-fix`),
+        # the safe direction, so ROUTINE is pinned only for the pattern recipes.
+        for host, globs in glob_rules(self.read("references/herdr.md")).items():
+            for command in ESCALATING:
+                with self.subTest(host=host, command=command):
+                    self.assertTrue(glob_asks(globs, command), f"{host} runs {command!r} unasked")
+
+    def test_gemini_policies_ask_for_every_escalation(self):
+        text = self.read("references/herdr.md")
+        policies = gemini_policies(text)
+        self.assertEqual(sorted(policies), ["gemini coordinator policy", "gemini reader policy"])
+        rows = launch_rows(text)
+        self.assertIn("<gemini coordinator policy>", rows["gemini"][0])
+        self.assertIn("<gemini reader policy>", rows["gemini"][1])
+        ask = policies["gemini coordinator policy"]
+        for name, policy in policies.items():
+            for command in ESCALATING + ESCALATING_BY_PATTERN:
+                with self.subTest(policy=name, command=command):
+                    self.assertTrue(gemini_asks(policy, command), f"{name} runs {command!r} unasked")
+        # A reader allows no shell command, so a write-capable read option still asks.
+        reader = policies["gemini reader policy"]
+        for command in ("git diff --output=/tmp/x", "git log 2>/tmp/x", "git status & touch x"):
+            with self.subTest(policy="reader", command=command):
+                self.assertNotEqual(gemini_decision(reader, "run_shell_command", {"command": command}), "allow")
+        for command in ROUTINE:
+            with self.subTest(command=command):
+                self.assertEqual(gemini_decision(ask, "run_shell_command", {"command": command}), "allow",
+                                 f"gemini does not allow routine {command!r}")
+
+    def test_gemini_reader_writes_only_to_the_run_directory(self):
+        policies = gemini_policies(self.read("references/herdr.md"))
+        record = "<run_dir>/<slug>/reviewer-a.md"
+        writes = {
+            "gemini reader policy": {record: "allow", "<run_dir>/<slug>/../../repo/x.md": "deny",
+                                     "<run_dir>/<slug>/sub/x.md": "deny", "/repo/src/x.py": "deny",
+                                     "<run_dir>/<slug>/gemini-reader.toml": "deny"},
+            "gemini coordinator policy": {"<other worktree>/src/x.py": "deny", "/repo/src/x.py": "default"},
+        }
+        for name, cases in writes.items():
+            for tool in ("write_file", "replace"):
+                for path, want in cases.items():
+                    with self.subTest(policy=name, tool=tool, path=path):
+                        got = gemini_decision(policies[name], tool, {"content": "x", "file_path": path})
+                        self.assertEqual(got, want)
+
+    def test_pi_extension_fails_closed_in_its_source(self):
+        # Runs without node, so the skip below never leaves the contract unchecked.
+        source = PI_SCRIPT.read_text(encoding="utf-8")
+        flat = " ".join(source.split())
+        for label, pattern in {
+            "a bad role, run dir or main branch is a settings error": r"(?s)(return \{ error:.*){3}",
+            "a settings error blocks every call": r"if \(config\.error\) return `\$\{BLOCKED\}",
+            "an unknown tool asks": r'return "ask"; \} export default',
+            "no UI blocks an approval": r"if \(!ctx\.hasUI\) return \{ block: true",
+            "only an explicit Allow lets an approval through": r'if \(choice === "Allow once"\) return undefined; return \{ block: true',
+            "a reader write outside the run dir blocks": r"inside\(target, config\.runDir\)\) return \"allow\"; return `\$\{BLOCKED\}",
+        }.items():
+            with self.subTest(contract=label):
+                self.assertRegex(flat, pattern, f"pi-permissions.mjs: {label} — no longer in the source")
+        for shape in (r"push\b", r"gh\s+pr\s+(merge|ready)", r"branch\b", r"worktree\s+remove", "recursiveForceRm"):
+            with self.subTest(escalation=shape):
+                self.assertIn(shape, source, "an escalation shape left pi's extension")
+
+    @unittest.skipUnless(shutil.which("node"), "node not on PATH: pi's extension is not exercised")
+    def test_pi_extension_enforces_each_role(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch).resolve()
+            run_dir, worktree, sibling = base / "run", base / "wt", base / "other"
+            for directory in (run_dir, worktree, sibling):
+                directory.mkdir()
+            (run_dir / "escape").symlink_to(worktree)
+            env = {"PI_MANAGER_RUN_DIR": str(run_dir), "PI_MANAGER_MAIN": "main",
+                   "PI_MANAGER_DENY": str(sibling), "PI_MANAGER_GATE": "bash scripts/check.sh"}
+            coordinator = {**env, "PI_MANAGER_ROLE": "coordinator"}
+            reviewer = {**env, "PI_MANAGER_ROLE": "reviewer"}
+            bash = lambda command: {"command": command}
+            path = lambda target: {"path": str(target)}
+            cases = [(coordinator, "bash", bash(c), "ask") for c in ESCALATING + ESCALATING_BY_PATTERN]
+            cases += [(reviewer, "bash", bash(c), "ask") for c in ESCALATING + ESCALATING_BY_PATTERN]
+            cases += [(coordinator, "bash", bash(c), "allow") for c in ROUTINE]
+            cases += [
+                (coordinator, "write", path(worktree / "a.py"), "allow"),
+                (coordinator, "edit", path(sibling / "a.py"), "block"),
+                (reviewer, "read", path("/etc/hosts"), "allow"),
+                (reviewer, "write", path(run_dir / "herdr-kinds" / "reviewer-a.md"), "allow"),
+                (reviewer, "write", path(worktree / "a.py"), "block"),
+                (reviewer, "write", path(run_dir / ".." / "wt" / "a.py"), "block"),
+                (reviewer, "write", path(run_dir / "escape" / "a.py"), "block"),
+                (reviewer, "edit", {"path": "../wt/a.py"}, "block"),
+                (reviewer, "bash", bash("git diff main...HEAD | head -n 40"), "allow"),
+                (reviewer, "bash", bash("bash scripts/check.sh"), "allow"),
+                # The gate is matched whole: nothing may ride along after it.
+                (reviewer, "bash", bash(" bash scripts/check.sh "), "allow"),
+                (reviewer, "bash", bash("bash scripts/check.sh && git push origin feat/x"), "ask"),
+                (reviewer, "bash", bash("bash scripts/check.sh; touch x"), "ask"),
+                (reviewer, "bash", bash("git log > notes.md"), "ask"),
+                (reviewer, "bash", bash("cat $(echo x)"), "ask"),
+                (reviewer, "bash", bash("find . -delete"), "ask"),
+                (reviewer, "bash", bash("python3 -c 'open(\"x\",\"w\")'"), "ask"),
+                (reviewer, "bash", bash("git log && touch x"), "ask"),
+                # A lone `&`, a numbered redirect and a write-capable option each
+                # write or run something, so none is a read.
+                (reviewer, "bash", bash("git log & touch x"), "ask"),
+                (reviewer, "bash", bash("git status & bash /tmp/evil.sh"), "ask"),
+                (reviewer, "bash", bash("git log 2>/tmp/x"), "ask"),
+                (reviewer, "bash", bash("cat /etc/hosts 1>/tmp/outside.txt"), "ask"),
+                (reviewer, "bash", bash("git show HEAD 2>1"), "ask"),
+                (reviewer, "bash", bash("git log &>/tmp/x"), "ask"),
+                (reviewer, "bash", bash("git diff --output=/tmp/outside.patch"), "ask"),
+                (reviewer, "bash", bash("git diff --ext-diff main"), "ask"),
+                (reviewer, "bash", bash("sed -n 'w /tmp/outside.txt' README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n e README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n -i s/x/y/ README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n '1p' -i README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n 1p --in-place README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n 1p -e 'w /tmp/x' README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n 1p -f /tmp/script.sed README.md"), "ask"),
+                (reviewer, "bash", bash("sed -n 1p README.md -s"), "ask"),
+                (reviewer, "bash", bash("find . -fprint /tmp/x"), "ask"),
+                (reviewer, "bash", bash("find . -fprintf ../wt/x.md %p"), "ask"),
+                (reviewer, "bash", bash("find . -fls /tmp/x"), "ask"),
+                (reviewer, "bash", bash("rg --pre 'touch /tmp/pwn' pattern ."), "ask"),
+                (reviewer, "bash", bash("git log --oneline 2>&1 | head -n 5"), "allow"),
+                (reviewer, "bash", bash("sed -n '1,40p' README.md"), "allow"),
+                (reviewer, "bash", bash("rg -n pattern skills | head -n 20"), "allow"),
+                (reviewer, "bash", bash("find skills -name '*.md'"), "allow"),
+                (reviewer, "mcp_tool", {}, "ask"),
+                ({**env, "PI_MANAGER_ROLE": "admin"}, "read", path("/etc/hosts"), "block"),
+                ({**reviewer, "PI_MANAGER_RUN_DIR": "relative/run"}, "read", path("/etc/hosts"), "block"),
+                ({**reviewer, "PI_MANAGER_MAIN": ""}, "read", path("/etc/hosts"), "block"),
+            ]
+            payload = [{"env": e, "tool": t, "input": i, "cwd": str(run_dir)} for e, t, i, _ in cases]
+            # The registered hook: an escalation with no UI, or a denied one, blocks.
+            # Each hook case is the dialog's answer; an absent "ui" key means no UI at all.
+            hooks = [({}, "block"), ({"ui": "Deny"}, "block"), ({"ui": "Allow once"}, "allow")]
+            payload += [{"hook": True, "env": coordinator, "tool": "bash", "input": bash("rm -rf x"),
+                         "cwd": str(run_dir), **ui} for ui, _ in hooks]
+            result = subprocess.run(["node", "--input-type=module", "-e", PI_DRIVER, "--",
+                                     PI_SCRIPT.as_uri(), json.dumps(payload)],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr[-600:])
+            verdicts = json.loads(result.stdout)
+        expected = [want for *_, want in cases] + [want for _, want in hooks]
+        for (case, got, want) in zip(payload, verdicts, expected):
+            with self.subTest(role=case["env"].get("PI_MANAGER_ROLE"), tool=case["tool"], input=case["input"]):
+                self.assertEqual(got, want)
 
     def test_each_kind_launches_with_its_grant(self):
         # The mechanism, not the briefs' wording: these cells are what the host enforces.
@@ -327,6 +667,9 @@ class ManagerApprovalTests(unittest.TestCase):
             "claude": (r"--permission-mode auto", r"--permission-mode dontAsk"),
             "codex": (r"-s workspace-write -a on-request", r"-s read-only -a on-request"),
             "opencode, kilo": (r"OPENCODE_CONFIG_CONTENT", r'"edit":"ask"'),
+            "pi": (re.escape(PI_EXTENSION), re.escape(PI_EXTENSION)),
+            "gemini": (r"--approval-mode auto_edit .*--policy", r"--approval-mode default .*--policy"),
+            "cursor": (r"^unknown — do not launch", r"^unknown — do not launch"),
         }
         for kind, (coordinator, role) in expected.items():
             with self.subTest(kind=kind, role="coordinator"):
@@ -370,7 +713,7 @@ class ManagerApprovalTests(unittest.TestCase):
         text = self.read("references/herdr.md")
         self.expect("herdr.md", text, r"`<worktree>` is the item's worktree",
                     "the table uses <worktree> without defining it")
-        for kind, (coordinator, _) in launch_rows(text).items():
+        for kind, (coordinator, *_) in launch_rows(text).items():
             with self.subTest(kind=kind):
                 self.assertNotIn("<worktree>", coordinator,
                                  f"{kind} coordinator starts in a worktree it has not created")

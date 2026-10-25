@@ -268,7 +268,9 @@ loads and executes.
   and manager has `watch-workers.py` (Python 3.9+, stdlib: one background
   watcher per Herdr run that polls every worker every 5 s, records prompts
   as deduplicated events in `<run_dir>/watcher.sqlite3`, and wakes the
-  manager through a host background `wait`, never terminal input).
+  manager through a host background `wait`, never terminal input) and
+  `pi-permissions.mjs` (the pi extension that is a pi worker's only
+  permission prompt, loaded with `pi -e`).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
@@ -413,8 +415,10 @@ loads and executes.
   (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
   (`scripts/test-batch-merge-approval.py`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), one slash command per fenced block in
-  every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
-  (`scripts/test-manager-approval.py`), the manager's persistent console
+  every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval
+  contract and its pi permission extension (`scripts/test-manager-approval.py`;
+  the extension cases run under `node` and report a skip without it), the
+  manager's persistent console
   (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
   (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against
   a stub `herdr` and fixed clock (`scripts/test-manager-watcher.py`),
@@ -426,7 +430,7 @@ loads and executes.
   tests (`scripts/test-diff-target.sh`), the eval runner's offline transcript
   parsing and delegation traces (`scripts/test-run-evals.py`), and eval case
   validation (`--dry-run`).
-  Requires Python 3.9+ and Bash; no host CLI, model calls, credentials, or
+  Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
   validation. Lint/format/build: no separate tools. Behavioral skill

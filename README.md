@@ -592,7 +592,9 @@ word ceilings on agent and skill roots), the fix-everywhere contract
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), one slash command per fenced block in every
 Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
-(`scripts/test-manager-approval.py`), the manager's persistent console
+and its pi permission extension (`scripts/test-manager-approval.py`; the
+extension cases need `node` and report a skip without it), the manager's
+persistent console
 (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
 (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
 stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
