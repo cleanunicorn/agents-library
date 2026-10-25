@@ -28,6 +28,9 @@ python3 scripts/test-fix-everywhere.py
 echo "Checking the README table of contents and in-page links..."
 python3 scripts/test-readme-toc.py
 
+echo "Checking no fenced block holds two slash commands..."
+python3 scripts/test-paste-blocks.py
+
 echo "Checking the manager answers routine approvals and relays the rare ones..."
 python3 scripts/test-manager-approval.py
 

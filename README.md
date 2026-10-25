@@ -54,7 +54,7 @@ reported as `KEPT`.
 
 | Host | What the installer does | Item checklist applies |
 | --- | --- | --- |
-| Claude Code | `claude plugin install agents-library --marketplace cleanunicorn/agents-library` | No: whole plugin |
+| Claude Code | `claude plugin install agents-library --marketplace cleanunicorn/agents-library`, which registers the marketplace and installs the plugin in one command | No: whole plugin |
 | Codex | `codex plugin marketplace add cleanunicorn/agents-library`, then `codex plugin add agents-library@agents-library` | No: whole plugin |
 | opencode | Symlinks into `~/.config/opencode/{agents,skills}/` | Yes |
 | Kilo Code | Symlinks into `~/.config/kilo/{agents,skills}/` | Yes |
@@ -99,8 +99,9 @@ Something failed? See [Troubleshooting](#troubleshooting).
 
 ### Install without cloning (Claude Code, Codex)
 
-The plugin hosts don't need the clone. These are the commands the installer
-runs, and you can run them directly.
+The plugin hosts don't need the clone. Each host takes two steps, registering
+the marketplace and then installing the plugin from it. Registering the
+marketplace does not install the plugin.
 
 Claude Code 2.1.286 uses SSH for this plugin by default, both here and through
 the installer. Provide a GitHub SSH key **or**
@@ -108,27 +109,48 @@ the installer. Provide a GitHub SSH key **or**
 run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting `claude` if you
 want HTTPS.
 
-```
-/plugin marketplace add cleanunicorn/agents-library
-/plugin install agents-library@agents-library
-```
+In Claude Code, run these one at a time. Pasting both together fails: the
+prompt reads them as one command, and the second line becomes part of the
+first command's argument.
+
+1. Register the marketplace:
+
+   ```
+   /plugin marketplace add cleanunicorn/agents-library
+   ```
+
+2. Install the plugin from it:
+
+   ```
+   /plugin install agents-library@agents-library
+   ```
 
 The same from the CLI is
 `claude plugin marketplace add cleanunicorn/agents-library` then
-`claude plugin install agents-library@agents-library`.
+`claude plugin install agents-library@agents-library`. The installer runs
+`claude plugin install agents-library --marketplace cleanunicorn/agents-library`,
+which does both in one command.
 
-Codex takes two steps, registering the marketplace and then installing the
-plugin from it:
+In Codex, the same two steps:
 
-```
-codex plugin marketplace add cleanunicorn/agents-library
-codex plugin add agents-library@agents-library
-```
+1. Register the marketplace:
+
+   ```
+   codex plugin marketplace add cleanunicorn/agents-library
+   ```
+
+2. Install the plugin from it:
+
+   ```
+   codex plugin add agents-library@agents-library
+   ```
+
+These are the commands the installer runs.
 
 Codex's in-thread plugin UI takes this repository's URL,
 `https://github.com/cleanunicorn/agents-library`, in place of the first command.
-Registering the marketplace does not install the plugin. Check installation
-with `codex plugin list -m agents-library --json`. The manifests are
+Check installation with `claude plugin list --json` in Claude Code and
+`codex plugin list -m agents-library --json` in Codex. The manifests are
 [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json) and
 [`.codex-plugin/plugin.json`](.codex-plugin/plugin.json).
 
@@ -556,7 +578,8 @@ required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-fi
 word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), this README's table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
-(`scripts/test-readme-toc.py`), the manager's approval contract
+(`scripts/test-readme-toc.py`), one slash command per fenced block in every
+Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
 (`scripts/test-manager-approval.py`), the manager's persistent console
 (`scripts/test-manager-console.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target

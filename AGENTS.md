@@ -395,7 +395,8 @@ loads and executes.
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
   (`scripts/test-fix-everywhere.py`), the README table of contents and in-page
-  links (`scripts/test-readme-toc.py`), the manager's approval contract
+  links (`scripts/test-readme-toc.py`), one slash command per fenced block in
+  every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
   (`scripts/test-manager-approval.py`), the manager's persistent console
   (`scripts/test-manager-console.py`), opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
