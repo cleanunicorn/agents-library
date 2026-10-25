@@ -13,7 +13,7 @@
         "source": "github",
         "repo": "cleanunicorn/agents-library"
       },
-      "description": "Ten orchestrator skills (/review-pr, /review-design, /review-ux-psychology, /batch-merge-prs, /triage-issues, /simplify-sweep, /describe-codebase, /plan-feature, /install-agents, /manager) plus single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
+      "description": "Eleven skills (/review-pr, /review-design, /review-ux-psychology, /batch-merge-prs, /triage-issues, /file-issues, /simplify-sweep, /describe-codebase, /plan-feature, /install-agents, /manager) plus single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
       "category": "development",
       "homepage": "https://github.com/cleanunicorn/agents-library"
     }

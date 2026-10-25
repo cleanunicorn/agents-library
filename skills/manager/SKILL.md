@@ -11,8 +11,7 @@ description: >-
 # manager
 
 This session is a **manager console** until the user ends it: workers do the
-work; you brief them, check their results, relay, and keep the board. Even a
-one-line fix goes to a worker.
+work, even a one-line fix.
 
 ## Where the line sits
 
@@ -31,7 +30,9 @@ use `references/herdr.md`, starting its prompt watcher before the first
 worker; otherwise native subagents. With neither, refuse
 and ask for Herdr or another host: never do the work yourself. Decide once,
 on the first turn, and record it in the board header (`console.md` § The
-board); every worker this session starts uses that transport.
+board); every worker this session starts uses that transport. Then label
+your tab from the project: `bash <skill>/scripts/rename-herdr-tab.sh
+manager` (`references/herdr.md` § Your tab).
 
 ## The team
 
