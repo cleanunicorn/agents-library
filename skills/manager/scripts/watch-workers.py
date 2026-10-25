@@ -60,8 +60,12 @@ IS_ACTIVE = f"state IN {ACTIVE}"
 # Statuses that end a turn: the worker's result file is the manager's signal,
 # so an unchanged idle or done status is never a reason to read the screen.
 FINISHED = ("idle", "done")
+# Hosts whose permission dialog Herdr reports as `done` (pi, through the
+# manager's pi-permissions.mjs; references/herdr.md), so their `done` may
+# still hide a prompt and is read like `unknown`.
+DONE_HIDES_PROMPT = ("pi",)
 # Prompt UIs of the hosts the manager drives (Claude Code, Codex, opencode,
-# Kilo). A layout none of these match is found only once Herdr says `blocked`.
+# Kilo, pi). A layout none of these match is found only once Herdr says `blocked`.
 PROMPT_PATTERNS = [re.compile(p, re.IGNORECASE) for p in (
     r"\bdo you want to\b",
     r"\b(allow|approve) (once|always|for this session)\b",
@@ -176,7 +180,8 @@ def observe(binary, worker, timeout):
     seen = {"name": worker["name"], "error": False, "status": status, "streak": streak,
             "instance_key": instance_key(agent), "prompt_hash": None, "kind": None}
     unchanged = streak >= 2 and status not in FINISHED
-    if status not in ("blocked", "unknown") and not unchanged:
+    hidden = status == "done" and agent.get("agent") in DONE_HIDES_PROMPT
+    if status not in ("blocked", "unknown") and not unchanged and not hidden:
         return seen
     screen = herdr(binary, ["agent", "read", worker["name"], "--source", "recent-unwrapped",
                             "--lines", str(READ_LINES)], timeout)
@@ -328,7 +333,14 @@ def stop(db, _args):
 # --- Manager side ------------------------------------------------------------
 
 def backoff(notified):
-    return min(BACKOFF_FIRST * 2 ** (notified - 1), BACKOFF_CAP)
+    # Double step by step and stop at the cap: an event left unclaimed for
+    # hours has a count far too large for 2 ** count to fit in a float.
+    delay = BACKOFF_FIRST
+    for _ in range(notified - 1):
+        if delay >= BACKOFF_CAP:
+            break
+        delay *= 2
+    return min(delay, BACKOFF_CAP)
 
 
 def take_due(db, now):

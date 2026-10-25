@@ -25,6 +25,7 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 
@@ -39,6 +40,9 @@ Do you want to proceed?
   2. Yes, and don't ask again for curl commands
   3. No, and tell Claude what to do differently (esc)
 """
+# The manager's pi extension dialog (skills/manager/scripts/pi-permissions.mjs),
+# which Herdr reports as `done`, not `blocked`, while it waits.
+PI_PROMPT = "Manager approval needed — bash:\n\n  rm -rf build\n\nAllow?\n→ Allow once\n  Deny\n"
 CONFIRM_PROMPT = "Write ~/.claude/settings.json?\nDo you want to proceed?\n❯ 1. Yes\n  2. No\n"
 WORKING_TEXT = "⏺ Reading skills/manager/SKILL.md\n✳ Thinking… (12s · esc to interrupt)\n"
 
@@ -66,7 +70,7 @@ if "raw" in agent:
 if args[1] == "read":
     sys.stdout.write(agent.get("read", ""))
     sys.exit(0)
-record = {"agent": "claude", "agent_status": agent["status"], "name": args[2],
+record = {"agent": agent.get("host", "claude"), "agent_status": agent["status"], "name": args[2],
           "pane_id": "w1:p9", "terminal_id": agent.get("terminal", "term_1")}
 if agent.get("session"):
     record["agent_session"] = {"kind": "id", "value": agent["session"]}
@@ -99,8 +103,9 @@ class Run:
     def save(self):
         (self.bin / "scenario.json").write_text(json.dumps(self.agents), encoding="utf-8")
 
-    def agent(self, name, status, read="", session="ses-1", sleep=0, terminal="term_1"):
-        self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep, "terminal": terminal}
+    def agent(self, name, status, read="", session="ses-1", sleep=0, terminal="term_1", host="claude"):
+        self.agents[name] = {"status": status, "read": read, "session": session, "sleep": sleep, "terminal": terminal,
+                             "host": host}
         self.save()
 
     def reads(self, name=""):
@@ -207,6 +212,22 @@ class DetectionTests(unittest.TestCase):
         self.assertEqual(run.events(), [], "ordinary output or a finished turn raised an event")
         self.assertFalse(run.reads("idle"),
                          "a finished turn was inspected; its result file is the manager's signal")
+
+    def test_a_pi_dialog_behind_a_done_status_is_found(self):
+        run = Run(self)
+        run.agent("pi-coord", "done", WORKING_TEXT + PI_PROMPT, host="pi")
+        run.register("pi-coord")
+        run.sweep(now=1000)
+        self.assertEqual([e["kind"] for e in run.events("pending")], ["suspected"],
+                         "pi's permission dialog shows as `done`, so it must still be read and raised")
+
+    def test_a_finished_pi_turn_raises_nothing(self):
+        run = Run(self)
+        run.agent("pi-coord", "done", WORKING_TEXT + "Saved the plan to run/plan.md\n", host="pi")
+        run.register("pi-coord")
+        for now in (1000, 1005, 1010):
+            run.sweep(now=now)
+        self.assertEqual(run.events(), [], "a finished pi turn raised an event")
 
     def test_the_same_prompt_is_one_event_and_a_new_one_supersedes_it(self):
         run = Run(self)
@@ -391,6 +412,14 @@ class HandlingTests(unittest.TestCase):
             self.assertEqual(event_ids(run.wait(now=last + gap - 1).stdout), [], f"re-notified before the {gap} s backoff")
             self.assertEqual(event_ids(run.wait(now=last + gap).stdout), [event], f"not re-notified after {gap} s")
             last += gap
+
+    def test_backoff_stays_capped_however_often_an_event_was_notified(self):
+        run, event = self.blocked_run()
+        with closing(sqlite3.connect(run.dir / "watcher.sqlite3")) as db, db:
+            db.execute("UPDATE events SET notified_at = 1000, notify_count = 1025 WHERE id = ?", (event,))
+        result = run.wait(now=1030)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(event_ids(result.stdout), [event], "a long-unclaimed event must still be due after 30 s")
 
     def test_a_claim_is_the_acknowledgment_and_has_one_winner(self):
         run, event = self.blocked_run()
