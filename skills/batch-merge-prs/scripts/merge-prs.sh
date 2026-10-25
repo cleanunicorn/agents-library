@@ -33,6 +33,7 @@
 #       SKIPPED <n> unresolved <reason>
 #       CONFLICT <n> <pr-head-sha> <path>               one per path, then
 #       PENDING [<n>...]                                the PRs still queued
+#   - --continue needs Git 2.38+ (`git merge-tree --write-tree`).
 #   - Exit 0 once the queue is done, 3 when paused on a conflict, 2 for bad
 #     args, 1 (FATAL on stderr) for anything else; nothing is reset or cleaned.
 
@@ -71,9 +72,14 @@ abort_merge() {
   fi
 }
 
-# The paths Git recorded as conflicted when the merge stopped.
+# The paths the pending merge conflicts on, re-derived from the two commits:
+# after staging, the index no longer has them, and MERGE_MSG's comment block
+# depends on core.commentChar. Exit 1 from merge-tree means "conflicts".
 conflicted_paths() {
-  sed -n '/^# Conflicts:$/,/^[^#]/s/^#\t//p' "$(git rev-parse --git-path MERGE_MSG)"
+  local listing status=0
+  listing=$(git merge-tree --write-tree --name-only --no-messages HEAD MERGE_HEAD) || status=$?
+  [ "$status" -le 1 ] || fatal "git merge-tree could not list the conflicts (needs Git 2.38+)"
+  printf '%s\n' "$listing" | tail -n +2 | sed '/^$/d'
 }
 
 # Refuse to touch a merge that is not this run's pause on PR <n>.
@@ -122,7 +128,7 @@ merge_queue() {
 continue_merge() {
   [ "$#" -ge 4 ] || usage
   remote=$1
-  local target=$2 n=$3 record=$4 path missing=""
+  local target=$2 n=$3 record=$4 path missing="" conflicted
   shift 4
   require_pr_numbers "$n" "$@"
   check_pending "$target" "$n"
@@ -131,9 +137,12 @@ continue_merge() {
   [ -z "$(git diff --name-only)" ] \
     || fatal "unstaged changes — stage only the reviewed resolution"
   [ -s "$record" ] || fatal "resolution record $record is missing or empty"
+  conflicted=$(conflicted_paths) || exit 1
+  # An empty list would make every record pass: the pause had conflicts.
+  [ -n "$conflicted" ] || fatal "could not list PR #$n's conflicted paths"
   while IFS= read -r path; do
     grep -qF -- "$path" "$record" || missing="$missing${missing:+, }$path"
-  done < <(conflicted_paths)
+  done <<< "$conflicted"
   [ -z "$missing" ] || fatal "resolution record does not name: $missing"
   git fetch -q "$remote" "pull/$n/head" || fatal "git fetch $remote pull/$n/head failed"
   [ "$(git rev-parse FETCH_HEAD)" = "$(git rev-parse MERGE_HEAD)" ] \

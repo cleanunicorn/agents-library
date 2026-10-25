@@ -48,7 +48,15 @@ cat > "$tmp/gitwrap/git" <<EOF
 if [ "\$1 \${2:-}" = "merge --abort" ]; then exit 1; fi
 exec $(command -v git) "\$@"
 EOF
-chmod +x "$tmp/bin/gh" "$tmp/bin/date" "$tmp/failhooks/pre-merge-commit" "$tmp/gitwrap/git"
+# A git whose merge-tree reports a tree and no conflicted paths.
+mkdir "$tmp/emptytree"
+cat > "$tmp/emptytree/git" <<EOF
+#!/usr/bin/env bash
+if [ "\$1" = merge-tree ]; then echo 0000000000000000000000000000000000000000; exit 0; fi
+exec $(command -v git) "\$@"
+EOF
+chmod +x "$tmp/bin/gh" "$tmp/bin/date" "$tmp/failhooks/pre-merge-commit" "$tmp/gitwrap/git" \
+  "$tmp/emptytree/git"
 export PATH="$tmp/bin:$PATH"
 
 assert_equal() {
@@ -220,6 +228,9 @@ pr 1 README.md 'P1\nline2\nline3\n' 'a b.txt' 'pr\n'
 main_change README.md 'M1\nline2\nline3\n'
 main_change 'a b.txt' --rm
 clone_work
+# A non-default comment prefix changes MERGE_MSG's conflict block; the
+# record check must not depend on it.
+git config core.commentChar ';'
 before=$(protected_refs)
 
 run_merge origin main auto 1
@@ -242,6 +253,8 @@ run_merge --continue origin batch/20000101-0000 1 "$tmp/rec-1.md"
 assert_equal 0 "$code" 'complete record continues'
 m1=$(merged_sha 1)
 assert_equal 'pr' "$(git show "$m1:a b.txt")" 'modify/delete resolved as recorded'
+assert_equal 'Merge PR #1: Title 1' "$(git log -1 --format=%B "$m1" | sed '/^$/d')" \
+  'conflict comments stripped under any comment prefix'
 assert_equal "$before" "$(protected_refs)" 'remote refs and main unchanged'
 
 # --- Guards on --continue, then an explicit --skip -------------------------
@@ -378,6 +391,24 @@ schema=$(grep -B1 'from merge-prs\.sh,' "$ROOT/AGENTS.md" | tr '\n' ' ')
 for line in $(sed -n 's/^#       \([A-Z]*\) .*/\1/p' "$SCRIPT" | sort -u); do
   assert_contains "$schema" "$line" "AGENTS.md schema names $line"
 done
+
+# --- An empty conflict list fails closed -----------------------------------
+
+fixture empty-list
+pr 1 README.md 'A1\nline2\nline3\n'
+pr 2 README.md 'B1\nline2\nline3\n'
+clone_work
+run_merge origin main batch-1 1 2
+printf 'A1 B1\nline2\nline3\n' > README.md
+git add README.md
+printf 'notes only\n' > "$tmp/rec-empty.md"
+state=$(merge_state)
+code=0
+PATH="$tmp/emptytree:$PATH" bash "$SCRIPT" --continue origin batch-1 2 "$tmp/rec-empty.md" \
+  > "$tmp/out" 2> "$tmp/err" || code=$?
+assert_equal 1 "$code" 'no listed conflicts refuses continue'
+assert_contains "$(cat "$tmp/err")" 'could not list' 'empty list diagnostic'
+assert_equal "$state" "$(merge_state)" 'empty-list continue changes nothing'
 
 case_name=usage
 run_merge
