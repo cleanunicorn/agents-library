@@ -22,8 +22,9 @@ and report. These boundaries apply throughout:
   A `FATAL` stops that step: relay the error without destructive cleanup.
 - **Herdr first:** when the host lists a `herdr` skill and
   `test "${HERDR_ENV:-}" = 1 && command -v herdr` passes, follow
-  `references/herdr.md` for all agents and test commands. Otherwise use
-  native subagents and your shell; the same contracts hold.
+  `references/herdr.md` for all agents and test commands, answering
+  routine worker approvals per its § Approvals. Otherwise use native
+  subagents and your shell; the same contracts hold.
 
 Script paths below are relative to this skill; run from the target repository.
 
@@ -95,5 +96,7 @@ Return one ledger:
 - **Tests:** command, source, exit status, passed/failed counts; skipped suites
   and reasons; each failure's culprit PR, `pre-existing`, or `none`.
 - **Review:** ranked verified findings and review-pr's filtered-out tally.
+- **Approvals:** `<run-dir>/approvals.md` and its count of answered,
+  relayed, and rejected prompts.
 - **Next steps:** the user may inspect, fix or drop a culprit, push, or open
   a combined PR. Nothing on GitHub was changed.
