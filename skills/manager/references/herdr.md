@@ -109,7 +109,8 @@ a listing.
 - **Planners are done after Phase 1.** Close the tabs you recorded for them
   once their records are saved, so reviewers never share scrollback with a
   plan and the tab bar shows only live workers.
-- **`blocked`** means an approval or a question UI. Read just the prompt with
+- **`blocked`** means an approval or a question UI. The watcher reports it
+  as an event: claim it first (§ Watch for prompts). Read just the prompt with
   `herdr agent read <name> --source recent-unwrapped --lines 40` and classify it — role, action,
   target — against `references/console.md` § Approvals:
   - **Routine:** choose the persistent option the menu offers ("Allow
@@ -133,9 +134,74 @@ a listing.
   miss is a member that fails (SKILL.md rule 8). A timeout after activity is
   not a reason to send again: the worker has the prompt.
 
+## Watch for prompts
+
+A worker can raise a permission prompt or a question between your turns, and
+a prompt nobody reads stalls its item. One watcher per run polls every
+worker and helper every five seconds, records each prompt as an event in the
+run directory, and wakes you; it only detects and notifies. Classifying,
+answering and the approvals-answered row stay yours, under
+`references/console.md` § Approvals, unchanged. `<watcher>` below is
+`python3 <skill dir>/scripts/watch-workers.py`, where `<skill dir>` is the
+directory of the header's `skill` path, and every call takes `--run-dir
+<run_dir>`.
+
+- **Start it before the first worker**, on the turn you record the
+  transport: `<watcher> run --run-dir <run_dir> > <run_dir>/watcher.log 2>&1
+  &` as a plain background shell command. A second `run` prints
+  `ALREADY_RUNNING` and exits, so one watcher serves the run.
+- **Register every worker** right after its `agent start`, helpers and
+  replacements too: `<watcher> register --run-dir <run_dir> --name <agent
+  name> --item <slug> --role <role>`. Unregister it (`unregister --name`)
+  when you close its tab.
+- **Keep one wait armed** beside the worker waits: `<watcher> wait --run-dir
+  <run_dir>` as a background command that wakes you when it exits, re-armed
+  each time it does. It prints `EVENT <id> worker=<name> item=<slug>
+  role=<role> kind=blocked|suspected` per due event, ids and identities only,
+  never prompt text; `WATCHER stale` means the watcher died. An event nobody
+  claims is printed again after 5, 10, 20, then every 30 seconds: printing is
+  not acknowledgment.
+- **Drain on every resume**, woken or not: `<watcher> status --run-dir
+  <run_dir>` lists the events, open ones first. For each `pending` one, and
+  each EVENT line:
+  1. `<watcher> claim --event <id>`. `NOT_CLAIMABLE` means it was already
+     handled, cleared or replaced: ignore it, so a late or duplicate
+     notice is harmless. `CLAIMED … token=<token>` makes it yours for 30
+     seconds; unresolved after that, it is due again.
+  2. Re-read the current prompt (§ Drive, `blocked`) and check the worker
+     and item still match the event before answering. A `suspected` event
+     with no prompt on screen is resolved without sending anything;
+     that screen is not raised again until it or the worker's session
+     changes.
+  3. Answer it as § Drive's `blocked` bullet says, then `herdr agent get`
+     until the worker leaves `blocked`, and `<watcher> resolve --event <id>
+     --token <token>`. `STALE_TOKEN` means the claim lapsed while you
+     answered: claim it again and resolve with the new token, without
+     sending anything again. A confirmation dialog or the next prompt
+     arrives as a new event: handle it the same way, never by repeating keys.
+  4. A prompt relayed to the user: `<watcher> await-user --event <id>
+     --token <token>`. It stays on the board without further notices; with
+     the user's answer, claim it again and go on from step 2.
+- **Record its health** on every board rewrite from `status`: the header's
+  `watcher <instance> · heartbeat <age>s · pending <N>`. `alive: false` or
+  `WATCHER stale` → start it again with the same `run` command; it takes
+  over the run's store and keeps every event. Recovering the watcher never
+  re-prompts a worker or resends a brief.
+- **Wake-ups ride the host, not Herdr.** Herdr 0.9.5 (protocol 22) has no
+  queued or idle-conditional delivery: `agent prompt` types text and Enter
+  into the terminal, which can submit whatever sits in your input buffer, and
+  a status check before it still races your own resumption. So the watcher
+  calls only `herdr agent get` and `herdr agent read` and never writes to a
+  terminal, yours included. Where the host does not wake you when a
+  background command exits, read `status` each turn instead, or run `wait
+  --timeout <seconds>` where the host lets you wait with a timeout: detection is
+  continuous, wake-up is only as reliable as the host's background
+  commands.
+
 ## Tear down
 
 At an item's Phase 5, after its records are in the run directory: `herdr tab
-close <recorded tab id>` for each of its tabs still open. Other items' tabs
+close <recorded tab id>` for each of its tabs still open, and `unregister`
+each of its workers from the watcher. Other items' tabs
 stay. Close only tabs you created and recorded — never by label, never from a
 listing, never a workspace, never `herdr server stop`.

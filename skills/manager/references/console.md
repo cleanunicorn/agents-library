@@ -12,6 +12,8 @@ the user names, else the host's scratch directory, else
 | `board.md`, `<slug>/brief-<role>-<label>.md` (the exact text sent) | you |
 | `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `merged-plan`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
 | `<slug>/gate-<role>-<short-sha>.log`, `<slug>/ci-coordinator-<short-sha>.log` | the worker that ran it |
+| `watcher.sqlite3` — Herdr transport only: worker registry, prompt events (ids and hashes, never prompt text), watcher heartbeat | `scripts/watch-workers.py` (`references/herdr.md` § Watch for prompts) |
+| `watcher.log` — the watcher's START, EVENT and STOPPED lines | your shell redirect of its `run` command |
 
 **A gate log** starts with `command: <exact command>` and `head: <full SHA>`,
 then the raw output, then `exit: <code>`. **A CI log** has the same shape:
@@ -85,7 +87,9 @@ Each turn, in this order:
    yourself" → say the console delegates, and delegate it.
 2. **Worker events.** A worker that finished: read its result block, check
    it as § Results says, start the next phase. A worker that blocked:
-   classify and answer its prompt per § Approvals; it keeps its phase.
+   classify and answer its prompt per § Approvals; it keeps its phase. On
+   Herdr, drain the watcher's events first, whether or not it woke you
+   (`references/herdr.md` § Watch for prompts).
 3. **The board**, then a short reply: what moved, what waits on the user.
 
 Keep the console responsive: wait in the background with wake-up where the
@@ -179,7 +183,12 @@ every rewrite, so a context summary cannot lose the mode or the transport:
 
 ```
 console: manager · skill <absolute path to SKILL.md> · transport herdr <workspace id> | native · run_dir <absolute path> · since <HH:MM>
+  · watcher <instance> · heartbeat <age>s · pending <N>
 ```
+
+The second line is the Herdr watcher's health, refreshed from its `status`
+on every rewrite (`references/herdr.md` § Watch for prompts); native runs
+have no watcher and omit it.
 
 Then the items:
 
@@ -223,7 +232,8 @@ three active items is the user's to change.
 
 ## Native subagents
 
-Same roles, briefs, budget and rules.
+Same roles, briefs, budget and rules. No watcher runs: a subagent's prompt
+reaches you only as the host shows it, so claim no continuous monitoring.
 
 - **Start same-role workers in one message**, in the background where the
   host allows. A subagent's final message lands in your context, so its brief
@@ -273,4 +283,6 @@ The console ends only when the user ends it in words — "end the manager",
 "leave the console", "stop managing". A later request, a skill invocation,
 or "just do it yourself" does not end it (SKILL.md rule 10). Then report
 every item still open with its hand-back block (`in progress` or `blocked`),
-close the workers you started, and leave every worktree and branch in place.
+close the workers you started, stop this run's watcher on Herdr (`<watcher>
+stop --run-dir <run_dir>`; it never stops another run's), and leave every
+worktree and branch in place.
