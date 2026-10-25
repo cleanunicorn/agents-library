@@ -259,7 +259,9 @@ loads and executes.
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
   main already contains), `merge-prs.sh` (which auto-names the target branch
-  `batch/<YYYYMMDD-HHMM>` when passed `auto`), `test-commands.sh`,
+  `batch/<YYYYMMDD-HHMM>` when passed `auto`, refuses an existing one, and
+  pauses on a conflict for the agent to resolve and resume with `--continue`
+  or skip with `--skip`), `test-commands.sh`,
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
   test), review-pr has `diff-target.sh` (main-branch detection +
   diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
@@ -298,7 +300,8 @@ loads and executes.
   follows the same orient → fan out → consolidate shape and then adds
   *decide* → *act* → *summarize* phases, acting only on what was approved.
   batch-merge-prs takes the user's PR list as the selection: orient and
-  classify → merge onto a new local branch → test under the project's rules,
+  classify → merge onto a new local branch, resolving conflicts or skipping
+  them with a reason → test under the project's rules,
   attributing failures → review with review-pr → report; inside Herdr its
   reviewer and helpers run in tabs and its tests in a pane
   (`references/herdr.md`, self-contained for standalone installation,
@@ -397,7 +400,8 @@ loads and executes.
   `INSTALLED|IDENTICAL|CONFLICT|UPDATED|FAILED|JOURNAL <name>` status lines
   install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
-  `TARGET|MERGED <n> <sha>|SKIPPED <n> <reason>` from merge-prs.sh,
+  `TARGET|MERGED <n> <sha>|RESOLVED <n> <sha> <record>|SKIPPED <n>
+  <reason>|CONFLICT <n> <head> <path>|PENDING <n>...` from merge-prs.sh,
   `SOURCE|CANDIDATE|CAUTION|NONE` from test-commands.sh, `GATE <label>
   exit=<n>` from run-gate.sh, and `BASELINE|AT|CULPRIT` from
   attribute-failure.sh — plus its `{time, worker, asked, option}` rows in

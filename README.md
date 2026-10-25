@@ -271,8 +271,10 @@ build gate; no `gh` or remote is required.
 
 [`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) merges the pull requests
 you name onto one new local branch (`batch/<YYYYMMDD-HHMM>` unless you name
-it), skipping each PR main already contains and showing the evidence. A
-conflicting PR is aborted with its files listed while the rest still merge. It
+it), skipping each PR main already contains and showing the evidence. When a
+PR conflicts, it resolves the conflict on that branch, keeping both sides'
+intent and recording each file's resolution, or skips the PR with a stated
+reason when it can't resolve it with confidence; the rest still merge. It
 then runs the tests the project's own docs and CI call for, skipping any suite
 marked as touching live or shared resources unless you authorize it. It names
 the PR behind each failure and reviews the merged branch with `review-pr`.

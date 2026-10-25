@@ -42,7 +42,8 @@ write `counts not printed` when absent.
 ## Attribute failures
 
 After the reviewer finishes, for each failed command pass **every** `MERGED`
-entry in merge order:
+entry in merge order — a resolved conflict is an ordinary `MERGED` entry, so
+a bad resolution is attributed to its PR:
 
 ```
 bash <skill>/scripts/attribute-failure.sh <run-dir> <remote>/<main> '<command>' <n>=<merge-sha>...
