@@ -614,8 +614,8 @@ persistent console
 (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
 stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
-regressions (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
-against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), the eval runner's
+regressions (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
+against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval runner's
 offline transcript parsing and delegation traces (`scripts/test-run-evals.py`),
 and eval cases with `run_evals.py --dry-run`.
 The command is local and manual: it starts no model runs, needs no credentials,

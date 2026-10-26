@@ -10,18 +10,18 @@ by the Herdr skill: one full-size, watchable tab per worker in the current
 workspace, grouped by `<slug>-` labels. Herdr supplies transport and live
 context, with the same roles and rules as native workers.
 
-## Your tab
+## Your workspace
 
-On the first turn, once, label your own tab so the user can find the console
-among the workers' tabs: run `bash <skill>/scripts/rename-herdr-tab.sh
-manager`, `<skill>` being this skill's directory, from the project's working
-directory — never `cd` into the skill first, or the label names the skill.
-It renames `$HERDR_TAB_ID` to `manager <project>`,
-where `<project>` is the git toplevel directory's name, else the working
-directory's. It needs only `HERDR_ENV=1` and `HERDR_TAB_ID`, not this file's
-precondition, so it also runs when workers are native. Outside Herdr it does
-nothing; a failed rename prints one warning and never blocks startup. Do not
-retry it or rename it per item.
+On the first turn, once, label your workspace so the user can find the
+console in Herdr's workspace sidebar: run
+`bash <skill>/scripts/rename-herdr-workspace.sh manager`, `<skill>` being
+this skill's directory. It renames `$HERDR_WORKSPACE_ID` to `manager` — no
+project name, since the sidebar already shows each workspace's directory.
+Tabs are left alone; workers' tabs keep their `<slug>-` labels. It needs only
+`HERDR_ENV=1` and `HERDR_WORKSPACE_ID`, not this file's precondition, so it
+also runs when workers are native. Outside Herdr it does nothing; a failed
+rename prints one warning and never blocks startup. Do not retry it or
+rename it per item.
 
 ## Start a worker
 

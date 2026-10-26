@@ -29,14 +29,13 @@ Two guardrails frame everything below:
 
 ## Startup
 
-1. **Label the tab.** Run `bash <skill>/scripts/rename-herdr-tab.sh issues`,
-   `<skill>` being this skill's directory, from the project's working
-   directory — never `cd` into the skill first, or the label names the
-   skill. Inside Herdr (`HERDR_ENV=1`, `HERDR_TAB_ID` set) it
-   renames the tab to `issues <project>`, `<project>` being the git toplevel
-   directory's name, else the working directory's. Outside Herdr it does
-   nothing; a failed rename prints one warning and never blocks startup. Run
-   it once; do not retry it.
+1. **Label the workspace.** Run
+   `bash <skill>/scripts/rename-herdr-workspace.sh issues`, `<skill>` being
+   this skill's directory. Inside Herdr (`HERDR_ENV=1`, `HERDR_WORKSPACE_ID`
+   set) it renames the workspace to `issues` — no project name, since
+   Herdr's sidebar already shows each workspace's directory. Outside Herdr
+   it does nothing; a failed rename prints one warning and never blocks
+   startup. Run it once; do not retry it.
 2. **Check `gh`.** `command -v gh` and `gh auth status`. Either failing →
    say which and stop.
 3. **Learn the repository's conventions**, once, and reuse them every loop:

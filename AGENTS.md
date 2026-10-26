@@ -273,9 +273,9 @@ loads and executes.
   manager through a host background `wait`, never terminal input) and
   `pi-permissions.mjs` (the pi extension that is a pi worker's only
   permission prompt, loaded with `pi -e`), and manager and file-issues each
-  ship a byte-identical `rename-herdr-tab.sh` (labels the session's Herdr tab
-  `<prefix> <project>`; the manager copy is canonical, and
-  `scripts/test-rename-herdr-tab.sh` fails when a copy drifts, since a skill
+  ship a byte-identical `rename-herdr-workspace.sh` (labels the session's
+  Herdr workspace `manager` or `issues`; the manager copy is canonical, and
+  `scripts/test-rename-herdr-workspace.sh` fails when a copy drifts, since a skill
   installed alone carries only its own directory).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
   `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
@@ -440,8 +440,8 @@ loads and executes.
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), the shared Herdr tab-rename step
-  against a stub `herdr` (`scripts/test-rename-herdr-tab.sh`), the eval
+  tests (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
+  against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval
   runner's offline transcript parsing and delegation traces
   (`scripts/test-run-evals.py`), and eval case validation (`--dry-run`).
   Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
