@@ -31,8 +31,8 @@ worker; otherwise native subagents. With neither, refuse
 and ask for Herdr or another host: never do the work yourself. Decide once,
 on the first turn, and record it in the board header (`console.md` § The
 board); every worker this session starts uses that transport. Then label
-your tab from the project: `bash <skill>/scripts/rename-herdr-tab.sh
-manager` (`references/herdr.md` § Your tab).
+your workspace: `bash <skill>/scripts/rename-herdr-workspace.sh manager`
+(`references/herdr.md` § Your workspace).
 
 ## The team
 
