@@ -42,7 +42,8 @@ Status lines (one per host/item):
   COPIED <host>/<name>    file or directory copied
   INSTALLED <host>/<plugin>  plugin installed through the host's CLI
   OK <host>/<name>        already installed correctly
-  UPDATED <host>/<name>   destination overwritten (--force)
+  UPDATED <host>/<name>   destination overwritten (--force), or installed plugin
+                          refreshed through the host's CLI
   REMOVED <host>/<name>   unchecked item this library had installed
   KEPT <host>/<name>      unchecked item left alone: it differs from the library
   SKIPPED <host>/<name>   host cannot take this install (reason on stderr)
@@ -466,35 +467,43 @@ def install_plugin(host_key: str, project: Optional[Path], ledger: Ledger) -> No
         ledger.report("FAILED", target, f"`{HOSTS[host_key].binary}` is not on PATH")
         return
 
+    # Installed plugins are refreshed rather than skipped: a plugin host keeps
+    # serving its cached copy until told to update.
     if host_key == "claude":
         scope = "project" if project else "user"
         if claude_installed(cwd, scope):
-            ledger.report("OK", target)
-            return
-        commands = [["claude", "plugin", "install", PLUGIN, "--marketplace", MARKETPLACE_SOURCE,
-                     "--scope", scope]]
+            status = "UPDATED"
+            commands = [["claude", "plugin", "marketplace", "update", PLUGIN],
+                        ["claude", "plugin", "update", f"{PLUGIN}@{PLUGIN}", "--scope", scope]]
+        else:
+            status = "INSTALLED"
+            commands = [["claude", "plugin", "install", PLUGIN, "--marketplace", MARKETPLACE_SOURCE,
+                         "--scope", scope]]
     else:
         if project:
             ledger.report("SKIPPED", target, "Codex has no project scope; run without --project to install it")
             return
         if codex_installed(cwd):
-            ledger.report("OK", target)
-            return
-        commands = [["codex", "plugin", "marketplace", "add", MARKETPLACE_SOURCE],
-                    ["codex", "plugin", "add", f"{PLUGIN}@{PLUGIN}"]]
+            status = "UPDATED"
+            commands = [["codex", "plugin", "marketplace", "upgrade", PLUGIN]]
+        else:
+            status = "INSTALLED"
+            commands = [["codex", "plugin", "marketplace", "add", MARKETPLACE_SOURCE],
+                        ["codex", "plugin", "add", f"{PLUGIN}@{PLUGIN}"]]
 
     if ledger.dry_run:
-        ledger.report("INSTALLED", target)
+        ledger.report(status, target)
         return
     for command in commands:
         result = run(command, cwd)
         # An already-registered Codex marketplace fails `marketplace add`; the
-        # `plugin add` that follows is what decides the outcome.
-        if result.returncode != 0 and command is commands[-1]:
+        # `plugin add` that follows is what decides the outcome. Updating has
+        # no such tolerance: a failed refresh leaves the old copy in place.
+        if result.returncode != 0 and (status == "UPDATED" or command is commands[-1]):
             output = (result.stderr or result.stdout).strip()
             ledger.report("FAILED", target, f"`{' '.join(command)}` exited {result.returncode}: {output}")
             return
-    ledger.report("INSTALLED", target)
+    ledger.report(status, target)
 
 
 # --- entry point ------------------------------------------------------------

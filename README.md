@@ -337,19 +337,13 @@ git pull
   `CONFLICT` until refreshed. Inspect customizations, then rerun with
   `--force`, for example `/path/to/agents-library/install.py --project --yes --force`
   from the project.
-- **Claude Code**: the installer reports an installed plugin as `OK` and
-  does not update it. Update it, then restart Claude Code:
-
-  ```sh
-  claude plugin update agents-library@agents-library
-  ```
-
-  Check `claude plugin list --json` for the installed scope, and add
-  `--scope project` from a project directory to target a project install.
-  Claude Code 2.1.286 auto-detects the scope; older versions may differ.
-- **Codex**: [refresh the Git marketplace](https://developers.openai.com/plugins/build/plugins)
-  with `codex plugin marketplace upgrade agents-library`, then start a new
-  thread. Omit the name to refresh all configured Git marketplaces.
+- **Claude Code and Codex**: the installer updates an installed plugin
+  itself and reports `UPDATED` (`claude plugin marketplace update` then
+  `claude plugin update`; `codex plugin marketplace upgrade`). Restart Claude
+  Code, or start a new Codex thread, to load it. To update without the
+  installer, run `claude plugin update agents-library@agents-library`
+  (add `--scope project` from a project directory) or
+  `codex plugin marketplace upgrade agents-library`.
 
 Something failed? See [Troubleshooting](#troubleshooting).
 

@@ -443,14 +443,35 @@ class PluginHostTests(Sandbox):
                      if line.startswith("install: running ")]
         self.assertEqual(announced, self.calls())
 
-    def test_installed_plugins_report_ok(self):
+    def test_installed_plugins_are_updated(self):
         (self.stubs / "claude-list.json").write_text(
             '[{"id": "agents-library@agents-library", "scope": "user"}]')
         (self.stubs / "codex-list.json").write_text(
             '{"installed": [{"pluginId": "agents-library@agents-library"}]}')
         code, out, _ = self.run_installer("--yes", "--hosts", "claude,codex")
-        self.assertEqual(out, ["OK claude/agents-library", "OK codex/agents-library"])
-        self.assertFalse(any("install" in call or " add " in call for call in self.calls()))
+        self.assertEqual(code, 0)
+        self.assertEqual(out, ["UPDATED claude/agents-library", "UPDATED codex/agents-library"])
+        calls = self.calls()
+        self.assertIn("claude plugin marketplace update agents-library", calls)
+        self.assertIn("claude plugin update agents-library@agents-library --scope user", calls)
+        self.assertIn("codex plugin marketplace upgrade agents-library", calls)
+        self.assertFalse(any("install" in call or " add " in call for call in calls))
+
+    def test_failed_plugin_update_is_reported(self):
+        (self.stubs / "claude-list.json").write_text(
+            '[{"id": "agents-library@agents-library", "scope": "user"}]')
+        (self.stubs / "claude-exit-update").write_text("1")
+        code, out, stderr = self.run_installer("--yes", "--hosts", "claude")
+        self.assertEqual(code, 3)
+        self.assertEqual(out, ["FAILED claude/agents-library"])
+        self.assertIn("exited 1", stderr)
+
+    def test_dry_run_updates_nothing(self):
+        (self.stubs / "claude-list.json").write_text(
+            '[{"id": "agents-library@agents-library", "scope": "user"}]')
+        code, out, _ = self.run_installer("--yes", "--hosts", "claude", "--dry-run")
+        self.assertEqual(out, ["UPDATED claude/agents-library"])
+        self.assertEqual([call for call in self.calls() if "plugin list" not in call], [])
 
     def test_unexpected_plugin_listings_mean_not_installed(self):
         for claude, codex in (("{}", "[]"), ("[1]", '{"installed": [1]}'), ("[]", '{"installed": {}}')):
