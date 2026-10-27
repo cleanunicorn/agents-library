@@ -273,22 +273,29 @@ class PluginLayoutTests(unittest.TestCase):
         to one manager and a capped team. It was then narrowed to a console
         that does no work itself: workers plan, implement, review, fix, and run
         the gate. This guards all three: the stages the user asked to keep
-        (SWOT merge, implementation, independent review, validated fixes), the
-        cap, and the manager-only role, so neither the removed layers nor the
+        (one plan, its independent review, implementation by a separate
+        implementer, independent code review, validated fixes), the cap, and the manager-only role, so neither the removed layers nor the
         manager's old hands-on steps creep back one copy-edit at a time.
         """
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         for rule in ("You do no work.", "Single writer.", "Independence.", "Evidence, not reports."):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
-        for stage in ("## Phase 2 — SWOT merge", "## Phase 3 — Implement",
+        for stage in ("## Phase 2 — Review the plan", "## Phase 3 — Implement",
                       "## Phase 4 — Review, validate, fix"):
             self.assertIn(stage, root_text, f"SKILL.md lost `{stage}`")
-        self.assertIn("**at most five agents**", root_text, "SKILL.md lost its agent cap")
-        # The cap is the sum of the team table, so pin each row's count too.
-        for role, count in (("planner", r"1 or 2"), ("coordinator", r"1"),
-                            ("reviewer", r"1, or 2 for high risk")):
+        self.assertIn("Each item gets only these roles", root_text, "SKILL.md lost its team statement")
+        # Capacity numbers belong to the user and the host, not to the prose:
+        # a fixed agent cap or item count goes stale the next time a role moves.
+        self.assertNotRegex(root_text, r"(?i)\b(at most|up to|no more than) (one|two|three|four|five|six|seven|\d+) "
+                                       r"(agents?|workers?|items?)|\b(a )?(second|third|fourth) (item )?queues",
+                            "SKILL.md hardcodes a team or concurrency number")
+        # The team table still pins each role's count.
+        for role, count in (("coordinator", r"1"), ("planner", r"1"), ("plan reviewer", r"1"),
+                            ("implementer", r"1"), ("code reviewer", r"1, or 2 in the full tier")):
             self.assertRegex(root_text, rf"\| {role} \| {count} \|", f"the `{role}` count in the team table changed")
+        for tier in ("trivial", "standard", "full"):
+            self.assertRegex(root_text, rf"\| `{tier}` \|", f"SKILL.md lost the `{tier}` tier")
         self.assertRegex(root_text, r"(?i)start no new reviewer", "the re-check must not start a reviewer")
         # With one reviewer by default, a failed reviewer must not let an
         # unreviewed PR be marked ready.
@@ -311,7 +318,7 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIsNone(found, f"the manager does work again — found {found and found.group(0)!r}")
         self.assertIn("references/console.md", root_text, "SKILL.md does not hand over console.md")
         self.assertTrue((skill / "references/console.md").is_file(), "console.md is missing")
-        for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
+        for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md", "implementer-brief.md"):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
                 self.assertTrue((skill / "references" / brief).is_file(), f"{brief} is missing")
@@ -327,8 +334,6 @@ class PluginLayoutTests(unittest.TestCase):
             self.assertEqual(suffix, "", f"coordinator brief sub-numbers Phase {number}{suffix}")
             if number in ("2", "3"):
                 self.assertEqual(title, phases[number], f"coordinator Phase {number} is named differently")
-        for quadrant in ("Strength", "Weakness", "Opportunity", "Threat"):
-            self.assertIn(f"| {quadrant} |", coordinator, f"the SWOT table lost `{quadrant}`")
         removed = r"(?i)super manager|simplify-sweep|final reviewer|agent-types\.md|hosting-agents\.md|role: manager"
         for path in (skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))):
             with self.subTest(path=str(path.relative_to(ROOT))):
@@ -353,12 +358,12 @@ class PluginLayoutTests(unittest.TestCase):
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         self.assertIn("**Results, not transcripts.**", root_text, "SKILL.md lost the results-only rule")
-        self.assertRegex(root_text, r"(?i)records between workers \*\*by path\*\*",
+        self.assertRegex(root_text, r"(?i)pass records \*\*by path\*\*",
                          "records are no longer passed by path")
         fields = ("result:", "record:", "head:", "gate:", "summary:", "asks:")
         console = (skill / "references/console.md").read_text(encoding="utf-8")
         self.assertIn("## Results", console, "console.md lost its Results section")
-        for name in ("console.md", "planner-brief.md", "coordinator-brief.md", "reviewer-brief.md"):
+        for name in ("console.md", "worker-common.md"):
             text = (skill / "references" / name).read_text(encoding="utf-8")
             blocks = [b for b in re.findall(r"(?s)```\n(.*?)```", text) if b.startswith("result:")]
             with self.subTest(file=name):

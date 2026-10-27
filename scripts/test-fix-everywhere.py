@@ -77,10 +77,10 @@ class FixEverywhereTests(unittest.TestCase):
         self.expect(path, text, FIXES_EVERY_INSTANCE, "the issue fixer does not sweep")
         self.refute(path, text, CAP, "a per-area cap is back")
 
-    def test_manager_coordinator_fixes_every_instance(self):
-        path = "skills/manager/references/coordinator-brief.md"
+    def test_manager_implementer_fixes_every_instance(self):
+        path = "skills/manager/references/implementer-brief.md"
         text = self.read(path)
-        self.expect(path, text, FIXES_EVERY_INSTANCE, "the coordinator does not sweep")
+        self.expect(path, text, FIXES_EVERY_INSTANCE, "the implementer does not sweep")
         self.refute(path, text, CAP, "a per-area cap is back")
 
     def test_guides_teach_the_rule(self):

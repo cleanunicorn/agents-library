@@ -175,9 +175,12 @@ Pick the skill that matches the job:
 
 ![Manager workflow: three parallel item teams, each with a coordinator, planners, and reviewers. Plans feed implementation and tests, followed by independent review, a fix-and-recheck loop, final push and draft PR, CI, and a ready PR. Results return to the manager.](docs/assets/manager-workflow.png)
 
-The manager launches every worker; three item teams can run concurrently. Each
-coordinator combines independent plans and implements in its own worktree;
-reviewers return findings for validation, fixes, tests, and re-checks. Local
+The manager launches every worker; item teams run concurrently while capacity allows. Each
+team has a coordinator, one planner, a plan reviewer, an implementer, and one
+or two code reviewers. The planner writes the plan and the plan reviewer
+checks it; the implementer, the only writer in the item's worktree,
+implements it; code reviewers return findings for validation, fixes, tests,
+and re-checks. Local
 review and testing finish before the final push creates the draft PR. CI
 failures return to the same fix loop; the PR becomes ready only when the
 tested commit matches the PR and CI, with no open findings.
@@ -191,21 +194,34 @@ and a board header records the mode so it survives a context summary. In Herdr i
 at launch; as native subagents, which share its session's permissions, it
 checks that session at intake and each read-only worker's worktree after
 it. It answers routine permission prompts itself with the host's persistent
-option, logging each on the board. Only five kinds go to you: actions the
+option, logging each on the board. Only these kinds go to you: actions the
 skill forbids such as merging or force-pushing, destruction outside the item,
 secrets or global settings, the project's ask-first list, and prompts it
 cannot classify. Planners and reviewers still write only to the run
 directory. It never edits code, plans, reviews, or runs tests itself,
 even when asked. To keep its own context small, it reads only each worker's
 few-line result block — status, record path, head SHA, gate exit, counts —
-and hands full plans and reviews between workers by path. Three items run concurrently and a fourth queues, each in
-its own worktree with one PR and at most five workers.
+and hands full plans and reviews between workers by path. Items run concurrently while capacity allows and the rest queue, each in
+its own worktree with one PR.
 
-One or two independent `plan-feature` planners feed a coordinator's SWOT
-merge and Progress checklist. The coordinator implements; one independent
-`review-pr` reviewer (two for high risk) reviews. Findings are validated with
-evidence before fixes; the raising reviewer audits refutations and re-checks
-fix commits. Gate claims need a saved log at the branch head.
+The coordinator sets up the worktree, picks a tier, validates the reviews,
+updates the plan, pushes, opens the PR, and waits for CI; it edits no file in
+the worktree. One `plan-feature` planner writes the plan, and an independent
+plan reviewer checks it against the criteria and the code; the coordinator
+confirms or refutes each finding and updates the plan. A separate implementer
+implements the plan, then fixes confirmed findings. One independent
+`review-pr` reviewer (two in the `full` tier) reviews the frozen branch.
+Findings are validated with evidence before fixes; the raising reviewer
+audits refutations and re-checks fix commits. Gate claims need a saved log at
+the branch head.
+
+The coordinator picks the tier at setup and records why:
+
+| Tier | When | Workers |
+|------|------|---------|
+| `trivial` | One obvious edit, or you asked for no planning | coordinator, implementer, one code reviewer; the coordinator writes a short plan |
+| `standard` | Everything else | all five roles, one code reviewer |
+| `full` | Security, stored data, a public contract, or an ask-first boundary | `standard` plus a second code reviewer |
 
 The deliverable is a PR that is fully tested and fully reviewed. It stays a
 draft until the gate log, the PR head, and the CI log share one SHA, the
@@ -214,9 +230,9 @@ no finding open. A failing check is fixed and re-checked like any other
 finding. The PR body carries the evidence: Progress, the gate result, CI
 status, and a findings table. With no remote or `gh`, the manager asks
 whether a branch is acceptable; unattended, the item ends `blocked: no
-remote`. The `direct`
-playbook skips planning for an obvious edit, retaining review. Planners and
-reviewers use a different agent kind from the coordinator when available.
+remote`. The plan
+reviewer and the code reviewers use a different agent kind from the
+implementer's and the planner's when available.
 
 With Herdr and its skill installed, each worker has a tab in your current
 workspace; otherwise it uses native subagents. With neither, it refuses.

@@ -27,34 +27,6 @@
         }
       ]
     },
-    "task-service-with-plans": {
-      "steps": [
-        {
-          "files": {
-            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n",
-            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the real behavior tests with `make test` (Python standard library only).\n",
-            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
-            "src/__init__.py": "",
-            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
-            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
-            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
-            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
-            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_empty_list(self):\n        self.assertEqual(execute(\"list\"), [])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n    def test_list_returns_copies(self):\n        execute(\"add\", title=\"first\")\n        execute(\"list\")[0][\"title\"] = \"changed\"\n        self.assertEqual(execute(\"list\")[0][\"title\"], \"first\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-            "AGENTS.md": "# Agent guide \u2014 taskbox\n\n- Layering is a rule, not a habit: `src/app.py` only dispatches, `src/service.py`\n  validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit. Never commit red.\n- Commits use Conventional Commits (`feat: ...`, `fix: ...`, `test: ...`).\n- One feature, one PR: code, tests, and docs ship together. Never move tests\n  into a follow-up PR.\n- New work starts in a git worktree under `.worktrees/` (gitignored), on a new\n  branch from `main`. Work on an existing feature branch continues in place.\n  Plan documents a user asks for are saved where the user says.\n- There is no remote. The terminal state is a committed branch; never commit\n  to `main`.\n",
-            "docs/plans/plan-a.md": "# Plan A \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
-            "docs/plans/plan-b.md": "# Plan B \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n"
-          }
-        },
-        {
-          "run": [
-            "git init -q -b main",
-            "git add -A",
-            "git commit -qm 'feat: initial task service'",
-            "git tag eval-baseline"
-          ]
-        }
-      ]
-    },
     "task-service-implemented": {
       "steps": [
         {
@@ -167,7 +139,7 @@
   "cases": [
     {
       "id": "mg-h1",
-      "prompt": "Act as manager for optional list limits, but only as far as the merged plan, then stop: two independent planners, then a coordinator that runs a SWOT analysis on each plan and merges them. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the merged plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing. Use .worktrees/manager-run as the run directory.",
+      "prompt": "Act as manager for optional list limits, but only as far as the reviewed plan, then stop: one planner, a plan reviewer, then a coordinator that validates the reviewer's findings, updates the plan, and saves it. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the reviewed plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -183,37 +155,17 @@
         {
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)strength"
+          "pattern": "(?i)review log"
         },
         {
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)weakness"
+          "pattern": "(?i)(confirmed|refuted|uncertain|no (plan )?findings|0 (plan )?findings)"
         },
         {
           "type": "file_regex",
           "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)opportunit"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)threat"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bA-[SWOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bB-[SWOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?is)\\b[AB]-[WT]\\d.{0,400}\\b(fix|mitigat|ask)"
+          "pattern": "(?i)(one|single|same) (PR|pull request)"
         },
         {
           "type": "file_regex",
@@ -226,8 +178,21 @@
           "pattern": "make test"
         },
         {
+          "type": "file_not_regex",
+          "path": "docs/plans/list-limit.md",
+          "pattern": "(?i)\\b(SWOT|strengths?|weakness(es)?)\\b"
+        },
+        {
           "type": "shell",
           "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\b(trivial|standard|full)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)plan reviewer"
         },
         {
           "type": "shell",
@@ -235,21 +200,29 @@
         },
         {
           "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
           "cmd": "find .worktrees/manager-run -name 'plan-a*.md' | grep -q ."
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan-b*.md' | grep -q ."
+          "cmd": "find .worktrees/manager-run -name 'plan-review*.md' | grep -q ."
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+          "cmd": "find .worktrees/manager-run -name 'plan.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'implementation*.md' | grep -q . && exit 1 || exit 0"
         }
       ]
     },
     {
       "id": "mg-h3",
-      "prompt": "Deliver optional list limits end to end as manager: planners, SWOT merge, implementation, an independent review, and validated fixes. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "prompt": "Deliver optional list limits end to end as manager: a planner, a plan review the coordinator validates, a separate implementer, an independent code review, and validated fixes. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service",
       "timeout": 3600,
@@ -292,7 +265,11 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?im)^- Team: [^\\n]*planner[^\\n]*coordinator[^\\n]*reviewer"
+          "pattern": "(?im)^- Team: tier (standard|full)[^\\n]*planner[^\\n]*plan reviewer[^\\n]*coordinator[^\\n]*implementer[^\\n]*reviewer"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- Plan: [^\\n]*\\d+ plan findings[^\\n]*\\d+ plan changes"
         },
         {
           "type": "shell",
@@ -301,6 +278,18 @@
         {
           "type": "shell",
           "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'plan-review*.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'plan.md' | grep -q ."
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name 'implementation*.md' | grep -q ."
         },
         {
           "type": "shell",
@@ -532,139 +521,113 @@
     },
     {
       "id": "mg-h16",
-      "prompt": "As manager, have a coordinator do only the SWOT-merge step for optional list limits. The manager chose one planner for this item \u2014 no second plan was asked for and none failed \u2014 and its plan, Plan A, is below. Check it against this repo, run a SWOT analysis on it, and save the merged plan in this checkout at docs/plans/list-limit.md. Then stop; change no code.\n\n# Plan A \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- A-D1 Validate `limit` in `src/service.py` `list_tasks`, where `add_task`\n  already validates `title`. `src/app.py` keeps passing `**params` through.\n- A-D2 Reject zero, negative numbers, strings, floats, and booleans with\n  `ValueError`. `bool` is rejected explicitly because `isinstance(True, int)`\n  is true.\n- A-D3 Slice in the service after validation; `src/repository.py` is unchanged.\n- A-D4 Tests go in `tests/test_tasks.py` in the same PR: limit=2, limit larger\n  than the list, and each invalid value.\n\nVerification: `make test`.\n",
+      "prompt": "As manager, have a coordinator do only the plan-review step for optional list limits. One planner wrote the plan below and a plan reviewer returned the findings below. Validate each finding against this repo: mark it confirmed, refuted or uncertain with evidence, update the plan for the confirmed ones, and save the plan as plan.md in the run directory. Then stop; change no code and write nothing else in this checkout. Use .worktrees/manager-run as the run directory.\n\n# Plan \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n\nPlan reviewer findings:\n- P-1 (important) B-D1/B-D2: the plan slices and validates in `src/app.py`, but AGENTS.md says `src/app.py` only dispatches and `src/service.py` validates input; `add_task` already validates `title` in the service. Move both into `src/service.py` `list_tasks`.\n- P-2 (critical) B-D1: `execute` has no `limit` parameter, so `execute(\"list\", limit=2)` would raise TypeError before reaching the service; the plan must add a `limit` argument to `execute` in `src/app.py`.\n",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
         {
-          "type": "file_exists",
-          "path": "docs/plans/list-limit.md"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\A\\s*(#[^\\n]*\\n\\s*)?##? Progress[^\\n]*\\n(?:[^\\n]*\\n){0,3}?\\s*- \\[[ xX]\\]"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)single-plan"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)strength"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)weakness"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)opportunit"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)threat"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bA-[SWOT]\\d"
-        },
-        {
-          "type": "file_not_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bB-[SWOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "src/service\\.py"
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name plan.md | grep -q ."
         },
         {
           "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -E '^#' \"$f\" | head -n 2 | grep -qi 'progress'"
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qE '^- \\[[ xX]\\]' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE '(one|single|same) (PR|pull request)' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'src/service\\.py' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE 'review log|P-1' \"$f\" && grep -qiE 'P-2' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE 'P-2.{0,500}refuted|refuted.{0,500}P-2' \"$f\" || tr '\\n' ' ' < \"$f\" | grep -qiE 'P-2.{0,500}refuted|refuted.{0,500}P-2'"
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && tr '\\n' ' ' < \"$f\" | grep -qiE 'P-1.{0,500}confirmed|confirmed.{0,500}P-1'"
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && tr '\\n' ' ' < \"$f\" | grep -qiE 'P-2.{0,600}(\\*\\*kwargs|\\*params|src/app\\.py:[0-9]+|execute)'"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-baseline)\""
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)P-2.{0,600}refuted|refuted.{0,600}P-2"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)P-1.{0,600}confirmed|confirmed.{0,600}P-1"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\b1 confirmed\\b[^\\n]*\\b1 refuted\\b"
         }
       ]
     },
     {
       "id": "mg-h17",
-      "prompt": "Three planners wrote plans for optional list limits: docs/plans/plan-a.md, docs/plans/plan-b.md, and Plan C, which is below. As manager, have a coordinator do only the SWOT-merge step: check every plan against this repo, run a SWOT analysis on each, and merge the best decisions into one plan saved in this checkout at docs/plans/list-limit.md. Then stop; change no code and leave the input plans as they are.\n\n# Plan C \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks in insertion\norder; omitting `limit` returns every task.\n\nDecisions\n- C-D1 Validate `limit` in `src/service.py` `list_tasks`; `src/app.py` only\n  dispatches and keeps passing `**params` through.\n- C-D2 Reject zero, negative numbers, and non-integers with `ValueError`.\n- C-D3 Document the `limit` argument in `README.md`, with one example, in the\n  same PR as the code.\n- C-D4 Tests go in `tests/test_tasks.py`: limit=2 and an empty list.\n\nVerification: `make test`.\n",
+      "prompt": "As manager, have a coordinator do only the plan-review step for optional list limits. One planner wrote the plan below and the plan reviewer returned an empty findings list. Validate each finding against this repo: mark it confirmed, refuted or uncertain with evidence, update the plan for the confirmed ones, and save the plan as plan.md in the run directory. Then stop; change no code and write nothing else in this checkout. Use .worktrees/manager-run as the run directory.\n\n# Plan \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n\nPlan reviewer findings: none (an empty list).\n",
       "should_trigger": true,
-      "fixture": "task-service-with-plans",
+      "fixture": "task-service",
       "assertions": [
         {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\A\\s*(#[^\\n]*\\n\\s*)?##? Progress[^\\n]*\\n(?:[^\\n]*\\n){0,3}?\\s*- \\[[ xX]\\]"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "src/service\\.py"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)(one|single|same) (PR|pull request)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?is)(weakness|threat|layer|dispatch).{0,400}app\\.py|app\\.py.{0,400}(weakness|threat|layer|dispatch)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)empty"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)bool"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bA-S\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bA-[WOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bB-[SOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?is)\\bB-W\\d.{0,400}\\b(fix|mitigat|declin|ask)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?is)\\b[AB]-O\\d.{0,400}\\b(adopt|declin)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\bC-[SWOT]\\d"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)README"
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name plan.md | grep -q ."
         },
         {
           "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -E '^#' \"$f\" | head -n 2 | grep -qi 'progress'"
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qE '^- \\[[ xX]\\]' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && ! grep -qE '\\bP-[0-9]' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'src/app\\.py' \"$f\""
+        },
+        {
+          "type": "shell",
+          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'B-D1' \"$f\""
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\b0 plan findings\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\b0 plan changes\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)\\b0 confirmed\\b"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)\\bP-\\d"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-baseline)\""
         }
       ]
     },
@@ -941,7 +904,7 @@
         },
         {
           "type": "output_not_regex",
-          "pattern": "(?i)(planner [ab]\\b|\\bSWOT\\b|reviewer [ab]\\b)"
+          "pattern": "(?i)(\\bplanner\\b|\\bplan reviewer\\b|\\bimplementer\\b|\\bcoordinator\\b|\\bcode reviewer\\b|\\bSWOT\\b)"
         }
       ]
     }

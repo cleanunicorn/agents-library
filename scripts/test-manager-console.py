@@ -133,9 +133,11 @@ class ManagerConsoleTests(unittest.TestCase):
             (r"never `cat` it whole", "whole-file reads are allowed again"),
         ]:
             self.expect("console.md § Output budget", canonical, pattern, why)
-        for brief in ["coordinator-brief.md", "planner-brief.md", "reviewer-brief.md"]:
-            self.assertEqual(budget(self.read(f"references/{brief}"), brief), canonical,
-                             f"{brief}: the output budget drifted from console.md")
+        self.assertEqual(budget(self.read("references/worker-common.md"), "worker-common.md"), canonical,
+                         "worker-common.md: the output budget drifted from console.md")
+        for brief in ["coordinator-brief.md", "planner-brief.md", "reviewer-brief.md", "implementer-brief.md"]:
+            self.expect(brief, self.read(f"references/{brief}"), r"Read `worker-common\.md` first",
+                        "a brief no longer points at the shared worker contract carrying the output budget")
         self.expect("console.md § Helpers", section(self.read("references/console.md"), "Helpers"),
                     r"§ Output budget paragraph", "a helper's brief omits the output budget")
         self.expect("SKILL.md rule 9", rule(self.read("SKILL.md"), 9), r"§ Output budget",

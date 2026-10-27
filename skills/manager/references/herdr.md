@@ -26,12 +26,13 @@ rename it per item.
 ## Start a worker
 
 1. **Pick kinds.** `herdr agent` lists the kinds this Herdr knows; use the
-   installed ones. Give planners and reviewers a kind different from the
-   coordinator's.
+   installed ones. Give the plan reviewer and the code reviewers a kind
+   different from the implementer's and the planner's (SKILL.md § The team).
 2. **One tab per worker**, created when that worker is needed, in your own
    workspace only: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
-   <dir> --label "<slug>-<role>-<label>" --no-focus`. The coordinator's
-   `<dir>` is the repository root, since it creates the worktree; every later
+   <dir> --label "<slug>-<role>-<label>" --no-focus`, the role being
+   `coordinator`, `planner`, `plan-reviewer`, `implementer` or `reviewer`. The
+   coordinator's `<dir>` is the repository root, since it creates the worktree; every later
    worker's is that worktree, and a helper's (`references/console.md`
    § Helpers) the repository root. Add the kind's `--env` from § Pre-grants per
    kind, if any, to this command. Record `.result.tab.tab_id` and
@@ -45,7 +46,10 @@ rename it per item.
 
 ### Pre-grants per kind
 
-A helper launches with the planner, reviewer column. The args give each
+A helper launches with the planner, reviewer column. The `coordinator`
+column is the **writer** grant: the coordinator and the implementer both
+launch with it, and the planner, the plan reviewer and the code reviewers all
+use the read-only column. The args give each
 role what its job needs (`references/console.md`
 § Approvals) so prompts rarely appear, while every escalation case still
 surfaces as a prompt. A host's own default can approve silently what no flag
@@ -77,7 +81,9 @@ prompt surface: without network, a remote write cannot run unasked.
 pi asks before no tool call at all (its `docs/security.md`), so the
 skill's own extension `<manager>/scripts/pi-permissions.mjs` (`<manager>` is
 this skill's directory) is the prompt surface: it reads the role from the
-tab's environment, asks for each escalation command every time, blocks a
+tab's environment (`PI_MANAGER_ROLE` is `coordinator`, `planner` or
+`reviewer`: the implementer launches as `coordinator` and the plan reviewer as
+`reviewer`), asks for each escalation command every time, blocks a
 reader's write outside `<run_dir>`, and blocks every call when a setting is
 missing; `--no-extensions` keeps other extensions from answering first.
 Smoke check (herdr 0.9.5, pi 1.2.0): `rm -rf` raised the extension's
@@ -207,12 +213,15 @@ a listing.
 - **The board reads live state.** Before showing it, `herdr agent get
   <name>` for each recorded worker: `working`, `idle`, `done`, `blocked`, or
   `unknown`. `unknown` is not done.
-- **The coordinator stays live** from Phase 0 to Phase 5, and each reviewer
-  from its review to its re-check: each later step is a further `herdr agent
+- **The coordinator stays live** from Phase 0 to Phase 5, the implementer
+  from Phase 3 to the last fix, and each code reviewer from its review to its
+  re-check: each later step is a further `herdr agent
   prompt` to the same name, so it keeps its context.
-- **Planners are done after Phase 1.** Close the tabs you recorded for them
-  once their records are saved, so reviewers never share scrollback with a
-  plan and the tab bar shows only live workers.
+- **The planner is done after Phase 1, and the plan reviewer after Phase 2.**
+  Close the tabs you recorded for them once their records are saved (the plan
+  reviewer's once it has ruled on the refutations), so the implementer and the
+  code reviewers never share scrollback with a plan or its review and the tab
+  bar shows only live workers.
 - **`blocked`** means an approval or a question UI. The watcher reports it
   as an event: claim it first (§ Watch for prompts). Read just the prompt with
   `herdr agent read <name> --source recent-unwrapped --lines 40` and classify it — role, action,
@@ -257,7 +266,8 @@ directory of the header's `skill` path, and every call takes `--run-dir
 - **Register every worker** right after its `agent start`, helpers and
   replacements too: `<watcher> register --run-dir <run_dir> --name <agent
   name> --item <slug> --role <role>`. Unregister it (`unregister --name`)
-  when you close its tab.
+  when you close its tab. The roles are `coordinator`, `planner`,
+  `plan-reviewer`, `implementer`, `reviewer` and `helper`.
 - **Keep one wait armed** beside the worker waits: `<watcher> wait --run-dir
   <run_dir>` as a background command that wakes you when it exits, re-armed
   each time it does. It prints `EVENT <id> worker=<name> item=<slug>

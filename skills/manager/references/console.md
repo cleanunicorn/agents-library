@@ -10,8 +10,9 @@ the user names, else the host's scratch directory, else
 | File | Written by |
 |------|------------|
 | `board.md`, `<slug>/brief-<role>-<label>.md` (the exact text sent) | you |
-| `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `merged-plan`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
-| `<slug>/gate-<role>-<short-sha>.log`, `<slug>/ci-coordinator-<short-sha>.log` | the worker that ran it |
+| `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `plan-review-a`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
+| `<slug>/plan.md` — the plan updated after the plan review, `## Progress` first, review log last (at `trivial`, the short plan itself) | the coordinator |
+| `<slug>/gate-<role>-<short-sha>.log` (`gate-coordinator-…`, `gate-implementer-…`, `gate-reviewer-…`), `<slug>/ci-coordinator-<short-sha>.log` | the worker that ran it |
 | `watcher.sqlite3` — Herdr transport only: worker registry, prompt events (ids and hashes, never prompt text), watcher heartbeat | `scripts/watch-workers.py` (`references/herdr.md` § Watch for prompts) |
 | `watcher.log` — the watcher's START, EVENT and STOPPED lines | your shell redirect of its `run` command |
 
@@ -31,7 +32,7 @@ result:   <role>-<label> · done | blocked: <why> | failed: <why>
 record:   <run_dir>/<slug>/<role>-<label>.md
 head:     <full SHA> | n/a
 gate:     <log path> · exit <code> · N passed, N failed | n/a
-summary:  at most five lines of counts and ids, never content
+summary:  a few short lines of counts and ids, never content
 asks:     questions or proposed splits for the user, verbatim | none
 ```
 
@@ -45,8 +46,9 @@ log's and `gh pr view <pr> --json headRefOid`. A result block missing, over
 length, or contradicted by these checks goes back to the worker once; it is
 not a reason to open the record.
 
-**Pass records by path.** The coordinator gets the plan and review paths; a
-reviewer gets the validation record's path. Open a record yourself only to
+**Pass records by path.** The coordinator gets the plan and review paths; the
+implementer gets `plan.md`, then the validation record's path; a reviewer
+gets the validation record's path. Open a record yourself only to
 relay a worker's question that quotes it, and then only the lines it names.
 
 ## Output budget
@@ -78,7 +80,7 @@ Each turn, in this order:
    header's `skill` path before anything else. Start every worker on the
    header's `transport`.
 1. **The user's message**, whatever it says and whether or not it names the
-   manager. A new change → Phase 0, or the queue when three are active. A
+   manager. A new change → Phase 0, or the queue when at the active-item limit. A
    question your own reads (`SKILL.md` § Where the line sits) cannot answer,
    a skill the user invokes now (`/review-pr`, `/describe-codebase`, …), or
    "start an agent to …" → a helper (§ Helpers), or Phase 0 when it asks for
@@ -108,7 +110,7 @@ planner, reviewer column) on the recorded transport, a tab labelled
 subagent. Its brief is the request verbatim, the skill's absolute path when
 one is named, its record path `<run_dir>/<slug>/helper-a.md`, write access
 only to the run directory, the § Output budget paragraph, and the result
-block. Its `summary` holds the answer in at most five lines; relay those and
+block. Its `summary` holds the answer in a few short lines; relay those and
 the record path. A helper never edits, and a request that turns out to need a
 change becomes a work item.
 
@@ -135,15 +137,15 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   directory, which for a coordinator is the user's checkout. Where only such
   an option persists, take the session or once option. Routine is whatever the
   role's job needs: files and folders (worktree, run directory, the repository
-  and its `.git`, other paths the job reads), shell commands, git commits and
-  pushes of the item's branch, `gh` for the item's PR (including ready status
+  and its `.git`, other paths the job reads), shell commands, git commits
+  (the implementer's) and pushes (the coordinator's) of the item's branch, `gh` for the item's PR (including ready status
   after Phase 5's gates pass), the gate — for a
   planner or reviewer, only one that writes nowhere but the run directory —
   installs, and network fetches.
 - **Log each answer** in the board's **approvals answered** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
-- **Relay to the user only** these five cases, tagged `[<slug>]`, verbatim
+- **Relay to the user only** these cases, tagged `[<slug>]`, verbatim
   with the host's options, and deliver exactly the option the user names —
   once, session or always — never the broadest-persistent default:
   1. an action SKILL.md forbids or reserves — merging, force-push, a commit
@@ -195,9 +197,9 @@ Then the items:
 ```
 | item | phase | members (name=kind: state) | PR / branch | waiting on | last event |
 |------|-------|----------------------------|-------------|------------|------------|
-| list-limit | 4 review | coord=claude: idle · rev-a=codex: working | #12 draft | rev-a | 14:02 review started at 3f1c2ab |
-| count-cmd  | 1 plan   | coord=claude: idle · plan-a=codex: done · plan-b=opencode: working | — | plan-b | 13:58 plan A saved |
-| export     | queued   | — | — | a free slot | 13:55 three items active |
+| list-limit | 4 review · standard | coord=claude: idle · impl=claude: idle · rev-a=codex: working | #12 draft | rev-a | 14:02 review started at 3f1c2ab |
+| count-cmd  | 2 plan review · full | coord=claude: idle · planner=codex: done · plan-rev=opencode: working | — | plan-rev | 13:58 plan saved |
+| export     | queued   | — | — | a free slot | 13:55 at the active-item limit |
 ```
 
 Below the table, every secret a prompt showed redacted: open questions to
@@ -212,8 +214,8 @@ approvals answered
 | time  | item       | worker=kind        | asked (action · target)                     | option       |
 |-------|------------|--------------------|---------------------------------------------|--------------|
 | 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
-| 14:07 | count-cmd  | plan-b=opencode    | read external dir <run_dir>/count-cmd/*     | Allow always |
-| 14:09 | count-cmd  | plan-b=opencode    | edit src/count.py                           | rejected — read-only role |
+| 14:07 | count-cmd  | plan-rev=opencode  | read external dir <run_dir>/count-cmd/*     | Allow always |
+| 14:09 | count-cmd  | plan-rev=opencode  | edit src/count.py                           | rejected — read-only role |
 ```
 
 Then **overlaps** — two items whose diffs (`git diff --stat`) touch the same
@@ -223,13 +225,14 @@ names the file so the user merges in order.
 ## Concurrency
 
 Each item owns a worktree, branch, PR and workers, with one writer per
-worktree, and a blocked item never stops another. A coordinator's grant covers
+worktree, and a blocked item never stops another. The one writer is the
+implementer; the coordinator edits no file in the worktree. Both grants cover
 the whole repository, so an edit to a sibling's worktree would not prompt:
-give a claude, pi or gemini coordinator the other active worktrees as deny
+give a claude, pi or gemini coordinator and implementer the other active worktrees as deny
 rules — claude's `<claude ask>` deny, pi's `PI_MANAGER_DENY`, gemini's
 `<other worktree>` rule (`references/herdr.md` § Pre-grants per kind). An item started later, and a
-host without path rules, rely on the coordinator brief alone. The cap of
-three active items is the user's to change.
+host without path rules, rely on the coordinator brief alone (the implementer's likewise). The limit on
+active items is the user's to set; the rest queue.
 
 ## Native subagents
 
@@ -239,10 +242,11 @@ reaches you only as the host shows it, so claim no continuous monitoring.
 - **Start same-role workers in one message**, in the background where the
   host allows. A subagent's final message lands in your context, so its brief
   ends with the result block and nothing after it (§ Results).
-- **Continue a worker** — the coordinator across Phases 0 to 5, a reviewer
-  from review to re-check — by resuming or messaging it. Where the host
-  cannot, start a fresh agent in that role with its record paths (setup,
-  merged plan, its findings) and `git log`; that is the same member, not a
+- **Continue a worker** — the coordinator across Phases 0 to 5, the
+  implementer from Phase 3 to the last fix, a reviewer from review to
+  re-check — by resuming or messaging it. Where the host cannot, start a
+  fresh agent in that role with its record paths (setup, `plan.md`, its
+  findings) and `git log`; that is the same member, not a
   new one or a second review round. A replaced coordinator's ticked boxes
   count only after a fresh gate log.
 - **Pre-grant through the manager's own session.** Native workers inherit
@@ -250,14 +254,15 @@ reaches you only as the host shows it, so claim no continuous monitoring.
   session was started broad but guarded — for Claude Code `--permission-mode
   auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>`; for
   other hosts the coordinator row of `references/herdr.md` § Pre-grants per
-  kind, without its deny rules, since every coordinator shares this session.
+  kind, without its deny rules, since every coordinator and implementer
+  shares this session.
   If not, tell the user the one relaunch line once; never edit their global
   settings to get it. Unattended, note it once on the board as `assumed` and
   continue with the session's permissions.
 - **Subagents cannot ask the user.** Relay their `asks` under rule 7 and
   resume them with the answer. A host that shows their prompts to the user
   directly is noted once on the board.
-- **Read-only roles stay read-only** by their briefs alone, since a session
+- **Read-only roles stay read-only** (planner, reviewers) by their briefs alone, since a session
   grant cannot narrow them. Before each starts, record the worktree's `git
   rev-parse HEAD`, branch and `git stash list | wc -l`; when it returns,
   compare them and require an empty `git status --porcelain` — a clean status
@@ -268,7 +273,11 @@ reaches you only as the host shows it, so claim no continuous monitoring.
 
 - **No gate command, or a placeholder:** ask the user; unattended, the item
   is `blocked`. No worker edits without a gate.
-- **Gate red at the baseline:** the coordinator adds no failure; nobody
+- **A failed planner, or a plan or code review round with no report:** the
+  item is `blocked` and the PR stays a draft (SKILL.md rule 8); the
+  coordinator never reviews a plan it wrote, and edits no file in the
+  worktree.
+- **Gate red at the baseline:** the implementer adds no failure; nobody
   claims green.
 - **The main branch moved, or the worktree exists:** the coordinator fetches
   and rebases as the project allows, then re-checks the citations the change
@@ -278,11 +287,28 @@ reaches you only as the host shows it, so claim no continuous monitoring.
   and the re-check record's `gate:` reads `not run — <reason> →
   <coordinator's log>`.
 
+## The hand-back block
+
+Phase 5's report, one per item:
+
+```
+### <work-item-slug> — done | blocked | in progress — <outcome, or the blocker, in one line>
+- Shipped: PR URL or branch · worktree path · N files changed, each by path
+- Gate: `<exact command>` → <result with a number> · log by <role> at <sha>
+- CI: N of N required checks passed at <sha>, failures by name | none — no CI checks | none — branch only
+- Progress: N of M boxes ticked · the unticked ones, by name
+- Team: tier <trivial|standard|full> — <why> · planner · plan reviewer · coordinator · implementer · N code reviewers · <role>=<kind/model>, … · herdr | native · degradations or none
+- Plan: N plan findings: N confirmed · N refuted · N uncertain · N plan changes — or `trivial`
+- Findings: N raised · N confirmed · N refuted · N uncertain · N fixed · each by id with verdict and evidence
+- Follow-ups: open items, assumed answers, deferred findings, what was not verified
+- Confidence: 🟢 High | 🟡 Medium | 🔴 Low
+```
+
 ## Ending the session
 
 The console ends only when the user ends it in words — "end the manager",
-"leave the console", "stop managing". A later request, a skill invocation,
-or "just do it yourself" does not end it (SKILL.md rule 10). Then report
+"leave the console", "stop managing". A later message does not end it
+(SKILL.md rule 10). Then report
 every item still open with its hand-back block (`in progress` or `blocked`),
 close the workers you started, stop this run's watcher on Herdr (`<watcher>
 stop --run-dir <run_dir>`; it never stops another run's), and leave every

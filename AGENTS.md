@@ -318,25 +318,27 @@ loads and executes.
   never their full records or transcripts, which pass between workers by
   path — and everything
   else — worktree setup, plans, code, reviews, gate runs, git and PR writes —
-  is a worker's. Its default playbook composes the other skills, at most five
-  workers per work item: intake and ask early → a coordinator sets up the
-  worktree and baseline → one or two planners (plan-feature, without its own
-  fan-out), or none for the `direct` playbook → the coordinator's SWOT merge →
-  implement → one reviewer, or two for high-risk changes (review-pr) →
+  is a worker's. Its default playbook composes the other skills, one role at a
+  time per work item: intake and ask early → a coordinator sets up the
+  worktree and baseline and picks the tier (`trivial`, `standard`, `full`) →
+  one planner (plan-feature, without its own fan-out; none at `trivial`) →
+  a plan reviewer, with the coordinator validating its findings and updating
+  the plan → a separate implementer, the only writer (the coordinator edits no
+  file in the worktree) → one code reviewer, or two at `full` (review-pr) →
   validate and fix, with the raising reviewer ruling on refutations and
-  re-checking the fix commits → final push, PR evidence body and CI wait,
+  re-checking the fix commits, and the implementer applying the fixes → final push, PR evidence body and CI wait,
   where a failing check is one more finding → mark ready only when gate, PR
   head and CI share one SHA, every required check passed, and nothing is
   open → hand back in a fixed status block whose `done` means that ready
-  PR. Three
-  work items run concurrently and a fourth queues, tracked on a status board
+  PR. Work
+  items run concurrently while capacity allows and the rest queue, tracked on a status board
   (`references/console.md`). Inside Herdr (its `herdr` skill present,
   `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
   current workspace (`references/herdr.md`); otherwise as native subagents;
   with neither, the manager refuses. On Herdr a watcher started before the
   first worker detects prompts between turns (`references/herdr.md` §
   Watch for prompts); the manager still claims, decides and answers them.
-  Planners and reviewers only read; one agent writes per worktree.
+  Planners and reviewers only read; the implementer is the one writer per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -381,9 +383,10 @@ loads and executes.
   describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
   …}` verdicts for triage-issues; `{worktree, branch, gate, gate_kind,
-  baseline, conventions, remote}` setup records, `{planner, plan, decisions}` plan records,
-  `{id, quadrant, claim, evidence, affects, action}` SWOT records, `{topic,
-  plan_<label> per plan, chosen, rule, reason, swot_refs}` decision records,
+  baseline, conventions, remote, tier, tier_reason}` setup records, `{planner, plan,
+  decisions}` plan records, `{id, severity, location, problem, evidence, fix}`
+  plan-review findings, `{milestone, status, commits, gate, deviations}`
+  implementation rows,
   and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
   action, sweep, status}` validation records, and `{reviewer, head, gate,
   findings, new}` re-check records, and the `{result, record, head, gate,
