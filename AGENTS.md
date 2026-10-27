@@ -314,31 +314,19 @@ loads and executes.
   open and closed issues → ground it in code → `gh issue create` → report
   the URL → wait) that files issues and never implements. manager turns
   the invoking session into a console that does no work itself: it reads the
-  request, project guidance, git state, and workers' short result blocks —
-  never their full records or transcripts, which pass between workers by
-  path — and everything
-  else — worktree setup, plans, code, reviews, gate runs, git and PR writes —
-  is a worker's. Its default playbook composes the other skills, one role at a
-  time per work item: intake and ask early → a coordinator sets up the
-  worktree and baseline and picks the tier (`trivial`, `standard`, `full`) →
-  one planner (plan-feature, without its own fan-out; none at `trivial`) →
-  a plan reviewer, with the coordinator validating its findings and updating
-  the plan → a separate implementer, the only writer (the coordinator edits no
-  file in the worktree) → one code reviewer, or two at `full` (review-pr) →
-  validate and fix, with the raising reviewer ruling on refutations and
-  re-checking the fix commits, and the implementer applying the fixes → final push, PR evidence body and CI wait,
-  where a failing check is one more finding → mark ready only when gate, PR
-  head and CI share one SHA, every required check passed, and nothing is
-  open → hand back in a fixed status block whose `done` means that ready
-  PR. Work
-  items run concurrently while capacity allows and the rest queue, tracked on a status board
-  (`references/console.md`). Inside Herdr (its `herdr` skill present,
-  `HERDR_ENV=1`) each worker runs as a live agent in its own tab of the
-  current workspace (`references/herdr.md`); otherwise as native subagents;
-  with neither, the manager refuses. On Herdr a watcher started before the
-  first worker detects prompts between turns (`references/herdr.md` §
-  Watch for prompts); the manager still claims, decides and answers them.
-  Planners and reviewers only read; the implementer is the one writer per worktree.
+  request, project guidance, git state, and coordinators' short status, and
+  everything else is a worker's. It runs one coordinator per work item
+  (Herdr tab, else native subagent; with neither, it refuses). The
+  coordinator follows plan → build → review → test in the item's GitHub
+  issue (plan with `## Progress` checkboxes, findings and decisions in the
+  issue and PR), picks its roles by the item's complexity, and delivers one
+  draft PR, marked ready only when gate, PR head and CI share one SHA, every
+  required check passed, and nothing is open; the manager never merges.
+  Work items run concurrently while capacity allows and the rest queue,
+  tracked on a status board (`references/console.md`). On Herdr
+  (`references/herdr.md`) a watcher started before the first worker detects
+  prompts between turns; the manager still claims, decides and answers them.
+  Planners and reviewers only read; one agent writes per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
   (deliberately versionless — versioned by commit SHA); the Codex plugin
   manifest in `.codex-plugin/plugin.json` carries the only SemVer `version`
@@ -382,18 +370,11 @@ loads and executes.
   survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
   describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
   plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; `{worktree, branch, gate, gate_kind,
-  baseline, conventions, remote, tier, tier_reason}` setup records, `{planner, plan,
-  decisions}` plan records, `{id, severity, location, problem, evidence, fix}`
-  plan-review findings, `{milestone, status, commits, gate, deviations}`
-  implementation rows,
-  and `{source_ids, raised_by, severity, verdict, evidence, scope, audited,
-  action, sweep, status}` validation records, and `{reviewer, head, gate,
-  findings, new}` re-check records, and the `{result, record, head, gate,
-  summary, asks}` result block every worker ends with for manager, defined in its
-  role briefs, with the gate-log and CI-log format in `references/console.md`
-  (`command:`/`head:`/`exit:`), the board's `{time, item, worker=kind, asked,
-  option}` approvals-answered rows there too, and the PR evidence body in its
+  …}` verdicts for triage-issues; the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
+  Follow-ups, Confidence}` for manager, with the gate-log and CI-log format in
+  `references/console.md` (`command:`/`head:`/`exit:`) and the board's
+  `{time, item, worker=kind, asked, option}` approvals-answered rows there
+  too; the PR evidence body is in its
   coordinator brief; install.py's
   `LINKED|COPIED|INSTALLED|OK|UPDATED|REMOVED|KEPT|SKIPPED|CONFLICT|FAILED
   <host>/<name>` status lines and its saved selection `{version, hosts:

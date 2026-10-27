@@ -173,78 +173,52 @@ Pick the skill that matches the job:
 
 ### The Manager Skill
 
-![Manager workflow: three parallel item teams, each with a coordinator, planners, and reviewers. Plans feed implementation and tests, followed by independent review, a fix-and-recheck loop, final push and draft PR, CI, and a ready PR. Results return to the manager.](docs/assets/manager-workflow.png)
+![Manager workflow: a manager console runs parallel work items, each with one coordinator that plans, builds, reviews and tests in the item's issue, then returns a ready PR.](docs/assets/manager-workflow.png)
 
-The manager launches every worker; item teams run concurrently while capacity allows. Each
-team has a coordinator, one planner, a plan reviewer, an implementer, and one
-or two code reviewers. The planner writes the plan and the plan reviewer
-checks it; the implementer, the only writer in the item's worktree,
-implements it; code reviewers return findings for validation, fixes, tests,
-and re-checks. Local
-review and testing finish before the final push creates the draft PR. CI
-failures return to the same fix loop; the PR becomes ready only when the
-tested commit matches the PR and CI, with no open findings.
+[`/manager`](skills/manager/SKILL.md) turns this session into a console. It
+starts **one coordinator per work item** through Herdr (else native
+subagents), tracks a status board, and never does the work itself. The
+coordinator follows the software loop **plan → build → review → test** in the
+item's GitHub issue: a plan with `## Progress` checkboxes, then findings and
+decisions in the issue and PR. It picks its own roles by the item's
+complexity: a small change needs few, risk (security, stored data, a public
+contract, an ask-first boundary) gets more review. It delivers one draft PR,
+then marks it ready.
 
-[`/manager`](skills/manager/SKILL.md) turns this session into a console:
-workers do the work while it briefs them, relays questions, and maintains a
-status board. The session stays a console until you end it: every later
-message — a new request, a question, a skill you invoke, "start an agent" —
-goes to a worker on the same transport (a Herdr tab, or a native subagent),
-and a board header records the mode so it survives a context summary. In Herdr it pre-grants each worker the access its role needs
+The session stays a console until you end it: every later message — a new
+request, a question, a skill you invoke, "start an agent" — goes to a worker
+on the same transport, and a board header records the mode so it survives a
+context summary. In Herdr it pre-grants each worker the access its role needs
 at launch; as native subagents, which share its session's permissions, it
 checks that session at intake and each read-only worker's worktree after
 it. It answers routine permission prompts itself with the host's persistent
 option, logging each on the board. Only these kinds go to you: actions the
 skill forbids such as merging or force-pushing, destruction outside the item,
 secrets or global settings, the project's ask-first list, and prompts it
-cannot classify. Planners and reviewers still write only to the run
-directory. It never edits code, plans, reviews, or runs tests itself,
-even when asked. To keep its own context small, it reads only each worker's
-few-line result block — status, record path, head SHA, gate exit, counts —
-and hands full plans and reviews between workers by path. Items run concurrently while capacity allows and the rest queue, each in
-its own worktree with one PR.
+cannot classify. Planners and reviewers stay read-only and write only to the
+run directory. The manager never edits code, plans, reviews, or runs tests
+itself, even when asked. It reads each coordinator's short status, not
+transcripts. Items run concurrently while capacity allows and the rest queue,
+each in its own worktree with one PR.
 
-The coordinator sets up the worktree, picks a tier, validates the reviews,
-updates the plan, pushes, opens the PR, and waits for CI; it edits no file in
-the worktree. One `plan-feature` planner writes the plan, and an independent
-plan reviewer checks it against the criteria and the code; the coordinator
-confirms or refutes each finding and updates the plan. A separate implementer
-implements the plan, then fixes confirmed findings. One independent
-`review-pr` reviewer (two in the `full` tier) reviews the frozen branch.
-Findings are validated with evidence before fixes; the raising reviewer
-audits refutations and re-checks fix commits. Gate claims need a saved log at
-the branch head.
-
-The coordinator picks the tier at setup and records why:
-
-| Tier | When | Workers |
-|------|------|---------|
-| `trivial` | One obvious edit, or you asked for no planning | coordinator, implementer, one code reviewer; the coordinator writes a short plan |
-| `standard` | Everything else | all five roles, one code reviewer |
-| `full` | Security, stored data, a public contract, or an ask-first boundary | `standard` plus a second code reviewer |
-
-The deliverable is a PR that is fully tested and fully reviewed. It stays a
-draft until the gate log, the PR head, and the CI log share one SHA, the
-gate exits 0, every required CI check passes, and the last re-check leaves
-no finding open. A failing check is fixed and re-checked like any other
-finding. The PR body carries the evidence: Progress, the gate result, CI
-status, and a findings table. With no remote or `gh`, the manager asks
+The PR stays a draft until the gate log, the PR head, and the CI log share
+one SHA, the gate exits 0, every required check passes, and no finding is
+open. A failing check is a finding. The PR body carries the evidence:
+Progress, the gate result, CI status, and findings. Independent reviewers
+never see the author's report. With no remote or `gh`, the manager asks
 whether a branch is acceptable; unattended, the item ends `blocked: no
-remote`. The plan
-reviewer and the code reviewers use a different agent kind from the
-implementer's and the planner's when available.
+remote`.
 
-With Herdr and its skill installed, each worker has a tab in your current
-workspace; otherwise it uses native subagents. With neither, it refuses.
-In Herdr, a background watcher polls every worker every five seconds and
-records each permission prompt or question as an event in the run
-directory, so a prompt raised between turns is not missed; the manager
+With Herdr and its skill installed, each coordinator has a tab in your
+current workspace; otherwise it uses native subagents. With neither, the
+manager refuses. In Herdr, a background watcher polls every worker every five
+seconds and records each permission prompt or question as an event in the
+run directory, so a prompt raised between turns is not missed; the manager
 learns of it through a host background command and still decides every
 answer. Herdr 0.9.5 offers no safe way to message the manager's own
-terminal, so the watcher never types into it: wake-ups are as reliable as
-the host's background commands, and native subagents get no watcher.
-Transport instructions are local to each skill so either can be installed
-alone. The manager never merges a PR.
+terminal, so the watcher never types into it. Native subagents get no
+watcher. Transport instructions are local to each skill so either can be
+installed alone. The manager never merges a PR.
 
 ### The Feature Planning Skill
 

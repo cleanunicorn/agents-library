@@ -265,45 +265,33 @@ class PluginLayoutTests(unittest.TestCase):
             with self.subTest(source=source, target=target):
                 self.fail(f"{source} <-> {target} is mutual now; drop it from ONE_WAY_ROUTING_HINTS")
 
-    def test_manager_team_stays_small(self):
-        """The manager keeps its pipeline, its agent budget, and its hands off.
+    def test_manager_stays_a_console_over_coordinators(self):
+        """The manager keeps its loop, its hands off, and no fixed team.
 
-        The skill was collapsed from a super manager over per-item managers,
-        with a roster catalogue and a simplify pass and a fresh final reviewer,
-        to one manager and a capped team. It was then narrowed to a console
-        that does no work itself: workers plan, implement, review, fix, and run
-        the gate. This guards all three: the stages the user asked to keep
-        (one plan, its independent review, implementation by a separate
-        implementer, independent code review, validated fixes), the cap, and the manager-only role, so neither the removed layers nor the
-        manager's old hands-on steps creep back one copy-edit at a time.
+        The skill was collapsed from a super manager, then narrowed to a
+        console that does no work itself, then to one coordinator per item
+        that picks its own roles. This guards the loop the user asked to keep
+        (plan, build, review, test), the manager-only role, and the absence of
+        the fixed team, tiers and numbers that used to live in the prose.
         """
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         for rule in ("You do no work.", "Single writer.", "Independence.", "Evidence, not reports."):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
-        for stage in ("## Phase 2 — Review the plan", "## Phase 3 — Implement",
-                      "## Phase 4 — Review, validate, fix"):
-            self.assertIn(stage, root_text, f"SKILL.md lost `{stage}`")
-        self.assertIn("Each item gets only these roles", root_text, "SKILL.md lost its team statement")
-        # Capacity numbers belong to the user and the host, not to the prose:
-        # a fixed agent cap or item count goes stale the next time a role moves.
+        self.assertIn("**plan → build → review → test**", root_text, "SKILL.md lost the software loop")
+        self.assertRegex(root_text, r"(?i)one coordinator", "SKILL.md no longer runs one coordinator per item")
+        # The coordinator picks its roles; the prose fixes no team, tier or cap.
+        self.assertNotRegex(root_text, r"(?i)\| `?(trivial|standard|full)`? \||\bplan reviewer\b|\btier\b",
+                            "SKILL.md fixes a team or a tier again")
         self.assertNotRegex(root_text, r"(?i)\b(at most|up to|no more than) (one|two|three|four|five|six|seven|\d+) "
                                        r"(agents?|workers?|items?)|\b(a )?(second|third|fourth) (item )?queues",
                             "SKILL.md hardcodes a team or concurrency number")
-        # The team table still pins each role's count.
-        for role, count in (("coordinator", r"1"), ("planner", r"1"), ("plan reviewer", r"1"),
-                            ("implementer", r"1"), ("code reviewer", r"1, or 2 in the full tier")):
-            self.assertRegex(root_text, rf"\| {role} \| {count} \|", f"the `{role}` count in the team table changed")
-        for tier in ("trivial", "standard", "full"):
-            self.assertRegex(root_text, rf"\| `{tier}` \|", f"SKILL.md lost the `{tier}` tier")
-        self.assertRegex(root_text, r"(?i)start no new reviewer", "the re-check must not start a reviewer")
-        # With one reviewer by default, a failed reviewer must not let an
-        # unreviewed PR be marked ready.
-        self.assertRegex(root_text, r"\*\*A member that fails\*\*.{0,400}?review round that returned no report"
-                                    r".{0,80}?PR stays a draft",
-                         "a run with no review report must stay blocked")
-        self.assertRegex(root_text, r"## Phase 5 — .{0,200}?Unless the item is `blocked`.{0,200}?mark the PR ready",
-                         "Phase 5 marks a blocked item's PR ready")
+        # A failed reviewer must not let an unreviewed PR be marked ready.
+        self.assertRegex(root_text, r"\*\*A worker that fails\*\*.{0,400}?review round with no report"
+                                    r".{0,80}?PR stays draft",
+                         "a run with no review report must stay a draft")
+        self.assertRegex(root_text, r"(?i)mark it ready only when.{0,400}?\*\*Never merge\.\*\*",
+                         "the ready condition or the no-merge rule is gone")
         # The manager does no work: no step may hand it the gate, a review, a
         # fix, or a git write, and a host without delegation is refused rather
         # than served by the manager doing the work alone.
@@ -318,22 +306,13 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIsNone(found, f"the manager does work again — found {found and found.group(0)!r}")
         self.assertIn("references/console.md", root_text, "SKILL.md does not hand over console.md")
         self.assertTrue((skill / "references/console.md").is_file(), "console.md is missing")
-        for brief in ("planner-brief.md", "coordinator-brief.md", "reviewer-brief.md", "implementer-brief.md"):
+        for brief in ("coordinator-brief.md", "reviewer-brief.md"):
             with self.subTest(brief=brief):
                 self.assertIn(f"references/{brief}", root_text, f"SKILL.md does not hand over {brief}")
                 self.assertTrue((skill / "references" / brief).is_file(), f"{brief} is missing")
-        brief_text = (skill / "references/coordinator-brief.md").read_text(encoding="utf-8")
-        coordinator = " ".join(brief_text.split())
-        # The brief says its phase numbers are the manager's, so its headings
-        # must name phases SKILL.md actually has. Parsed from the raw text:
-        # `coordinator` collapses the line breaks headings need.
-        heading = r"(?m)^## Phase (\d)([a-z]?) — (.+)$"
-        phases = {n: title for n, _, title in re.findall(heading, (skill / "SKILL.md").read_text(encoding="utf-8"))}
-        for number, suffix, title in re.findall(heading, brief_text):
-            self.assertIn(number, phases, f"coordinator brief has a Phase {number} SKILL.md lacks")
-            self.assertEqual(suffix, "", f"coordinator brief sub-numbers Phase {number}{suffix}")
-            if number in ("2", "3"):
-                self.assertEqual(title, phases[number], f"coordinator Phase {number} is named differently")
+        # The coordinator picks its roles, so no per-role brief may return.
+        for gone in ("planner-brief.md", "implementer-brief.md", "worker-common.md"):
+            self.assertFalse((skill / "references" / gone).exists(), f"{gone} is back; the coordinator owns that role")
         removed = r"(?i)super manager|simplify-sweep|final reviewer|agent-types\.md|hosting-agents\.md|role: manager"
         for path in (skill / "SKILL.md", *sorted((skill / "references").glob("*.md"))):
             with self.subTest(path=str(path.relative_to(ROOT))):
@@ -347,32 +326,18 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertIsNone(found, f"a manifest still sells a removed stage — found {found and found.group(0)!r}")
 
     def test_manager_reads_results_not_transcripts(self):
-        """The manager's context holds result blocks, never the workers' full output.
+        """The manager's context holds the issue, the PR and a short status.
 
-        Every worker writes its record to the run directory and ends with a
-        short result block; the manager reads only that block and passes
-        records between workers by path. This guards both halves, so a brief
-        that drops its block, or a transport step that has the manager read a
-        record or a pane's scrollback for a result, fails here.
+        The manager reads a coordinator's short status and checks it with
+        one-line commands; it never reads scrollback or logs for a result.
         """
         skill = ROOT / "skills/manager"
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         self.assertIn("**Results, not transcripts.**", root_text, "SKILL.md lost the results-only rule")
-        self.assertRegex(root_text, r"(?i)pass records \*\*by path\*\*",
-                         "records are no longer passed by path")
-        fields = ("result:", "record:", "head:", "gate:", "summary:", "asks:")
         console = (skill / "references/console.md").read_text(encoding="utf-8")
         self.assertIn("## Results", console, "console.md lost its Results section")
-        for name in ("console.md", "worker-common.md"):
-            text = (skill / "references" / name).read_text(encoding="utf-8")
-            blocks = [b for b in re.findall(r"(?s)```\n(.*?)```", text) if b.startswith("result:")]
-            with self.subTest(file=name):
-                self.assertTrue(blocks, f"{name} has no result block")
-                for field in fields:
-                    self.assertRegex(blocks[0], rf"(?m)^{field}", f"{name}'s result block lacks `{field}`")
+        self.assertRegex(console, r"gh pr view .{0,40}headRefOid", "console.md no longer checks the PR head")
         herdr = " ".join((skill / "references/herdr.md").read_text(encoding="utf-8").split())
-        self.assertIn(".result", herdr, "Herdr workers no longer save a result file")
-        self.assertRegex(herdr, r"(?i)never the record", "the Herdr manager may read a full record")
         self.assertNotRegex(herdr, r"(?i)reply with the path only, then read the file",
                             "the Herdr manager reads the full record again")
 

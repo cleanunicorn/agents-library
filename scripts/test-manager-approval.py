@@ -137,7 +137,7 @@ def relay_list(policy):
 
 def rule(text, number):
     """Return one numbered rule from SKILL.md's Rules list."""
-    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## )", text)
+    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## |\Z)", text)
     if not found:
         raise AssertionError(f"SKILL.md has no rule {number}")
     return found.group(0)
@@ -402,32 +402,24 @@ class ManagerApprovalTests(unittest.TestCase):
 
     def test_every_brief_states_its_access(self):
         # The heading alone survives a gutted paragraph; pin what each worker is told.
-        common = self.read("references/worker-common.md")
-        access = re.search(r"(?s)\*\*Access\.\*\*.*?(?=\n\n)", common)
-        self.assertIsNotNone(access, "worker-common.md does not say what the manager pre-grants")
-        flat_access = " ".join(access.group(0).split())
-        for pattern in (r"(?i)answers any permission prompt",
-                        r"(?i)prompt that still appears is the manager's to answer",
-                        r"(?i)never makes a merge, a force-push, a commit to the main branch"):
-            self.expect("worker-common Access", flat_access, pattern,
-                        "the contract no longer says who answers prompts and what stays forbidden")
-        for role in ("coordinator", "planner", "reviewer", "implementer"):
+        for role in ("coordinator", "reviewer"):
             with self.subTest(role=role):
                 text = self.read(f"references/{role}-brief.md")
-                self.expect(role, text, r"Read `worker-common\.md` first", "the brief omits the shared contract")
                 self.expect(role, text, r"\*\*Grant\.\*\*", "the brief no longer says what the manager pre-grants")
+                self.expect(role, " ".join(text.split()), r"(?i)host permission is not role permission",
+                            "an approved prompt could widen the role")
+        coordinator = " ".join(self.read("references/coordinator-brief.md").split())
+        for pattern in (r"(?i)manager answers any prompt that still appears",
+                        r"(?i)no \"allow\" makes a merge, force-push or commit to the main branch acceptable"):
+            self.expect("coordinator Grant", coordinator, pattern,
+                        "the brief no longer says who answers prompts and what stays forbidden")
 
     def test_read_only_roles_write_only_to_the_run_directory(self):
-        common = " ".join(self.read("references/worker-common.md").split())
-        self.expect("worker-common", common, r"(?i)read-only role writes only to the run directory",
-                    "the contract no longer limits read-only writes to the run directory")
-        self.expect("worker-common", common, r"(?i)host permission is not role permission",
-                    "an approved prompt could widen the role")
-        for role in ("planner", "reviewer"):
-            with self.subTest(role=role):
-                text = self.read(f"references/{role}-brief.md")
-                self.expect(role, text, r"(?i)write access only to the run directory",
-                            "the pre-grant no longer limits writes to the run directory")
+        text = " ".join(self.read("references/reviewer-brief.md").split())
+        self.expect("reviewer", text, r"(?i)write access only to the run directory",
+                    "the pre-grant no longer limits writes to the run directory")
+        self.expect("reviewer", text, r"(?i)report only: no edits outside the run directory, no commits, no pushes",
+                    "a reviewer may edit or publish")
 
     def test_herdr_launches_with_pre_grants_and_answers_blocked_prompts(self):
         text = self.read("references/herdr.md")

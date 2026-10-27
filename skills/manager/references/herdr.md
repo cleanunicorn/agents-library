@@ -6,9 +6,11 @@ first; it and the installed binary (`herdr <group>` with no subcommand prints
 its syntax) overrule any command below.
 
 Your pane stays the console. This is the explicit topology request required
-by the Herdr skill: one full-size, watchable tab per worker in the current
-workspace, grouped by `<slug>-` labels. Herdr supplies transport and live
-context, with the same roles and rules as native workers.
+by the Herdr skill: one full-size, watchable tab per coordinator in the current
+workspace, grouped by `<slug>-` labels. Each coordinator starts its own
+workers in tabs of that same workspace and registers them with the watcher.
+Herdr supplies transport and live context; the roles and rules match native
+workers. The manager answers every prompt, the coordinator's and its workers'.
 
 ## Your workspace
 
@@ -26,12 +28,13 @@ rename it per item.
 ## Start a worker
 
 1. **Pick kinds.** `herdr agent` lists the kinds this Herdr knows; use the
-   installed ones. Give the plan reviewer and the code reviewers a kind
-   different from the implementer's and the planner's (SKILL.md § The team).
-2. **One tab per worker**, created when that worker is needed, in your own
-   workspace only: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
+   installed ones. A coordinator gives reviewers a kind different from the
+   implementer's when more than one is installed.
+2. **One tab per worker**, created when that worker is needed, in the
+   manager's workspace only (the coordinator's own tab first, then the ones it
+   starts): `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
    <dir> --label "<slug>-<role>-<label>" --no-focus`, the role being
-   `coordinator`, `planner`, `plan-reviewer`, `implementer` or `reviewer`. The
+   `coordinator`, `planner`, `implementer`, `reviewer` or `tester`. The
    coordinator's `<dir>` is the repository root, since it creates the worktree; every later
    worker's is that worktree, and a helper's (`references/console.md`
    § Helpers) the repository root. Add the kind's `--env` from § Pre-grants per
@@ -47,9 +50,9 @@ rename it per item.
 ### Pre-grants per kind
 
 A helper launches with the planner, reviewer column. The `coordinator`
-column is the **writer** grant: the coordinator and the implementer both
-launch with it, and the planner, the plan reviewer and the code reviewers all
-use the read-only column. The args give each
+column is the **writer** grant: the coordinator and any worker that edits
+launch with it, and read-only workers (planner, reviewers) use the reader
+column. The args give each
 role what its job needs (`references/console.md`
 § Approvals) so prompts rarely appear, while every escalation case still
 surfaces as a prompt. A host's own default can approve silently what no flag
@@ -82,8 +85,7 @@ pi asks before no tool call at all (its `docs/security.md`), so the
 skill's own extension `<manager>/scripts/pi-permissions.mjs` (`<manager>` is
 this skill's directory) is the prompt surface: it reads the role from the
 tab's environment (`PI_MANAGER_ROLE` is `coordinator`, `planner` or
-`reviewer`: the implementer launches as `coordinator` and the plan reviewer as
-`reviewer`), asks for each escalation command every time, blocks a
+`reviewer`: a writer launches as `coordinator`), asks for each escalation command every time, blocks a
 reader's write outside `<run_dir>`, and blocks every call when a setting is
 missing; `--no-extensions` keeps other extensions from answering first.
 Smoke check (herdr 0.9.5, pi 1.2.0): `rm -rf` raised the extension's
@@ -194,12 +196,9 @@ a listing.
 
 ## Drive
 
-- **Prompt** with the verbatim brief, the path its record goes to —
-  `<run_dir>/<slug>/<role>-<label>.md` — and its result path beside it,
-  `<role>-<label>.result`. Tell the worker to save its result block
-  (`references/console.md` § Results) there and reply with that path. Read
-  only that file: never the record, and never the pane's scrollback for a
-  result.
+- **Prompt** with the verbatim brief and the item. The coordinator ends with
+  a short status (`references/console.md` § Results). Read that: never the
+  pane's scrollback for a result.
 - **Confirm delivery, then do not block the console.** Send every prompt,
   first or follow-up, through a short gate: `herdr agent prompt <name>
   <brief> --wait --timeout 10000`. Delivery is confirmed when the agent
@@ -213,15 +212,9 @@ a listing.
 - **The board reads live state.** Before showing it, `herdr agent get
   <name>` for each recorded worker: `working`, `idle`, `done`, `blocked`, or
   `unknown`. `unknown` is not done.
-- **The coordinator stays live** from Phase 0 to Phase 5, the implementer
-  from Phase 3 to the last fix, and each code reviewer from its review to its
-  re-check: each later step is a further `herdr agent
-  prompt` to the same name, so it keeps its context.
-- **The planner is done after Phase 1, and the plan reviewer after Phase 2.**
-  Close the tabs you recorded for them once their records are saved (the plan
-  reviewer's once it has ruled on the refutations), so the implementer and the
-  code reviewers never share scrollback with a plan or its review and the tab
-  bar shows only live workers.
+- **The coordinator stays live** until its item is handed back; each later
+  step is a further `herdr agent prompt` to the same name, so it keeps its
+  context. Workers it starts are its to prompt and close.
 - **`blocked`** means an approval or a question UI. The watcher reports it
   as an event: claim it first (§ Watch for prompts). Read just the prompt with
   `herdr agent read <name> --source recent-unwrapped --lines 40` and classify it — role, action,
@@ -263,11 +256,12 @@ directory of the header's `skill` path, and every call takes `--run-dir
   transport: `<watcher> run --run-dir <run_dir> > <run_dir>/watcher.log 2>&1
   &` as a plain background shell command. A second `run` prints
   `ALREADY_RUNNING` and exits, so one watcher serves the run.
-- **Register every worker** right after its `agent start`, helpers and
-  replacements too: `<watcher> register --run-dir <run_dir> --name <agent
+- **Register every worker** right after its `agent start` (the coordinator
+  registers the ones it starts), helpers and replacements too: `<watcher> register --run-dir <run_dir> --name <agent
   name> --item <slug> --role <role>`. Unregister it (`unregister --name`)
   when you close its tab. The roles are `coordinator`, `planner`,
-  `plan-reviewer`, `implementer`, `reviewer` and `helper`.
+  `implementer`, `reviewer`, `tester` and `helper`. A coordinator registers
+  its own workers the same way.
 - **Keep one wait armed** beside the worker waits: `<watcher> wait --run-dir
   <run_dir>` as a background command that wakes you when it exits, re-armed
   each time it does. It prints `EVENT <id> worker=<name> item=<slug>
@@ -314,7 +308,7 @@ directory of the header's `skill` path, and every call takes `--run-dir
 
 ## Tear down
 
-At an item's Phase 5, after its records are in the run directory: `herdr tab
+When an item is handed back: `herdr tab
 close <recorded tab id>` for each of its tabs still open, and `unregister`
 each of its workers from the watcher. Other items' tabs
 stay. Close only tabs you created and recorded — never by label, never from a

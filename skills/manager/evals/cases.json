@@ -138,91 +138,8 @@
   },
   "cases": [
     {
-      "id": "mg-h1",
-      "prompt": "Act as manager for optional list limits, but only as far as the reviewed plan, then stop: one planner, a plan reviewer, then a coordinator that validates the reviewer's findings, updates the plan, and saves it. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Save the reviewed plan in this checkout at docs/plans/list-limit.md. Change no code. This is pre-approved; ask nothing. Use .worktrees/manager-run as the run directory.",
-      "should_trigger": true,
-      "fixture": "task-service",
-      "assertions": [
-        {
-          "type": "file_exists",
-          "path": "docs/plans/list-limit.md"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "\\A\\s*(#[^\\n]*\\n\\s*)?##? Progress[^\\n]*\\n(?:[^\\n]*\\n){0,3}?\\s*- \\[[ xX]\\]"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)review log"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)(confirmed|refuted|uncertain|no (plan )?findings|0 (plan )?findings)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)(one|single|same) (PR|pull request)"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "src/service\\.py"
-        },
-        {
-          "type": "file_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "make test"
-        },
-        {
-          "type": "file_not_regex",
-          "path": "docs/plans/list-limit.md",
-          "pattern": "(?i)\\b(SWOT|strengths?|weakness(es)?)\\b"
-        },
-        {
-          "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- . ':(exclude)docs/plans/list-limit.md' && test -z \"$(git ls-files --others --exclude-standard | grep -vx 'docs/plans/list-limit.md')\""
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)\\b(trivial|standard|full)\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)plan reviewer"
-        },
-        {
-          "type": "shell",
-          "cmd": "test -f .worktrees/manager-run/board.md"
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan-a*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan-review*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'implementation*.md' | grep -q . && exit 1 || exit 0"
-        }
-      ]
-    },
-    {
       "id": "mg-h3",
-      "prompt": "Deliver optional list limits end to end as manager: a planner, a plan review the coordinator validates, a separate implementer, an independent code review, and validated fixes. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Everything is pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "prompt": "Deliver optional list limits end to end as manager. execute(\"list\", limit=2) returns the first two tasks in insertion order, omitting limit returns all tasks, and limits of zero, negative numbers, booleans, strings, or floats raise ValueError. An empty list stays empty. Follow the software loop in the item's issue: plan, build, review, test. There is no remote or gh, so the file .worktrees/manager-run/list-limit/issue.md stands in for the issue: the coordinator keeps the plan there under a `## Progress` checkbox list and ticks it as work completes. Review findings get fixed, not just reported. Everything is pre-approved; ask nothing. Finish at a committed branch (no merge) and hand back with your summary. Use .worktrees/manager-run as the run directory.",
       "should_trigger": true,
       "fixture": "task-service",
       "timeout": 3600,
@@ -265,11 +182,11 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?im)^- Team: tier (standard|full)[^\\n]*planner[^\\n]*plan reviewer[^\\n]*coordinator[^\\n]*implementer[^\\n]*reviewer"
+          "pattern": "(?im)^- Team: [^\\n]*(coordinator|review)[^\\n]*"
         },
         {
           "type": "output_regex",
-          "pattern": "(?im)^- Plan: [^\\n]*\\d+ plan findings[^\\n]*\\d+ plan changes"
+          "pattern": "(?im)^- Plan: [^\\n]*\\d+[^\\n]*change"
         },
         {
           "type": "shell",
@@ -277,31 +194,19 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
+          "cmd": "grep -qE '^## Progress' .worktrees/manager-run/list-limit/issue.md && grep -qE '^- \\[[xX]\\]' .worktrees/manager-run/list-limit/issue.md"
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan-review*.md' | grep -q ."
+          "cmd": "! grep -E '^- \\[ \\]' .worktrees/manager-run/list-limit/issue.md"
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'plan.md' | grep -q ."
+          "cmd": "git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | head -n 1 | xargs -I{} git log main..{} --oneline | grep -q ."
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'implementation*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'review*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'recheck*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'gate-*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+          "cmd": "find .worktrees/manager-run -name '*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
         },
         {
           "type": "output_regex",
@@ -311,7 +216,7 @@
     },
     {
       "id": "mg-h4",
-      "prompt": "Act as manager for two work items \u2014 optional list limits, and a new count command that returns the number of tasks \u2014 but start nothing and change nothing yet: show me the status board you would keep, who you would start for each item, how many agents in total, and the pipeline checklist.",
+      "prompt": "Act as manager for two work items \u2014 optional list limits, and a new count command that returns the number of tasks \u2014 but start nothing and change nothing yet: show me the status board you would keep, who you would start for each item, how many agents in total, and the plan, build, review, test checklist.",
       "should_trigger": true,
       "fixture": "task-service",
       "assertions": [
@@ -329,15 +234,15 @@
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)planner"
-        },
-        {
-          "type": "output_regex",
           "pattern": "(?i)coordinator"
         },
         {
           "type": "output_regex",
-          "pattern": "(?i)reviewer"
+          "pattern": "(?i)(two|2)\\b[^.\\n]{0,40}coordinators?|coordinators?[^.\\n]{0,40}\\b(two|2)\\b|one coordinator (per|for each|each)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?is)plan.{0,200}build.{0,200}review.{0,200}test"
         },
         {
           "type": "shell",
@@ -345,7 +250,7 @@
         },
         {
           "type": "output_not_regex",
-          "pattern": "(?i)(super.?manager|final reviewer|simplify-sweep)"
+          "pattern": "(?i)(super.?manager|final reviewer|simplify-sweep|\\bSWOT\\b|\\btier\\b)"
         },
         {
           "type": "output_regex",
@@ -402,7 +307,7 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'validation*.md' | grep -q ."
+          "cmd": "test -f .worktrees/manager-run/board.md"
         }
       ]
     },
@@ -467,11 +372,7 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'setup*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'gate-*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+          "cmd": "find .worktrees/manager-run -name '*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
         },
         {
           "type": "output_regex",
@@ -507,127 +408,11 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'review*.md' | grep -q ."
-        },
-        {
-          "type": "shell",
           "cmd": "test -f .worktrees/manager-run/board.md"
         },
         {
           "type": "shell",
           "cmd": "git diff --exit-code eval-branch -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-branch)\""
-        }
-      ]
-    },
-    {
-      "id": "mg-h16",
-      "prompt": "As manager, have a coordinator do only the plan-review step for optional list limits. One planner wrote the plan below and a plan reviewer returned the findings below. Validate each finding against this repo: mark it confirmed, refuted or uncertain with evidence, update the plan for the confirmed ones, and save the plan as plan.md in the run directory. Then stop; change no code and write nothing else in this checkout. Use .worktrees/manager-run as the run directory.\n\n# Plan \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n\nPlan reviewer findings:\n- P-1 (important) B-D1/B-D2: the plan slices and validates in `src/app.py`, but AGENTS.md says `src/app.py` only dispatches and `src/service.py` validates input; `add_task` already validates `title` in the service. Move both into `src/service.py` `list_tasks`.\n- P-2 (critical) B-D1: `execute` has no `limit` parameter, so `execute(\"list\", limit=2)` would raise TypeError before reaching the service; the plan must add a `limit` argument to `execute` in `src/app.py`.\n",
-      "should_trigger": true,
-      "fixture": "task-service",
-      "assertions": [
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name plan.md | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -E '^#' \"$f\" | head -n 2 | grep -qi 'progress'"
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qE '^- \\[[ xX]\\]' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE '(one|single|same) (PR|pull request)' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'src/service\\.py' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE 'review log|P-1' \"$f\" && grep -qiE 'P-2' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qiE 'P-2.{0,500}refuted|refuted.{0,500}P-2' \"$f\" || tr '\\n' ' ' < \"$f\" | grep -qiE 'P-2.{0,500}refuted|refuted.{0,500}P-2'"
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && tr '\\n' ' ' < \"$f\" | grep -qiE 'P-1.{0,500}confirmed|confirmed.{0,500}P-1'"
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && tr '\\n' ' ' < \"$f\" | grep -qiE 'P-2.{0,600}(\\*\\*kwargs|\\*params|src/app\\.py:[0-9]+|execute)'"
-        },
-        {
-          "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-baseline)\""
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?is)P-2.{0,600}refuted|refuted.{0,600}P-2"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?is)P-1.{0,600}confirmed|confirmed.{0,600}P-1"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)\\b1 confirmed\\b[^\\n]*\\b1 refuted\\b"
-        }
-      ]
-    },
-    {
-      "id": "mg-h17",
-      "prompt": "As manager, have a coordinator do only the plan-review step for optional list limits. One planner wrote the plan below and the plan reviewer returned an empty findings list. Validate each finding against this repo: mark it confirmed, refuted or uncertain with evidence, update the plan for the confirmed ones, and save the plan as plan.md in the run directory. Then stop; change no code and write nothing else in this checkout. Use .worktrees/manager-run as the run directory.\n\n# Plan \u2014 optional list limits\n\nOutcome: `execute(\"list\", limit=N)` returns the first N tasks.\n\nDecisions\n- B-D1 Slice in `src/app.py`: `return service.list_tasks()[:limit]` inside the\n  `list` branch of `execute`. It is the shortest change, one line.\n- B-D2 Validate with `if not isinstance(limit, int) or limit < 1` in `src/app.py`\n  before slicing.\n- B-D3 Ship the behavior first; add the tests in a follow-up PR once the\n  behavior has settled.\n- B-D4 An empty list with a limit must stay an empty list, not an error: add\n  that case when the tests are written.\n\nVerification: `make test`.\n\nPlan reviewer findings: none (an empty list).\n",
-      "should_trigger": true,
-      "fixture": "task-service",
-      "assertions": [
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name plan.md | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -E '^#' \"$f\" | head -n 2 | grep -qi 'progress'"
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -qE '^- \\[[ xX]\\]' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && ! grep -qE '\\bP-[0-9]' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'src/app\\.py' \"$f\""
-        },
-        {
-          "type": "shell",
-          "cmd": "f=$(find .worktrees/manager-run -name plan.md | head -n 1); test -n \"$f\" && grep -q 'B-D1' \"$f\""
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)\\b0 plan findings\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)\\b0 plan changes\\b"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)\\b0 confirmed\\b"
-        },
-        {
-          "type": "output_not_regex",
-          "pattern": "(?i)\\bP-\\d"
-        },
-        {
-          "type": "shell",
-          "cmd": "git diff --exit-code eval-baseline -- . && test -z \"$(git ls-files --others --exclude-standard)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse eval-baseline)\""
         }
       ]
     },
@@ -656,11 +441,7 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'ci-*.log' | grep -q ."
-        },
-        {
-          "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'recheck*.md' | grep -q ."
+          "cmd": "find .worktrees/manager-run -name '*.log' | xargs grep -l 'integration' | grep -q ."
         },
         {
           "type": "output_regex",
@@ -788,7 +569,7 @@
         },
         {
           "type": "shell",
-          "cmd": "find .worktrees/manager-run -name 'helper-*.md' | grep -q ."
+          "cmd": "find .worktrees/manager-run -type f ! -name board.md | grep -q ."
         },
         {
           "type": "output_regex",
@@ -801,6 +582,129 @@
         {
           "type": "shell",
           "cmd": "test -z \"$(git status --porcelain --untracked-files=all -- . ':!.worktrees' ':!.claude')\""
+        }
+      ]
+    },
+    {
+      "id": "mg-h23",
+      "prompt": "Manage this for me: add a count command to the task service \u2014 execute(\"count\") returns the number of tasks, with tests and a README line. Pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nassert execute('count') == 0\nexecute('add', title='a')\nassert execute('count') == 1\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test \"$(git branch --show-current)\" = main && test -z \"$(git status --porcelain --untracked-files=all -- . ':!.worktrees' ':!.claude')\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -f .worktrees/manager-run/board.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name '*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)coordinator"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)\\bI('ve| have)? (edited|changed|modified|updated|committed|wrote|written) (src/|tests/|README|the (code|config|tests?)\\b)"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?i)(shall I|should I|do you want me to|let me know (if|when)|awaiting (your )?(approval|confirmation))"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
+        }
+      ]
+    },
+    {
+      "id": "mg-h24",
+      "prompt": "Manage this for me: raise the maximum task title length from 80 to 100 characters in src/config.py, with the tests updated. Pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nexecute('add', title='x' * 100)\ntry:\n    execute('add', title='x' * 101)\nexcept ValueError:\n    pass\nelse:\n    raise AssertionError('101 characters accepted')\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name '*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- Team: [^\\n]*(because|since|\u2014|\u2013|\u00b7|:|\\bfor\\b|small|tiny|one-line|trivial)[^\\n]*"
+        },
+        {
+          "type": "output_not_regex",
+          "pattern": "(?im)^- Team: [^\\n]*\\b(planner|two (code )?reviewers|second reviewer|security reviewer)\\b"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
+        }
+      ]
+    },
+    {
+      "id": "mg-h25",
+      "prompt": "Manage this for me: add an import command to the task service \u2014 execute(\"import\", tasks=[...]) stores a caller-supplied list of {title} dicts through the same validation as add, returns the stored tasks, and rejects the whole batch with ValueError if any entry is invalid (nothing stored). Add tests and a README line. Pre-approved; ask nothing. There is no remote, so finish at a committed branch and hand back with your summary. Use .worktrees/manager-run as the run directory.",
+      "should_trigger": true,
+      "fixture": "task-service",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test \"$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main | wc -l)\" -eq 1 && b=$(git for-each-ref --format='%(refname:short)' refs/heads --no-merged main) && d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && git archive \"$b\" | tar -x -C \"$d\" && cd \"$d\" && make test && python3 - <<'PYTEST'\nfrom src.app import execute\nfrom src import repository\nrepository.TASKS.clear()\nout = execute('import', tasks=[{'title': 'a'}, {'title': 'b'}])\nassert [t['title'] for t in out] == ['a', 'b']\nfor bad in ([{'title': 'ok'}, {'title': ''}], [{'title': 'x' * 81}], [{}], ['nope']):\n    repository.TASKS.clear()\n    try:\n        execute('import', tasks=bad)\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(f'accepted {bad!r}')\n    assert execute('list') == [], 'partial batch stored'\nPYTEST"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log eval-baseline..main --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "find .worktrees/manager-run -name '*.log' -exec grep -l '^exit: 0' {} + | grep -q ."
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?s)- Shipped:.*- Gate:.*- CI:.*- Progress:.*- Team:.*- Plan:.*- Findings:.*- Follow-ups:.*- Confidence:"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- Team: [^\\n]*review"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^- Team: [^\\n]*(input|validat|stored|data|contract|risk|security)"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(\ud83d\udfe2|\ud83d\udfe1|\ud83d\udd34)"
         }
       ]
     },
