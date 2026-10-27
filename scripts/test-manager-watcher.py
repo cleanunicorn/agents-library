@@ -497,8 +497,7 @@ class HandlingTests(unittest.TestCase):
         again = run.cli("claim", "--event", event, now=2001)
         self.assertEqual(again.returncode, 0, "the user's answer cannot be applied")
 
-    def handle(self, run, event, now):
-        """The manager's drain: claim, answer (the worker leaves `blocked`), resolve."""
+    def claim_answer_and_resolve(self, run, event, now):
         claimed = run.cli("claim", "--event", event, now=now)
         if claimed.returncode != 0:
             return claimed
@@ -520,7 +519,7 @@ class HandlingTests(unittest.TestCase):
                     self.assertEqual(event_ids(run.wait(now=1000).stdout), [event])
                 if resume == "with a notice printed but unread":
                     late = run.wait(now=1000).stdout
-                claims = [self.handle(run, event, now=1003)]
+                claims = [self.claim_answer_and_resolve(run, event, now=1003)]
                 if late is not None:
                     self.assertEqual(event_ids(late), [event])
                     claims.append(run.cli("claim", "--event", event, now=1006))
