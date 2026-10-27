@@ -228,9 +228,9 @@ Each item owns a worktree, branch, PR and workers, with one writer per
 worktree, and a blocked item never stops another. The one writer is the
 implementer; the coordinator edits no file in the worktree. Both grants cover
 the whole repository, so an edit to a sibling's worktree would not prompt:
-give a claude, pi or gemini coordinator and implementer the other active worktrees as deny
-rules — claude's `<claude ask>` deny, pi's `PI_MANAGER_DENY`, gemini's
-`<other worktree>` rule (`references/herdr.md` § Pre-grants per kind). An item started later, and a
+give the coordinator and implementer the other active worktrees as deny rules,
+in the form their kind's pre-grant takes (`references/herdr.md` § Pre-grants
+per kind). An item started later, and a
 host without path rules, rely on the coordinator brief alone (the implementer's likewise). The limit on
 active items is the user's to set; the rest queue.
 
