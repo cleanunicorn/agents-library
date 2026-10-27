@@ -2,57 +2,25 @@
 
 ## Run directory
 
-One per session, outside every repository so nothing lands in a PR: the one
-the user names, else the host's scratch directory, else
-`${TMPDIR:-/tmp}/manager-<YYYYMMDD-HHMM>`. Each work item gets
-`<run_dir>/<slug>/`:
-
-| File | Written by |
-|------|------------|
-| `board.md`, `<slug>/brief-<role>-<label>.md` (the exact text sent) | you |
-| `<slug>/<role>-<label>.md` — `setup`, `plan-a`, `merged-plan`, `implementation`, `review-a`, `validation`, `recheck-a` | that worker |
-| `<slug>/gate-<role>-<short-sha>.log`, `<slug>/ci-coordinator-<short-sha>.log` | the worker that ran it |
-| `watcher.sqlite3` — Herdr transport only: worker registry, prompt events (ids and hashes, never prompt text), watcher heartbeat | `scripts/watch-workers.py` (`references/herdr.md` § Watch for prompts) |
-| `watcher.log` — the watcher's START, EVENT and STOPPED lines | your shell redirect of its `run` command |
-
-**A gate log** starts with `command: <exact command>` and `head: <full SHA>`,
-then the raw output, then `exit: <code>`. **A CI log** has the same shape:
-`command:` is the `gh pr checks` call, `head:` the PR head it watched.
+One per session, outside every repository: the one the user names, else the
+host scratch directory, else `${TMPDIR:-/tmp}/manager-<YYYYMMDD-HHMM>`.
+`board.md` and the briefs you send live there, with `<slug>/` per item for
+workers' logs. Herdr adds `watcher.sqlite3` and `watcher.log`
+(`references/herdr.md` § Watch for prompts).
 
 ## Results
 
-Workers write everything to their records; you read only the **result
-block** each one ends its final reply with — nothing else from it. A native
-subagent's final message is the block; a Herdr worker saves it beside its
-record as `<role>-<label>.result` and replies with that path:
-
-```
-result:   <role>-<label> · done | blocked: <why> | failed: <why>
-record:   <run_dir>/<slug>/<role>-<label>.md
-head:     <full SHA> | n/a
-gate:     <log path> · exit <code> · N passed, N failed | n/a
-summary:  at most five lines of counts and ids, never content
-asks:     questions or proposed splits for the user, verbatim | none
-```
-
-Each brief says what its role's `summary` holds.
-
-**Checking it costs a few lines, not a file.** Accept a gate claim only when
-`sed -n '1,2p;$p' <log>` shows `head:` equal to `git rev-parse <branch>` and
-`exit: 0` — or, at a red baseline, a `summary` with no failure the baseline
-log lacked. Accept a CI claim only when that log's `head:` equals the gate
-log's and `gh pr view <pr> --json headRefOid`. A result block missing, over
-length, or contradicted by these checks goes back to the worker once; it is
-not a reason to open the record.
-
-**Pass records by path.** The coordinator gets the plan and review paths; a
-reviewer gets the validation record's path. Open a record yourself only to
-relay a worker's question that quotes it, and then only the lines it names.
+A coordinator ends with a short free-form status. Read that and the issue and
+PR, never records, logs or scrollback. Check claims with one-line commands:
+`git rev-parse <branch>`, `gh pr view <pr> --json headRefOid,isDraft`,
+`sed -n '1,2p;$p' <gate log>`. A gate claim holds only when `head:` equals the
+branch head and `exit: 0`; a CI claim only when its head equals the PR head.
+A status that is missing or contradicted by these goes back once.
 
 ## Output budget
 
-The manager and every worker follow this paragraph; each brief carries it
-word for word, and a helper's brief gets it too:
+The manager and every worker follow this paragraph. The coordinator brief
+carries it word for word; a helper's brief gets it too:
 
 **Output budget.** Every tool result stays in your context until the session
 ends, so keep each one small. Send output that can grow — a gate, a CI wait,
@@ -64,10 +32,8 @@ offset and limit, or `sed -n '<a>,<b>p'` — never `cat` it whole; `grep -n`
 first to find the range. A slice that cut too much is re-read narrower or
 further on, not in full.
 
-Your own reads (SKILL.md § Where the line sits) are already small; keep them
-so — `git diff --stat | tail -n 1` for a count, `git log --oneline -5`, the
-`sed` and `gh --json` checks in § Results — and never open a log or record to
-look around.
+Your own reads (SKILL.md § Where the line sits) stay small: `git diff --stat
+| tail -n 1`, `git log --oneline -5`, the checks in § Results.
 
 ## The loop
 
@@ -78,49 +44,43 @@ Each turn, in this order:
    header's `skill` path before anything else. Start every worker on the
    header's `transport`.
 1. **The user's message**, whatever it says and whether or not it names the
-   manager. A new change → Phase 0, or the queue when three are active. A
-   question your own reads (`SKILL.md` § Where the line sits) cannot answer,
-   a skill the user invokes now (`/review-pr`, `/describe-codebase`, …), or
-   "start an agent to …" → a helper (§ Helpers), or Phase 0 when it asks for
-   a change. An answer → the worker that asked. "Status" → the board. A
-   change to a running item → its coordinator, logged on the board. "Do it
-   yourself" → say the console delegates, and delegate it.
-2. **Worker events.** A worker that finished: read its result block, check
-   it as § Results says, start the next phase. A worker that blocked:
-   classify and answer its prompt per § Approvals; it keeps its phase. On
-   Herdr, drain the watcher's events first, whether or not it woke you
+   manager. A new change → intake, or the queue at the active-item limit. A
+   question your own reads cannot answer, a skill the user invokes now
+   (`/review-pr`, `/describe-codebase`, …), or "start an agent to …" → a
+   helper (§ Helpers), or intake when it asks for a change. An answer → the
+   worker that asked. "Status" → the board. A change to a running item → its
+   coordinator, logged on the board. "Do it yourself" → say the console
+   delegates, and delegate it.
+2. **Worker events.** A coordinator that finished: read its status, check it
+   per § Results, act. A worker that blocked: classify and answer its prompt
+   per § Approvals. On Herdr, drain the watcher's events first, whether or not it woke you
    (`references/herdr.md` § Watch for prompts).
 3. **The board**, then a short reply: what moved, what waits on the user.
 
-Keep the console responsive: wait in the background with wake-up where the
-host allows (`herdr agent wait <name>`, a background subagent) and return to
-the user; otherwise wait with a timeout and check next turn. A timeout is not
-a failure; check the worker before re-prompting.
+Stay responsive: wait in the background with wake-up where the host allows
+(`herdr agent wait <name>`, a background subagent) and return to the user.
+A timeout is not a failure; check the worker before re-prompting.
 
 ## Helpers
 
 A request that changes nothing — a question, an investigation, a read-only
 skill such as `review-pr` in report mode or `describe-codebase` — is its own
-board item with **one helper** and no other team. It launches like a planner:
-the read-only grant (`references/herdr.md` § Pre-grants per kind, the
-planner, reviewer column) on the recorded transport, a tab labelled
-`<slug>-helper-a` in Herdr, and the planner's worktree check as a native
-subagent. Its brief is the request verbatim, the skill's absolute path when
-one is named, its record path `<run_dir>/<slug>/helper-a.md`, write access
-only to the run directory, the § Output budget paragraph, and the result
-block. Its `summary` holds the answer in at most five lines; relay those and
-the record path. A helper never edits, and a request that turns out to need a
-change becomes a work item.
+board item with **one helper** and no other team. It launches with the
+read-only grant (`references/herdr.md` § Pre-grants per kind, the planner,
+reviewer column) on the recorded transport, in a tab labelled
+`<slug>-helper-a` in Herdr. Its brief is the request verbatim, the skill's
+absolute path when one is named, write access only to the run directory, the
+§ Output budget paragraph, and a short answer as its status. Relay that
+answer. A helper never edits; a request that needs a change becomes a work
+item.
 
 ## Approvals
 
 For implementation items, the manager invocation authorizes committing and
 pushing the item's branch, creating or updating its PR, waiting for CI, and
-marking it ready after all gates pass. Continue through final delivery without
-asking whether to push or publish. Keep Phases 0–4 local: no early draft PR
-or intermediate pushes. Publish once at Phase 5 after local gates pass;
-CI-only fixes follow the coordinator's batched recovery rule. A user-requested
-stopping point wins.
+marking it ready after all gates pass. Continue through final delivery
+without asking. Work stays local until the coordinator's single push. A
+user-requested stopping point wins.
 
 A worker waiting on a permission prompt is stalled work, and almost none of
 those prompts need the user. SKILL.md rule 7 makes them yours:
@@ -137,17 +97,17 @@ those prompts need the user. SKILL.md rule 7 makes them yours:
   role's job needs: files and folders (worktree, run directory, the repository
   and its `.git`, other paths the job reads), shell commands, git commits and
   pushes of the item's branch, `gh` for the item's PR (including ready status
-  after Phase 5's gates pass), the gate — for a
-  planner or reviewer, only one that writes nowhere but the run directory —
-  installs, and network fetches.
+  once the manager authorizes it), the gate — for a planner or reviewer, only
+  one that writes nowhere but the run directory — installs, and network
+  fetches.
 - **Log each answer** in the board's **approvals answered** list.
 - **Redact any secret** a prompt shows — a token, key or password — before
   it goes anywhere: the board, a relay to the user, a brief.
-- **Relay to the user only** these five cases, tagged `[<slug>]`, verbatim
+- **Relay to the user only** these cases, tagged `[<slug>]`, verbatim
   with the host's options, and deliver exactly the option the user names —
   once, session or always — never the broadest-persistent default:
   1. an action SKILL.md forbids or reserves — merging, force-push, a commit
-     to the main branch, marking ready outside Phase 5;
+     to the main branch, marking ready outside the manager's go-ahead;
   2. irreversible destruction outside the item's worktree and run directory
      — deleting other paths, dropping data, deleting branches or worktrees
      this run did not create;
@@ -167,13 +127,11 @@ rejected one is a failed member (SKILL.md rule 8).
 
 **Check afterwards** what launch rules cannot promise, since they match a
 command as written: any existing remote branch head remains an ancestor of
-the local head (`git merge-base --is-ancestor`). Before Phase 5, no new PR
-exists and the remote branch is absent or unchanged from intake. For an existing PR, verify it remains
-open and draft. In Phase 5, verify the published head matches the tested
-local head, and the PR is open and ready only after authorization
-(`gh pr view <pr> --json state,isDraft,headRefOid`). The main branch's remote
-head must remain the one recorded at intake. A mismatch is case 1, relayed
-at once.
+the local head (`git merge-base --is-ancestor`); no PR exists and the remote
+branch is absent before the coordinator's push; the published head matches the
+tested head, and the PR is ready only after authorization (`gh pr view <pr>
+--json state,isDraft,headRefOid`); the main branch's remote head is the one
+recorded at intake. A mismatch is case 1, relayed at once.
 
 ## The board
 
@@ -187,103 +145,99 @@ console: manager · skill <absolute path to SKILL.md> · transport herdr <worksp
 ```
 
 The second line is the Herdr watcher's health, refreshed from its `status`
-on every rewrite (`references/herdr.md` § Watch for prompts); native runs
-have no watcher and omit it.
-
-Then the items:
+on every rewrite; native runs omit it. Then the items:
 
 ```
 | item | phase | members (name=kind: state) | PR / branch | waiting on | last event |
 |------|-------|----------------------------|-------------|------------|------------|
-| list-limit | 4 review | coord=claude: idle · rev-a=codex: working | #12 draft | rev-a | 14:02 review started at 3f1c2ab |
-| count-cmd  | 1 plan   | coord=claude: idle · plan-a=codex: done · plan-b=opencode: working | — | plan-b | 13:58 plan A saved |
-| export     | queued   | — | — | a free slot | 13:55 three items active |
+| list-limit | review | coord=claude: working · rev-a=codex: working | #12 draft | rev-a | 14:02 review started at 3f1c2ab |
+| export     | queued | — | — | a free slot | 13:55 at the active-item limit |
 ```
 
 Below the table, every secret a prompt showed redacted: open questions to
 the user, each tagged `[<slug>]` — escalated approvals among them — then the
-**approvals answered** list, one row per approval you answered, appended and
-kept on every rewrite so the user can audit them later. Its `asked` cell is
-your own one-line summary of the action and target, with pipes and newlines
-stripped, never the prompt's text pasted in:
+**approvals answered** list, one row per approval you answered, kept on every
+rewrite so the user can audit them. Its `asked` cell is your own one-line
+summary of the action and target, with pipes and newlines stripped, never the
+prompt's text pasted in:
 
 ```
 approvals answered
 | time  | item       | worker=kind        | asked (action · target)                     | option       |
 |-------|------------|--------------------|---------------------------------------------|--------------|
 | 14:05 | list-limit | coord=codex        | git push origin feat/list-limit             | for session  |
-| 14:07 | count-cmd  | plan-b=opencode    | read external dir <run_dir>/count-cmd/*     | Allow always |
-| 14:09 | count-cmd  | plan-b=opencode    | edit src/count.py                           | rejected — read-only role |
+| 14:09 | count-cmd  | rev-a=opencode     | edit src/count.py                           | rejected — read-only role |
 ```
 
 Then **overlaps** — two items whose diffs (`git diff --stat`) touch the same
-file. Flag it, don't serialize: both PRs stay independent, and the hand-back
-names the file so the user merges in order.
+file. Flag it, don't serialize; the hand-back names the file so the user
+merges in order.
 
 ## Concurrency
 
-Each item owns a worktree, branch, PR and workers, with one writer per
-worktree, and a blocked item never stops another. A coordinator's grant covers
-the whole repository, so an edit to a sibling's worktree would not prompt:
-give a claude, pi or gemini coordinator the other active worktrees as deny
-rules — claude's `<claude ask>` deny, pi's `PI_MANAGER_DENY`, gemini's
-`<other worktree>` rule (`references/herdr.md` § Pre-grants per kind). An item started later, and a
-host without path rules, rely on the coordinator brief alone. The cap of
-three active items is the user's to change.
+Each item owns a worktree, branch, PR and coordinator; one writer per
+worktree; a blocked item never stops another. Both grants cover the whole
+repository, so give writers the other active worktrees as deny rules, in the
+form their kind's pre-grant takes (`references/herdr.md` § Pre-grants per
+kind). An item started later, and a host without path rules, rely on the coordinator brief alone. The limit on
+active items is the user's to set; the rest queue.
 
 ## Native subagents
 
-Same roles, briefs, budget and rules. No watcher runs: a subagent's prompt
-reaches you only as the host shows it, so claim no continuous monitoring.
+Same roles and rules. No watcher runs: a subagent's prompt reaches you only as
+the host shows it, so claim no continuous monitoring.
 
-- **Start same-role workers in one message**, in the background where the
-  host allows. A subagent's final message lands in your context, so its brief
-  ends with the result block and nothing after it (§ Results).
-- **Continue a worker** — the coordinator across Phases 0 to 5, a reviewer
-  from review to re-check — by resuming or messaging it. Where the host
-  cannot, start a fresh agent in that role with its record paths (setup,
-  merged plan, its findings) and `git log`; that is the same member, not a
-  new one or a second review round. A replaced coordinator's ticked boxes
-  count only after a fresh gate log.
-- **Pre-grant through the manager's own session.** Native workers inherit
-  its permissions; the spawn call has none of its own. At intake, check the
-  session was started broad but guarded — for Claude Code `--permission-mode
-  auto --add-dir <run_dir> --add-dir <repo> --settings <claude ask>`; for
-  other hosts the coordinator row of `references/herdr.md` § Pre-grants per
-  kind, without its deny rules, since every coordinator shares this session.
-  If not, tell the user the one relaunch line once; never edit their global
-  settings to get it. Unattended, note it once on the board as `assumed` and
-  continue with the session's permissions.
+- **Continue a worker** by resuming or messaging it; where the host cannot,
+  start a fresh agent in that role with the issue and `git log`. A replaced
+  coordinator's ticked boxes count only after a fresh gate log.
+- **Pre-grant through your own session.** Native workers inherit its
+  permissions. At intake, check it was started broad but guarded — for Claude
+  Code `--permission-mode auto --add-dir <run_dir> --add-dir <repo> --settings
+  <claude ask>`; for other hosts the coordinator row of `references/herdr.md`
+  § Pre-grants per kind, without its deny rules. If not, tell the user the one
+  relaunch line once; never edit their global settings. Unattended, note it
+  once on the board as `assumed` and continue with the session's permissions.
 - **Subagents cannot ask the user.** Relay their `asks` under rule 7 and
-  resume them with the answer. A host that shows their prompts to the user
-  directly is noted once on the board.
-- **Read-only roles stay read-only** by their briefs alone, since a session
-  grant cannot narrow them. Before each starts, record the worktree's `git
-  rev-parse HEAD`, branch and `git stash list | wc -l`; when it returns,
-  compare them and require an empty `git status --porcelain` — a clean status
-  alone misses a commit, a stash or a branch switch. A difference is a role
-  breach, reported to the user.
+  resume them with the answer.
+- **Read-only roles stay read-only** by their briefs alone. Before each
+  starts, record the worktree's `git rev-parse HEAD`, branch and `git stash
+  list | wc -l`; when it returns, compare them and require an empty `git
+  status --porcelain`. A difference is a role breach, reported to the user.
 
 ## Error handling
 
-- **No gate command, or a placeholder:** ask the user; unattended, the item
-  is `blocked`. No worker edits without a gate.
-- **Gate red at the baseline:** the coordinator adds no failure; nobody
-  claims green.
+- **No gate command, or a placeholder:** ask the user; unattended, the item is
+  `blocked`. No worker edits without a gate.
+- **A failed planner, or a review round with no report:** the item is
+  `blocked` and the PR stays a draft (SKILL.md rule 8).
+- **Gate red at the baseline:** nobody adds a failure; nobody claims green.
 - **The main branch moved, or the worktree exists:** the coordinator fetches
-  and rebases as the project allows, then re-checks the citations the change
-  touches.
+  and rebases as the project allows, then re-checks what the change touches.
 - **A reviewer's gate must write into the repository:** the reviewer reports
-  it and does not run it. The coordinator runs that gate at the same head,
-  and the re-check record's `gate:` reads `not run — <reason> →
-  <coordinator's log>`.
+  it and does not run it. The coordinator runs that gate at the same head.
+
+## The hand-back block
+
+One per item, when its coordinator reports:
+
+```
+### <work-item-slug> — done | blocked | in progress — <outcome, or the blocker, in one line>
+- Shipped: PR URL or branch · worktree path · N files changed, each by path
+- Gate: `<exact command>` → <result with a number> · log by <role> at <sha>
+- CI: N of N required checks passed at <sha>, failures by name | none — no CI checks | none — branch only
+- Progress: N of M boxes ticked · the unticked ones, by name
+- Team: roles used and why · transport
+- Plan: criteria covered, plan changes
+- Findings: N raised · N confirmed · N refuted · N uncertain · N fixed · each by id with verdict and evidence
+- Follow-ups: open items, assumed answers, deferred findings, what was not verified
+- Confidence: 🟢 High | 🟡 Medium | 🔴 Low
+```
 
 ## Ending the session
 
 The console ends only when the user ends it in words — "end the manager",
-"leave the console", "stop managing". A later request, a skill invocation,
-or "just do it yourself" does not end it (SKILL.md rule 10). Then report
-every item still open with its hand-back block (`in progress` or `blocked`),
-close the workers you started, stop this run's watcher on Herdr (`<watcher>
-stop --run-dir <run_dir>`; it never stops another run's), and leave every
-worktree and branch in place.
+"leave the console", "stop managing". A later message does not end it
+(SKILL.md rule 10). Then report every item still open with its hand-back
+block (`in progress` or `blocked`), close the workers you started, stop this
+run's watcher on Herdr (`<watcher> stop --run-dir <run_dir>`; it never stops
+another run's), and leave every worktree and branch in place.

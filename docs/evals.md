@@ -232,48 +232,51 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 | review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
 | simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
 | batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head`: a clean PR, one that conflicts with it, one already merged into main, one that breaks `make test`, one with an off-by-one against the README | listed PRs land as `Merge PR #…` commits; the already-merged PR is skipped with evidence; the conflict is resolved keeping both PRs' edits and reported; the test failure is attributed to its PR; the review names the off-by-one; no list means ask, not pick; nothing pushed or written to GitHub; no-remote fixture exercises the Phase 0 guardrail |
-| manager | layered task app; a copy with two planted plans (one breaks layering and the one-PR rule) used by the coordinator-only case `mg-h17` alone, so live planners never see them; an implemented branch with a zero-limit bug; the same branch pushed to a local bare remote behind a `gh` shim serving draft PR #12 with a required check that fails on a missing secret; a variant whose required gate is absent | merged plan opens with Progress and carries all four SWOT quadrants, from one plan or from three; planted plan defects are rejected; a false reviewer finding is refuted with evidence; the hand-back block reports the team, SWOT counts, and findings; a missing gate blocks; a failing CI check keeps the PR a draft (no `gh pr ready` call) and the item not `done`, with a `CI:` line naming the check; routine worker approvals are answered with the persistent option and logged on the board, a planner's source edit is rejected, a merge or an outside `rm -rf` is relayed tagged and never run while a routine fetch beside them is still answered, and an unattended force-push is rejected as `assumed`; asked to do the work itself, the manager delegates anyway and worker records appear in the run directory; main never touched |
+| manager | layered task app; an implemented branch with a zero-limit bug; the same branch pushed to a local bare remote behind a `gh` shim serving draft PR #12 with a required check that fails on a missing secret; a variant whose required gate is absent | end to end, the coordinator keeps a plan under `## Progress` in a stand-in issue file with every box ticked, the branch passes `make test`, and the hand-back block has the `Team:` and `Plan:` lines; a new `count` command is built on a branch while main and its checkout stay untouched and no source edit is claimed by the manager; a one-line change gets a `Team:` line with a reason and no planner or second reviewer, a validation-heavy `import` command gets a `Team:` line naming review and the risk; a false code-review finding is refuted with evidence; a missing gate blocks; a failing CI check keeps the PR a draft (no `gh pr ready` call) and the item not `done`, with a `CI:` line naming the check; routine worker approvals are answered with the persistent option and logged on the board, a planner's source edit is rejected, a merge or an outside `rm -rf` is relayed tagged and never run while a routine fetch beside them is still answered, and an unattended force-push is rejected as `assumed`; asked to do the work itself, the manager delegates anyway; main never touched |
 | triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
 | file-issues | `gh` shim serving an open bug (#7, last row dropped), a closed feature (#3, `--header`), the label vocabulary, and recording what `issue create` would file under `.fixture/created-*`; an unauthenticated variant | a new bug is filed with a convention title, existing labels only, and the five body sections citing `src/export.py`; an open or closed match is linked instead of filed; a fix-it-too request leaves source, branch and HEAD untouched with no PR call; planted secrets never reach the issue; unauthenticated `gh` stops with no create |
 
 The condensed suites retain 11 batch-merge cases (6 positive / 5 negative)
-and 18 manager cases (13 positive / 5 negative). `bm-h1` covers numeric and URL
+and 19 manager cases (14 positive / 5 negative). `bm-h1` covers numeric and URL
 inputs together, including a conflict to resolve and an already-merged PR; `bm-h4`
 checks attribution and branch restoration, and `bm-h6` checks review without
 fixing. Manager implementation and review delegation cases stay separate
 because they guard different forbidden actions.
 
-The manager suite is mostly slices of the pipeline, sized to the default
-900-second trial. Its one end-to-end case, `mg-h3`, nests a `plan-feature`
-run per planner and a `review-pr` run per reviewer, so it carries its own
+The manager suite is mostly slices of the loop, sized to the default
+900-second trial. Its one full end-to-end case, `mg-h3`, runs a coordinator
+through plan, build, review and test, so it carries its own
 `"timeout": 3600` and a full sweep gives it that without a flag. It is also
 the most expensive case in the repo — scope it in with `--case mg-h3` on
 purpose.
 
-`mg-h1` stops at the merged plan; `mg-h16` is the coordinator step on one
-plan — a *single-plan run* with no invented second side — and `mg-h17` the
-same step on three plans, the third given inline. `mg-h4` shows the status
-board and team for two concurrent work items and starts nothing; `mg-h5`
-validates two reviewer findings, one false; `mg-h6` blocks on a missing gate.
-`mg-h7` and `mg-h8` tell the manager to do the work itself — a one-line
-limit change, then a review — and pass only when it hands the work to a
-worker anyway (`mg-h7` carries `"timeout": 1800`). `mg-h18` takes a
-draft PR through hand-back: the finding is fixed, pushed and re-checked,
-but the shim's `integration` check fails on a secret no commit can supply,
-so the case passes only when `.gh-calls.log` shows `gh pr checks` and no
-`gh pr ready`, a CI log exists in the run directory, and the hand-back is
-`blocked` or `in progress`, never `done` (`"timeout": 1800`).
+`mg-h4` shows the status board and one coordinator per item for two
+concurrent work items and starts nothing; `mg-h5` validates two reviewer
+findings, one false; `mg-h6` blocks on a missing gate. `mg-h7` and `mg-h8`
+tell the manager to do the work itself — a one-line limit change, then a
+review — and pass only when it hands the work to a worker anyway (`mg-h7`
+carries `"timeout": 1800`). `mg-h23` is the plain case: an ordinary request
+must leave main and its checkout untouched, with the change on a branch
+that passes its tests. `mg-h24` and `mg-h25` check that the coordinator
+sizes its team: they assert only the hand-back `- Team:` line (a reason and
+no planner or second reviewer for a one-line change; review and the risk
+named for an `import` command that validates caller data), so they can flake
+on wording. `mg-h18` takes a draft PR through hand-back: the finding is
+fixed and pushed, but the shim's `integration` check fails on a secret no
+commit can supply, so the case passes only when `.gh-calls.log` shows
+`gh pr checks` and no `gh pr ready`, a CI log mentioning the check exists in
+the run directory, and the hand-back is `blocked` or `in progress`, never
+`done` (`"timeout": 1800`).
 
 `mg-h3` is an **outcome** test, not an orchestration test. The runner keeps
 the agent's text and the names of the skills it invoked, and saves only the
 last 4,000 characters of that text; sub-agent launches, their order, and
 their prompts are discarded. The delegation cases narrow that gap without
 closing it: their prompts set the run directory to `.worktrees/manager-run`
-(gitignored in every fixture), and they assert the board, the coordinator's
-setup record, the review and re-check records, and a gate log ending
-`exit: 0` exist there. A manager that did the work alone would have to forge
-every one of those files to pass. Nothing proves planners and reviewers ran
-in parallel and in isolation. `--trace` now records, per trial, which
+(gitignored in every fixture), and they assert the board and a gate log ending
+`exit: 0` exist there (`mg-h3` also checks the stand-in issue file's ticked
+`## Progress` list). A manager that did the work alone would have to forge
+those files to pass. Nothing proves reviewers ran in isolation. `--trace` now records, per trial, which
 sub-agents were launched, how many in one message, and whether sub-agent
 events appeared ([Delegation traces](#delegation-traces)) — evidence a solo
 manager cannot produce by writing files. It stays telemetry: no case asserts

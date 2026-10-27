@@ -137,7 +137,7 @@ def relay_list(policy):
 
 def rule(text, number):
     """Return one numbered rule from SKILL.md's Rules list."""
-    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## )", text)
+    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## |\Z)", text)
     if not found:
         raise AssertionError(f"SKILL.md has no rule {number}")
     return found.group(0)
@@ -325,20 +325,22 @@ class ManagerApprovalTests(unittest.TestCase):
         self.expect("herdr.md", self.read("references/herdr.md"), r"(?i)relay it to the user[^.]*secret redacted",
                     "a blocked Herdr prompt is relayed with its secret")
 
-    def test_every_quoted_escalation_count_matches_the_list(self):
-        # The list is single-sourced in console.md; its count is quoted in three places.
+    def test_no_place_quotes_the_escalation_count(self):
+        # The list is single-sourced in console.md. A count quoted anywhere
+        # else goes stale the first time a case is added, so none may be.
         policy = section(self.read("references/console.md"), "Approvals")
         relay = relay_list(policy)
-        count = len(re.findall(r"(?m)^  \d+\. ", relay))
-        word = ("zero one two three four five six seven eight nine ten").split()[count]
+        self.assertGreater(len(re.findall(r"(?m)^  \d+\. ", relay)), 0, "the escalation list is gone")
+        number = r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)"
         quotes = {
-            "console.md": (relay, rf"(?i)these {word} cases"),
-            "SKILL.md rule 7": (rule(self.read("SKILL.md"), 7), rf"(?i)relaying only the {word} cases"),
-            "README.md": ((ROOT / "README.md").read_text(encoding="utf-8"), rf"(?i)only {word} kinds go to you"),
+            "console.md": relay,
+            "SKILL.md rule 7": rule(self.read("SKILL.md"), 7),
+            "README.md": (ROOT / "README.md").read_text(encoding="utf-8"),
         }
-        for label, (text, pattern) in quotes.items():
+        for label, text in quotes.items():
             with self.subTest(where=label):
-                self.expect(label, text, pattern, f"the escalation list has {count} cases")
+                found = re.search(rf"(?i)\b(?:only|these|the) {number} (?:cases|kinds)\b", text)
+                self.assertIsNone(found, f"{label} quotes a count of the escalation list: {found and found.group(0)!r}")
 
     def test_a_repository_writing_gate_has_one_ruling(self):
         # The reviewer brief says report it; the launch table and the routine
@@ -400,29 +402,24 @@ class ManagerApprovalTests(unittest.TestCase):
 
     def test_every_brief_states_its_access(self):
         # The heading alone survives a gutted paragraph; pin what each worker is told.
-        promises = {
-            "coordinator": (r"(?i)prompt that still appears is the manager's to answer",
-                            r"(?i)never makes a merge, a force-push, a commit to the main branch"),
-            "planner": (r"(?i)answers any permission prompt",),
-            "reviewer": (r"(?i)answers any permission prompt",),
-        }
-        for role, patterns in promises.items():
-            text = self.read(f"references/{role}-brief.md")
-            access = re.search(r"(?s)\*\*Access\.\*\*.*?(?=\n\n)", text)
-            with self.subTest(role=role):
-                self.assertIsNotNone(access, f"{role} brief does not say what the manager pre-grants")
-                for pattern in patterns:
-                    self.expect(f"{role} Access", access.group(0), pattern,
-                                "the brief no longer says who answers its prompts and what stays forbidden")
-
-    def test_read_only_roles_write_only_to_the_run_directory(self):
-        for role in ("planner", "reviewer"):
+        for role in ("coordinator", "reviewer"):
             with self.subTest(role=role):
                 text = self.read(f"references/{role}-brief.md")
-                self.expect(role, text, r"(?i)write access only to the run directory",
-                            "the pre-grant no longer limits writes to the run directory")
-                self.expect(role, text, r"(?i)host permission is not (role )?permission",
+                self.expect(role, text, r"\*\*Grant\.\*\*", "the brief no longer says what the manager pre-grants")
+                self.expect(role, " ".join(text.split()), r"(?i)host permission is not role permission",
                             "an approved prompt could widen the role")
+        coordinator = " ".join(self.read("references/coordinator-brief.md").split())
+        for pattern in (r"(?i)manager answers any prompt that still appears",
+                        r"(?i)no \"allow\" makes a merge, force-push or commit to the main branch acceptable"):
+            self.expect("coordinator Grant", coordinator, pattern,
+                        "the brief no longer says who answers prompts and what stays forbidden")
+
+    def test_read_only_roles_write_only_to_the_run_directory(self):
+        text = " ".join(self.read("references/reviewer-brief.md").split())
+        self.expect("reviewer", text, r"(?i)write access only to the run directory",
+                    "the pre-grant no longer limits writes to the run directory")
+        self.expect("reviewer", text, r"(?i)report only: no edits outside the run directory, no commits, no pushes",
+                    "a reviewer may edit or publish")
 
     def test_herdr_launches_with_pre_grants_and_answers_blocked_prompts(self):
         text = self.read("references/herdr.md")

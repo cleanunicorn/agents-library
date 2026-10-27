@@ -42,7 +42,7 @@ def section(text, heading):
 
 def rule(text, number):
     """Return one numbered rule from SKILL.md's Rules list."""
-    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## )", text)
+    found = re.search(rf"(?ms)^{number}\. .*?(?=^\d+\. |^## |\Z)", text)
     if not found:
         raise AssertionError(f"SKILL.md has no rule {number}")
     return found.group(0)
@@ -133,9 +133,11 @@ class ManagerConsoleTests(unittest.TestCase):
             (r"never `cat` it whole", "whole-file reads are allowed again"),
         ]:
             self.expect("console.md § Output budget", canonical, pattern, why)
-        for brief in ["coordinator-brief.md", "planner-brief.md", "reviewer-brief.md"]:
-            self.assertEqual(budget(self.read(f"references/{brief}"), brief), canonical,
-                             f"{brief}: the output budget drifted from console.md")
+        self.assertEqual(budget(self.read("references/coordinator-brief.md"), "coordinator-brief.md"), canonical,
+                         "coordinator-brief.md: the output budget drifted from console.md")
+        self.expect("coordinator-brief.md", self.read("references/coordinator-brief.md"),
+                    r"(?i)send reviewers `reviewer-brief\.md` plus the output budget",
+                    "reviewers no longer get the output budget")
         self.expect("console.md § Helpers", section(self.read("references/console.md"), "Helpers"),
                     r"§ Output budget paragraph", "a helper's brief omits the output budget")
         self.expect("SKILL.md rule 9", rule(self.read("SKILL.md"), 9), r"§ Output budget",
