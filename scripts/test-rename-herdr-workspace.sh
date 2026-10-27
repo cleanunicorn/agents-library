@@ -102,8 +102,7 @@ done
 
 # The callers' wording is the other half of the contract: each skill calls
 # the helper by its path with its own label, and none still renames a tab.
-for caller in "manager:skills/manager/SKILL.md" "manager:skills/manager/references/herdr.md" \
-              "issues:skills/file-issues/SKILL.md"; do
+for caller in "manager:skills/manager/SKILL.md" "issues:skills/file-issues/SKILL.md"; do
   case_name="caller:${caller#*:}"
   text=$(tr -s ' \n' '  ' < "$ROOT/${caller#*:}")
   code=0; grep -qF "bash <skill>/scripts/rename-herdr-workspace.sh ${caller%%:*}" <<< "$text" || code=$?

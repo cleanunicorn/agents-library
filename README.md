@@ -591,18 +591,13 @@ skills' other scripts against temporary repositories and a stub `gh`
 table of contents and the
 in-page links in README.md, AGENTS.md, and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), one slash command per fenced block in every
-Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
-and its pi permission extension (`scripts/test-manager-approval.py`; the
-extension cases need `node` and report a skip without it), the manager's
-persistent console
-(`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
-(`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
+Markdown file (`scripts/test-paste-blocks.py`), the manager's pi permission
+extension (`scripts/test-pi-permissions.py`; needs `node` and reports a skip
+without it), the manager's worker watcher against a
 stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
 behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
-against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval runner's
-offline transcript parsing and delegation traces (`scripts/test-run-evals.py`),
-and eval cases with `run_evals.py --dry-run`.
+against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`).
 The command is local and manual: it starts no model runs, needs no credentials,
 and changes no installed plugins. It requires `bash`, Python 3.9+, and the usual
 Unix command-line tools.
@@ -622,16 +617,6 @@ The missing-version warning for Claude is intentional; Codex owns the release
 version. `claude plugin validate .` selects the marketplace in this repository,
 so it must not be treated as validation of every skill and agent. The local gate
 does not require either CLI or depend on their user-specific plugin caches.
-
-### Skill Evals
-
-The skills are thin prose, so they have no LLM evals: what is deterministic in
-them is a script, and each script has an offline test in the local gate. Only
-the manager skill still ships an eval suite (`skills/manager/evals/cases.json`),
-executed by [`run_evals.py`](run_evals.py) at the repo root until the manager is
-redesigned. Evals are **manual-only** — never wired to CI or git hooks. Start
-with `python3 run_evals.py --dry-run`; see [docs/evals.md](docs/evals.md) for the
-full guide and cost notes.
 
 ### Releasing
 
@@ -656,6 +641,3 @@ generated notes. **Those release notes are the changelog** — there is no
 rather than by release tag, so both tools track `main` — see
 [Update](#update) for how an installed
 copy picks it up.
-
-The manager evals are **not** part of any workflow — they spawn real agent runs
-and stay manual-only (`python3 run_evals.py`, see [docs/evals.md](docs/evals.md)).

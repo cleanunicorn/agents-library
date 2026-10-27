@@ -254,8 +254,7 @@ loads and executes.
   `SKILL.md` that states the goal, what good looks like, and the hard
   boundaries, and leaves the how to the model — no phase machinery, record
   schemas or per-lens prompt files, so a skill improves as the model does.
-  Only manager keeps `references/`. Deterministic
-Deterministic
+  Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
   main already contains), `merge-prs.sh` (which auto-names the target branch
@@ -278,7 +277,7 @@ Deterministic
   `scripts/test-rename-herdr-workspace.sh` fails when a copy drifts, since a skill
   installed alone carries only its own directory).
   Repo-level scripts (CI helpers, the gate's tests) live in top-level
-  `scripts/`; the installer is `install.py` at the root, beside `run_evals.py`.
+  `scripts/`; the installer is `install.py` at the root.
   The `.opencode/` and `.kilo/` directories mirror `agents/` and `skills/` via
   symlinks so both hosts auto-discover everything without duplicating files.
   One installer, `install.py` at the repo root (Python 3.9+, stdlib only),
@@ -314,8 +313,8 @@ install-agents installs through its script after one confirmation and then
   draft PR, marked ready only when gate, PR head and CI share one SHA, every
   required check passed, and nothing is open; the manager never merges.
   Work items run concurrently while capacity allows and the rest queue,
-  tracked on a status board (`references/console.md`). On Herdr
-  (`references/herdr.md`) a watcher started before the first worker detects
+  tracked on a status board. On Herdr
+  a watcher started before the first worker detects
   prompts between turns; the manager still claims, decides and answers them.
   Planners and reviewers only read; one agent writes per worktree.
 - **Config / manifests** — identity in `.claude-plugin/plugin.json`
@@ -343,20 +342,13 @@ install-agents installs through its script after one confirmation and then
   created with generated notes. **Those release notes are the changelog** —
   there is no `CHANGELOG.md`; don't create one. PR
   titles are load-bearing and CI-checked (`.github/workflows/pr-title.yml`).
-  Never add the manager evals to any workflow — they are manual-only
-  (`docs/evals.md`).
 - **No auth / error handling / logging / database / migrations** — agents
   inspect *target* projects for these; this repo holds none. The only durable
   per-project state is the per-agent journals in `agents/journals/`.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
   (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
-  the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
-  Follow-ups, Confidence}` for manager, with the gate-log and CI-log format in
-  `references/console.md` (`command:`/`head:`/`exit:`) and the board's
-  `{time, item, worker=kind, asked, option}` approvals-answered rows there
-  too; the PR evidence body is in its
-  coordinator brief; install.py's
+  install.py's
   `LINKED|COPIED|INSTALLED|OK|UPDATED|REMOVED|KEPT|SKIPPED|CONFLICT|FAILED
   <host>/<name>` status lines and its saved selection `{version, hosts:
   {<host>: bool}, excluded: [<name>]}` (user config, or `.agents-library.json`
@@ -392,12 +384,9 @@ install-agents installs through its script after one confirmation and then
   `--continue` and `--skip` against real temporary repositories
   (`scripts/test-batch-merge-prs.sh`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), one slash command per fenced block in
-  every Markdown file (`scripts/test-paste-blocks.py`), the manager's approval
-  contract and its pi permission extension (`scripts/test-manager-approval.py`;
-  the extension cases run under `node` and report a skip without it), the
-  manager's persistent console
-  (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
-  (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against
+  every Markdown file (`scripts/test-paste-blocks.py`), the manager's pi
+  permission extension (`scripts/test-pi-permissions.py`; the cases run under
+  `node` and report a skip without it), the manager's worker watcher against
   a stub `herdr` and fixed clock (`scripts/test-manager-watcher.py`),
   opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
@@ -408,17 +397,13 @@ install-agents installs through its script after one confirmation and then
   against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the skills'
   other scripts against temporary repositories and a stub `gh` —
   run-gate.sh, test-commands.sh, check-prs.sh, list-issues.sh
-  (`scripts/test-skill-scripts.py`) — the eval runner's offline transcript
-  parsing and delegation traces (`scripts/test-run-evals.py`), and eval case
-  validation (`--dry-run`).
+  (`scripts/test-skill-scripts.py`) .
   Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
-  validation. Lint/format/build: no separate tools. Skills have no LLM
-  evals: their behavior is the model's, and what is deterministic is a script
-  with a test. Only manager still carries `evals/cases.json`, run by
-  `python3 run_evals.py` — **manual-only and expensive** (real agent runs);
-  never wire them into CI, hooks, or push automation. See `docs/evals.md`.
+  validation. Lint/format/build: no separate tools. There are no LLM
+  evals: a skill's behavior is the model's, and what is deterministic in it is
+  a script with an offline test.
 
 **Where to look:** README.md for install and update paths; this file for the
 working guide; `agents/architect.md` for the agent shape;

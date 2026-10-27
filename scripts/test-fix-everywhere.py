@@ -22,13 +22,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # explicit decision here rather than silently escaping the contract.
 AGENTS = {"architect", "deadwood", "docbot", "refactor", "sentinel", "testforge",
           "uidesigner", "uxpolish"}
-FIXING_SKILLS = {"manager"}
 
-APPLIES_FIXES = re.compile(r"(?i)\*\*apply the (edit|change|fix)\*\*")
 # Agents carry only identity and purpose, so the rule lives in the purpose:
 # one problem, fixed at every place it occurs.
 AGENT_FIXES_EVERYWHERE = re.compile(r"(?i)\b(everywhere it (occurs|recurs)|on every (view|page)\b)")
-FIXES_EVERY_INSTANCE = re.compile(r"(?i)fix every instance")
 # Any cap that stops at the instances nearby is the rule this PR removed.
 CAP = re.compile(r"(?i)\b(up to|at most|no more than|only)\s+(2|two|3|three)\b"
                  r"|\bsame (area|module|vicinity|neighbou?rhood)\b")
@@ -56,25 +53,6 @@ class FixEverywhereTests(unittest.TestCase):
                 self.expect(name, text, AGENT_FIXES_EVERYWHERE,
                             "the purpose no longer fixes every place the problem occurs")
                 self.refute(name, text, CAP, "a per-area cap is back")
-
-    def test_fixing_skills_fix_every_instance(self):
-        found = {path.parent.name for path in (ROOT / "skills").glob("*/SKILL.md")
-                 if APPLIES_FIXES.search(path.read_text(encoding="utf-8"))}
-        self.assertEqual(found, FIXING_SKILLS,
-                         "a skill started or stopped applying fixes — add it here and give "
-                         "it the sweep, or confirm it no longer applies fixes")
-        for name in sorted(FIXING_SKILLS):
-            with self.subTest(skill=name):
-                text = self.read(f"skills/{name}/SKILL.md")
-                self.expect(name, text, FIXES_EVERY_INSTANCE,
-                            "apply phase does not fix the other instances")
-                self.refute(name, text, CAP, "a per-area cap is back")
-
-    def test_manager_coordinator_fixes_every_instance(self):
-        path = "skills/manager/references/coordinator-brief.md"
-        text = self.read(path)
-        self.expect(path, text, FIXES_EVERY_INSTANCE, "the coordinator does not sweep")
-        self.refute(path, text, CAP, "a per-area cap is back")
 
     def test_guides_teach_the_rule(self):
         guide = self.read("AGENTS.md")

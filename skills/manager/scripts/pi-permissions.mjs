@@ -2,8 +2,8 @@
 //
 // pi asks before no tool call on its own (its docs/security.md), so without
 // this extension every escalation command runs unasked. The manager sets the
-// role through the tab's environment (references/herdr.md § Pre-grants per
-// kind):
+// role through the tab's environment (see the manager's SKILL.md
+// § Scripts):
 //
 //   PI_MANAGER_ROLE     coordinator | planner | reviewer
 //   PI_MANAGER_RUN_DIR  absolute run directory, the only place a reader writes
@@ -13,7 +13,7 @@
 //
 // Missing or invalid settings block every tool call: failing open would
 // launch an unrestricted worker. Command matching is not an OS sandbox; the
-// manager's after-the-fact audit (references/console.md § Approvals) stays.
+// manager's after-the-fact audit of what it approved stays.
 
 import { realpathSync } from "node:fs";
 import { dirname, isAbsolute, resolve, sep } from "node:path";
