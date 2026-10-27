@@ -683,7 +683,9 @@ class LifecycleTests(unittest.TestCase):
         run.agent("coord", "blocked", CLAUDE_PROMPT)
         out, _ = waiting.communicate(timeout=5)
         self.assertEqual(waiting.returncode, 0)
-        self.assertRegex(out, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=blocked$",
+        # A sweep can read the old `working` status and then the new prompt
+        # screen, which is rightly `suspected`; either kind is a wake-up.
+        self.assertRegex(out, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=(blocked|suspected)$",
                          "a blocking wait never woke for the new prompt")
 
     def test_a_superseded_watcher_exits_instead_of_competing(self):
