@@ -371,27 +371,6 @@ assert_contains "$(cat "$tmp/err")" 'could not abort' 'abort diagnostic'
 assert_not_contains "$(cat "$tmp/out")" 'MERGED 3' 'queue stopped'
 assert_equal "$state" "$(merge_state)" 'merge state kept for the user'
 
-# --- The prose that drives the script agrees with it ------------------------
-
-case_name=contract
-skill_dir="$ROOT/skills/batch-merge-prs"
-skill=$(cat "$skill_dir/SKILL.md")
-assert_contains "$skill" 'references/conflicts.md' 'Phase 1 links the conflict procedure'
-assert_contains "$skill" 'references/test-gate.md' 'resolved merges still reach the test gate'
-assert_contains "$skill" 'read-only reviewer using **review-pr**' 'and the read-only review'
-procedure=$(cat "$skill_dir/references/conflicts.md")
-for op in --continue --skip; do
-  assert_contains "$procedure" "merge-prs.sh $op" "procedure shows $op"
-done
-# The rule this replaced, in the places that described it.
-old_rule=$(grep -rniE 'never resolve|SKIPPED <n> conflicts|conflicting PR is aborted|uses it as-is' \
-  "$skill_dir" "$ROOT/README.md" "$ROOT/AGENTS.md" "$ROOT/docs" || true)
-assert_equal '' "$old_rule" 'the abort-only conflict rule is gone everywhere'
-schema=$(grep -B1 'from merge-prs\.sh,' "$ROOT/AGENTS.md" | tr '\n' ' ')
-for line in $(sed -n 's/^#       \([A-Z]*\) .*/\1/p' "$SCRIPT" | sort -u); do
-  assert_contains "$schema" "$line" "AGENTS.md schema names $line"
-done
-
 # --- An empty conflict list fails closed -----------------------------------
 
 fixture empty-list

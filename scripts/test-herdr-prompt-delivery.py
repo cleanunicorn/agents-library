@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REFERENCES = sorted(ROOT.glob("skills/*/references/herdr.md"))
-EXPECTED = {"manager", "batch-merge-prs"}
+EXPECTED = {"manager"}
 
 # What a prompt procedure must say, each with the reason it matters.
 REQUIRED = [
@@ -51,8 +51,6 @@ REQUIRED = [
 SECOND_MISS = {
     "manager": (r"second miss is a member that fails \(SKILL\.md rule 8\)",
                 "is a member that fails (SKILL.md rule 8)"),
-    "batch-merge-prs": (r"second miss fails that worker: use § Fallback",
-                        "fails that worker: use § Fallback"),
 }
 
 # An unconditional instruction to prompt without the gate must not return.

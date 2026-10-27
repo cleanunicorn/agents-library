@@ -25,9 +25,6 @@ python3 scripts/test-plugin-layout.py
 echo "Checking every fix sweeps the whole repository..."
 python3 scripts/test-fix-everywhere.py
 
-echo "Checking batch-merge-prs answers routine worker approvals and relays the rare ones..."
-python3 scripts/test-batch-merge-approval.py
-
 echo "Checking batch-merge-prs pauses on conflicts and resumes only its own merge..."
 bash scripts/test-batch-merge-prs.sh
 
@@ -55,6 +52,9 @@ python3 scripts/test-install.py
 bash scripts/test-install-agents.sh
 ./scripts/test-diff-target.sh
 bash scripts/test-rename-herdr-workspace.sh
+
+echo "Checking the skills' scripts: gate runner, test-command finder, PR classifier, issue lister..."
+python3 scripts/test-skill-scripts.py
 
 echo "Checking the eval runner parses transcripts offline..."
 python3 scripts/test-run-evals.py

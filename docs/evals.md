@@ -1,7 +1,11 @@
 # Skill evals
 
-Every skill in `skills/` carries an eval suite, and a single runner at the repo
-root executes them. The evals exist for two reasons:
+**Only the manager skill still carries an eval suite.** The other skills are thin
+prose whose behavior is the model's, so they have no LLM evals; what is
+deterministic in them is a script, tested offline by
+`scripts/test-skill-scripts.py` and the other `scripts/test-*` files. The manager
+suite stays until the manager is redesigned, and the runner with it. A single
+runner at the repo root executes it. The evals exist for two reasons:
 
 - **Regression protection** — the skills encode team workflows (guardrails,
   output contracts, gates). A model update or a skill edit that degrades them
@@ -19,7 +23,7 @@ runs. Run it by hand, scoped, when you change a skill or update the model.
 ```
 run_evals.py                      # the shared runner (stdlib Python 3)
 scripts/test-run-evals.py         # offline tests of its transcript parsing
-skills/<name>/evals/cases.json    # at least 5 positive and 5 negative cases per skill
+skills/manager/evals/cases.json   # at least 5 positive and 5 negative cases
 eval-results/                     # JSON results per run (gitignored)
 ```
 
@@ -225,23 +229,7 @@ report-only prompts, `.gh-calls.log` free of `issue close` without approval).
 
 | Suite | Fixture | Signature assertions |
 |-------|---------|----------------------|
-| plan-feature | layered task app with behavioral tests, a missing-harness variant, and a roadmap doc to update in place | plans cite real integration points and observable tests; report-only leaves the baseline intact; requested plan updates preserve unrelated content |
-| review-pr | feature branch with a spec-violating boundary bug (`> 8` vs "at least 8"), a dead function, a test gap | review names the bug/dead code; fix case leaves `>= 8` and `make test` green |
-| describe-codebase | small layered service (app → handlers → db → config) | brief cites real layers; flow trace hits all hops; tree stays clean; `ARCHITECTURE.md` written only on explicit approval |
-| review-design | tokens file + component with `#999` on white, 13px body text, off-scale spacing, two primary buttons | findings name contrast/scale issues; fix case removes `#999` in favor of a token |
-| review-ux-psychology | signup flow: blank 7-field form, 0% progress, gated report, unanchored price | findings name the matching principle per screen; report-only leaves tree clean |
-| simplify-sweep | duplicated `parse_config`, unused export, 4-deep nesting, stale `--fast` doc | each planted item surfaced by name; apply case keeps `make test` green |
-| batch-merge-prs | fake `gh` shim + local bare remote with real `refs/pull/N/head`: a clean PR, one that conflicts with it, one already merged into main, one that breaks `make test`, one with an off-by-one against the README | listed PRs land as `Merge PR #…` commits; the already-merged PR is skipped with evidence; the conflict is resolved keeping both PRs' edits and reported; the test failure is attributed to its PR; the review names the off-by-one; no list means ask, not pick; nothing pushed or written to GitHub; no-remote fixture exercises the Phase 0 guardrail |
 | manager | layered task app; an implemented branch with a zero-limit bug; the same branch pushed to a local bare remote behind a `gh` shim serving draft PR #12 with a required check that fails on a missing secret; a variant whose required gate is absent | end to end, the coordinator keeps a plan under `## Progress` in a stand-in issue file with every box ticked, the branch passes `make test`, and the hand-back block has the `Team:` and `Plan:` lines; a new `count` command is built on a branch while main and its checkout stay untouched and no source edit is claimed by the manager; a one-line change gets a `Team:` line with a reason and no planner or second reviewer, a validation-heavy `import` command gets a `Team:` line naming review and the risk; a false code-review finding is refuted with evidence; a missing gate blocks; a failing CI check keeps the PR a draft (no `gh pr ready` call) and the item not `done`, with a `CI:` line naming the check; routine worker approvals are answered with the persistent option and logged on the board, a planner's source edit is rejected, a merge or an outside `rm -rf` is relayed tagged and never run while a routine fetch beside them is still answered, and an unattended force-push is rejected as `assumed`; asked to do the work itself, the manager delegates anyway; main never touched |
-| triage-issues | `gh` shim serving 3 issues (easy win matching a planted bug, duplicate pair, needs-info), logging all calls to `.gh-calls.log` | duplicates clustered; easy win grounded in `src/export.py`; report-only prompts produce **zero** `issue edit/close/comment` calls; labels-only produces `issue edit` and nothing else |
-| file-issues | `gh` shim serving an open bug (#7, last row dropped), a closed feature (#3, `--header`), the label vocabulary, and recording what `issue create` would file under `.fixture/created-*`; an unauthenticated variant | a new bug is filed with a convention title, existing labels only, and the five body sections citing `src/export.py`; an open or closed match is linked instead of filed; a fix-it-too request leaves source, branch and HEAD untouched with no PR call; planted secrets never reach the issue; unauthenticated `gh` stops with no create |
-
-The condensed suites retain 11 batch-merge cases (6 positive / 5 negative)
-and 19 manager cases (14 positive / 5 negative). `bm-h1` covers numeric and URL
-inputs together, including a conflict to resolve and an already-merged PR; `bm-h4`
-checks attribution and branch restoration, and `bm-h6` checks review without
-fixing. Manager implementation and review delegation cases stay separate
-because they guard different forbidden actions.
 
 The manager suite is mostly slices of the loop, sized to the default
 900-second trial. Its one full end-to-end case, `mg-h3`, runs a coordinator

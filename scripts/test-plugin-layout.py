@@ -18,20 +18,21 @@ PLUGIN_NAME = "agents-library"
 DESCRIPTION_WORD_CEILING = 60
 DESCRIPTION_CHAR_CEILING = 420
 AGENT_WORD_CEILING = 1800
-# Per-skill root ceilings, keyed by name: each is the current size rounded up.
-# domains/, lenses/, references/ are loaded on demand and not budgeted here.
+# Per-skill ceilings, keyed by name: each is the current size rounded up.
+# Skills are thin single files, so SKILL.md is the whole budget (only scripts/
+# ship beside it, except the manager's references/).
 SKILL_ROOT_WORD_CEILINGS = {
-    "batch-merge-prs": 700,
-    "describe-codebase": 1000,
-    "file-issues": 1100,
-    "install-agents": 1400,
+    "batch-merge-prs": 900,
+    "describe-codebase": 650,
+    "file-issues": 750,
+    "install-agents": 750,
     "manager": 1550,
-    "plan-feature": 1300,
-    "review-design": 1800,
-    "review-pr": 2200,
-    "review-ux-psychology": 3000,
-    "simplify-sweep": 1800,
-    "triage-issues": 2800,
+    "plan-feature": 700,
+    "review-design": 750,
+    "review-pr": 800,
+    "review-ux-psychology": 900,
+    "simplify-sweep": 700,
+    "triage-issues": 1000,
 }
 # One-way routing hints the mutual-routing test tolerates, as (from, to):
 # `from`'s description names `to`, but `to` does not name `from` back.

@@ -250,12 +250,12 @@ loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode and Kilo register them as
-  subagents). `skills/<name>/SKILL.md` are 11 skills; all but file-issues are orchestrators that fan out to
-  sub-prompt files in `domains/` (review-pr, review-design,
-  review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
-  plan-feature), or
-  `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
-  also carries an eval suite in `evals/cases.json`. Deterministic
+  subagents). `skills/<name>/SKILL.md` are 11 skills. Skills are **thin**: one
+  `SKILL.md` that states the goal, what good looks like, and the hard
+  boundaries, and leaves the how to the model — no phase machinery, record
+  schemas or per-lens prompt files, so a skill improves as the model does.
+  Only manager keeps `references/`. Deterministic
+Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
   main already contains), `merge-prs.sh` (which auto-names the target branch
@@ -290,26 +290,17 @@ loads and executes.
   target project's `.<host>/`) of the checked items. `--yes` skips the
   checklist for unattended runs. install-agents keeps its own script because
   a skill installed into opencode or Kilo carries only its own directory.
-- **Skill shape** — the review and survey skills follow Phase 0 *orient* →
-  Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
-  review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
-  each finding) between fan-out and consolidate, so their consolidate step is
-  Phase 3. plan-feature investigates integration and verification in parallel
-  when useful (locally for small changes or hosts without delegation), then
-  produces an implementation plan and saves it when requested. triage-issues
-  follows the same orient → fan out → consolidate shape and then adds
-  *decide* → *act* → *summarize* phases, acting only on what was approved.
-  batch-merge-prs takes the user's PR list as the selection: orient and
-  classify → merge onto a new local branch, resolving conflicts or skipping
-  them with a reason → test under the project's rules,
-  attributing failures → review with review-pr → report; inside Herdr its
-  reviewer and helpers run in tabs and its tests in a pane
-  (`references/herdr.md`, self-contained for standalone installation,
-  including its approval rule: routine worker prompts answered and logged,
-  escalations relayed),
-  otherwise as native subagents and plain shell.
-  install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger). file-issues is a
+- **Skill shape** — a thin skill is frontmatter plus a short body: overview,
+  when (not) to use, principles (lenses listed inline, a line each), boundaries
+  (read-only unless asked, per-action approval, never push or implement where
+  the skill says so, lint/test gate before any commit), and, where the skill
+  ships `scripts/`, how to call them. Parallel investigation and independent
+  re-checking of findings are one sentence each, not a protocol. batch-merge-prs
+  takes the user's PR list as the selection and merges it onto a new local
+  branch through its scripts, resolving or skipping conflicts, testing,
+  reviewing with review-pr, and reporting; it never pushes or closes PRs.
+install-agents installs through its script after one confirmation and then
+  schedules. file-issues is a
   long-lived linear loop with no fan-out (accept a description → search
   open and closed issues → ground it in code → `gh issue create` → report
   the URL → wait) that files issues and never implements. manager turns
@@ -352,7 +343,7 @@ loads and executes.
   created with generated notes. **Those release notes are the changelog** —
   there is no `CHANGELOG.md`; don't create one. PR
   titles are load-bearing and CI-checked (`.github/workflows/pr-title.yml`).
-  Never add the skill evals to any workflow — they are manual-only
+  Never add the manager evals to any workflow — they are manual-only
   (`docs/evals.md`).
 - **No auth / error handling / logging / database / migrations** — agents
   inspect *target* projects for these; this repo holds none. The only durable
@@ -360,17 +351,7 @@ loads and executes.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
   (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
-  the in-skill finding records sub-agents return (`{id, severity, domain,
-  location, problem, measured, gap, fix, effort}` for review-pr, which its verify
-  pass then annotates with `{verdict, confidence}`; `{id, severity, lens,
-  principle, location, problem, measured, fix, effort}` for review-design;
-  `{id, kind, severity, lens, location, problem, measured, fix, effort}` for
-  simplify-sweep; `{id, severity, lens, principle, location, problem, fix,
-  hypothesis, effort}` for review-ux-psychology, which (like review-pr) runs a verify pass that annotates
-  survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
-  describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
-  plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
+  the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
   Follow-ups, Confidence}` for manager, with the gate-log and CI-log format in
   `references/console.md` (`command:`/`head:`/`exit:`) and the board's
   `{time, item, worker=kind, asked, option}` approvals-answered rows there
@@ -407,8 +388,7 @@ loads and executes.
 - **Commands** — `bash scripts/check.sh` runs the fast local gate: shell/JSON
   syntax, unused Python imports (`scripts/check-unused-imports.py`), Claude/Codex packaging contracts (`scripts/test-plugin-layout.py`),
   shared frontmatter fields, the fix-everywhere contract
-  (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
-  (`scripts/test-batch-merge-approval.py`), merge-prs.sh's conflict pause,
+  (`scripts/test-fix-everywhere.py`), merge-prs.sh's conflict pause,
   `--continue` and `--skip` against real temporary repositories
   (`scripts/test-batch-merge-prs.sh`), the README table of contents and in-page
   links (`scripts/test-readme-toc.py`), one slash command per fenced block in
@@ -425,18 +405,21 @@ loads and executes.
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
   tests (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
-  against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval
-  runner's offline transcript parsing and delegation traces
-  (`scripts/test-run-evals.py`), and eval case validation (`--dry-run`).
+  against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the skills'
+  other scripts against temporary repositories and a stub `gh` —
+  run-gate.sh, test-commands.sh, check-prs.sh, list-issues.sh
+  (`scripts/test-skill-scripts.py`) — the eval runner's offline transcript
+  parsing and delegation traces (`scripts/test-run-evals.py`), and eval case
+  validation (`--dry-run`).
   Requires Python 3.9+ and Bash (`node` optional); no host CLI, model calls, credentials, or
   installs — safe to run as often as needed.
   These are repository contracts, not full host schema or arbitrary YAML
-  validation. Lint/format/build: no separate tools. Behavioral skill
-  evals: `python3 run_evals.py` — **manual-only and expensive** (real agent
-  runs); never wire them into CI, hooks, or push automation. See `docs/evals.md`.
-  Prose quality is still enforced by the bars in this guide and each SKILL.md.
+  validation. Lint/format/build: no separate tools. Skills have no LLM
+  evals: their behavior is the model's, and what is deterministic is a script
+  with a test. Only manager still carries `evals/cases.json`, run by
+  `python3 run_evals.py` — **manual-only and expensive** (real agent runs);
+  never wire them into CI, hooks, or push automation. See `docs/evals.md`.
 
 **Where to look:** README.md for install and update paths; this file for the
 working guide; `agents/architect.md` for the agent shape;
-`skills/review-pr/SKILL.md` for the orchestrator shape, and its `domains/` for
-the shape of a sub-prompt.
+`skills/review-pr/SKILL.md` for the shape of a thin skill.
