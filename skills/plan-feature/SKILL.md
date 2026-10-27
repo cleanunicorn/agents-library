@@ -129,8 +129,7 @@ it does not prove the proposed behavior works.
 
 ## Phase 3 — Deliver or persist
 
-Return the plan in chat unless the user requested a file. For an authorized
-save, use the requested path or the repository's plan convention; if neither
+Return the plan in chat unless the user requested a file. To save, use the requested path or the repository's plan convention; if neither
 exists, choose `docs/plans/<feature-slug>.md` and report it. Read an existing
 target first and update only the relevant plan, preserving unrelated content.
 

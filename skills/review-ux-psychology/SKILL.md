@@ -26,11 +26,9 @@ Three properties frame everything below:
   psychology it serves is opinion, not review — the six lenses below are the
   rubric (decision fatigue, goal gradient, reciprocity, endowment/IKEA, loss
   aversion, anchoring/contrast). Each finding names its principle.
-- **Every finding names the metric it moves.** This skill exists to move a
-  specific target metric (activation, signup conversion, trial-to-paid, checkout
-  completion, feature adoption, retention). Each finding states which metric it is
-  meant to move and in which direction, so findings can be ranked by leverage and
-  validated afterward. Every fix rests on a *true* signal — real progress the
+- **Every finding names the metric it moves.** Each finding states which target
+  metric it is meant to move and in which direction, so findings can be ranked by
+  leverage and validated afterward. Every fix rests on a *true* signal — real progress the
   user made, a real reference number, a real stake: a fabricated one (fake
   progress, a phantom reference price, invented urgency) does not durably move a
   real metric, because users learn and the effect evaporates.
@@ -112,9 +110,10 @@ Each sub-agent's prompt is assembled from three parts:
    for.
 3. **The output contract** — the finding schema below, with the instruction:
    *analysis only; do not modify any files; read the files (and look at the
-   provided frames) as you need; every fix must rest on a true signal so it
-   durably moves the metric; name the metric each finding targets; return findings
-   in this exact schema, or an empty list if you find nothing worth raising.*
+   provided frames) as you need; every fix must rest on a true signal, reuse the
+   project's existing patterns and components, and name the metric it targets
+   (the `hypothesis`: metric and expected direction); return findings in this
+   exact schema, or an empty list if you find nothing worth raising.*
 
 The six lenses and their files:
 
@@ -132,9 +131,9 @@ never block the whole review on one lens.
 
 ## Phase 2 — Verify findings (don't trust the finders blindly)
 
-The finders are optimistic: each is primed to see its principle everywhere, so the
-raw pile they return contains false positives. Never present a finding — and
-never, in the autonomous loop, apply one — on a finder's word alone.
+Each finder is primed to see its principle everywhere, so the raw pile contains
+false positives. Never present a finding — and never, in the autonomous loop,
+apply one — on a finder's word alone.
 
 Dispatch at most four verification batches concurrently, grouped by lens and
 severity. A fresh, skeptical verifier that produced none of its batch's findings
@@ -155,9 +154,6 @@ Each verifier's prompt is:
    `refuted` when the evidence does not clearly support the finding. Return the
    verdict schema below.*
 
-Reading the **real code/flow**, not the finder's snippet, is the point — a finder
-reasoning from a partial view is exactly where false positives come from.
-
 Each verifier returns a list with one record per finding:
 
 ```
@@ -172,8 +168,7 @@ Fold the verdicts back into the findings:
 
 - **confirmed** → carries through to Phase 3, tagged ✓ verified.
 - **uncertain** → carries through, tagged ⚠ unverified, so the user knows it's a
-  judgment call — and so the autonomous loop leaves it for the user instead of
-  auto-applying it.
+  judgment call; the autonomous loop leaves it for the user.
 - **refuted** → dropped from the main list. Keep a short **filtered-out tally**
   (count, plus each dropped finding's ID and one-line reason) so the user can see
   what was screened and push back. Never silently discard.
@@ -208,10 +203,10 @@ its verification tag and the metric it targets:
         gate only the full breakdown behind signup — ↑ signup conversion — medium
 ```
 
-Then summarize: how many findings at each severity, which lenses were quiet, how
-many candidates verification filtered out (list those with one-line reasons), and
-whether the review was rendered or code-only. Note which findings are **structural
-product decisions** vs. **mechanical edits** (see Phase 5). Keep it skimmable.
+Then summarize: findings per severity, which lenses were quiet, the candidates
+verification filtered out (one-line reasons), and whether the review was rendered
+or code-only. Note which findings are **structural product decisions** vs.
+**mechanical edits** (see Phase 5). Keep it skimmable.
 
 ## Phase 4 — Decide
 
@@ -280,9 +275,7 @@ id:         <lens>-<n>            e.g. defaults-1
 severity:   critical | important | nice-to-have   (🔴 | 🟡 | 🟢)
 lens:       defaults | progress | reciprocity | endowment | loss-aversion | anchoring
 principle:  the named psychology principle the finding traces to
-            (e.g. "decision fatigue", "goal-gradient effect", "reciprocity",
-             "endowment/IKEA effect", "loss aversion / status-quo bias",
-             "anchoring / contrast effect")
+            (the lens prompt gives its name)
 location:   path:line, or the screen/step name when it's about flow sequence
 problem:    what in the UX works against how the user thinks, and the moment it
             costs on the target metric (drop-off, abandonment)

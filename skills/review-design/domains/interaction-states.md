@@ -5,10 +5,6 @@ whether the interface communicates that it's interactive, acknowledges every
 action, and moves with purpose — the difference between a UI that feels alive and
 one that feels dead or broken.
 
-Judge against the project's **own** component states, transition tokens, and
-overlay patterns (from the design-system map you were given). Reuse those in
-every fix.
-
 ## What to look for
 
 ### Affordances & signifiers

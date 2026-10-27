@@ -54,9 +54,8 @@ conversion. A true default removes work; a self-serving one just relocates it.
 Set `principle` to "decision fatigue" or "smart defaults". `problem` names the
 decisions forced and the moment the user is likely to stall or leave; `fix` is
 concrete — which field to prefill with which common value, which choices to
-curate or disclose progressively, what outcome the button should preview —
-reusing the project's existing form/default patterns. `hypothesis` names the
-metric the fix should move and the direction (e.g. "↑ form completion; watch
-per-field drop-off and correction rate"). Severity: 🔴 when a blank/overloaded
+curate or disclose progressively, what outcome the button should preview.
+`hypothesis` e.g. "↑ form completion; watch per-field drop-off and correction
+rate". Severity: 🔴 when a blank/overloaded
 high-stakes step is a likely abandonment point; 🟡 for a missing smart default or
 an outcome-blind button; 🟢 for refinement.

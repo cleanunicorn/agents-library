@@ -55,8 +55,7 @@ Set `principle` to "goal-gradient effect". `problem` names where the flow reads
 as "standing still" and the drop-off moment it invites; `fix` is concrete —
 which already-done step to count, what the starting percentage should be and why
 it's honest, how to reframe distance as momentum, where to add the missing
-indicator — reusing the project's existing progress component. `hypothesis`
-names the metric the fix should move and the direction (e.g. "↑ onboarding
-completion; watch per-step drop-off"). Severity: 🔴 for a long flow that opens at
+indicator (reusing the project's progress component). `hypothesis` e.g. "↑
+onboarding completion; watch per-step drop-off". Severity: 🔴 for a long flow that opens at
 zero with no visible finish (a prime drop-off point); 🟡 for an uncounted head
 start or distance-over-momentum framing; 🟢 for refinement.

@@ -16,8 +16,7 @@ user wants this project to maintain itself: the single-purpose agents
 hygiene, test gaps, visual design, UX polish) installed into the repo and run
 on a recurring schedule, each run producing at most one small reviewable PR.
 Your job is to locate the agent definitions, install the chosen ones into
-`.claude/agents/`, and wire a periodic schedule — **weekly by default**, unless
-the user decides something else.
+`.claude/agents/`, and wire a periodic schedule — **weekly by default**.
 
 ## Phase 0 — Orient & locate the agent sources
 
@@ -31,10 +30,9 @@ the user decides something else.
      `agents-library` install containing `agents/*.md`.
    - Otherwise ask the user for the path to their agents-library checkout.
 2. **Confirm the target.** The install target is the current project's repo
-   root (`git rev-parse --show-toplevel`; the current directory outside git —
-   installing still works, but warn that the agents themselves expect a git
-   repo, since every run branches and opens a PR, and skip mechanisms that need
-   a remote).
+   root (`git rev-parse --show-toplevel`). Outside git, use the current
+   directory, warn that every agent run branches and opens a PR, and skip
+   mechanisms that need a remote.
 3. **Detect prior installs.** List what already exists in `.claude/agents/` so
    the proposal distinguishes fresh installs from updates, and look for an
    existing `.github/workflows/periodic-agents.yml` or scheduled jobs from an

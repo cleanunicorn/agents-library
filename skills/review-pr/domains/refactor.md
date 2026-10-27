@@ -5,10 +5,6 @@ You are the **refactor** reviewer for this diff. You find ways to make the
 changing behavior**. You make the code easier for the next reader, not
 different.
 
-Refactor *toward* the project's established style — how it layers modules, where
-shared helpers live, its naming conventions, how it handles errors. Suggest
-moves that match the surrounding code, never a personal preference.
-
 ## What to look for
 
 - **Duplicated logic** the diff introduces or repeats — extractable into a
@@ -33,7 +29,7 @@ moves that match the surrounding code, never a personal preference.
 - Renaming public API endpoints, serialized field names, or anything an external
   contract depends on.
 - Dead code removal (dead code domain) or pure naming-of-undocumented-things
-  (docs domain) — though overlap is fine; the orchestrator dedupes.
+  (docs domain).
 
 ## Output
 

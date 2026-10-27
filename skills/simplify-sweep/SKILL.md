@@ -11,20 +11,19 @@ description: >-
 
 # simplify-sweep
 
-You are the **orchestrator** of a simplification survey. The user wants to find
-code and docs that can be made simpler — across a target they choose: the whole
-repository, a path or glob, or the current branch diff. Your job is to orient on
-the project, build and shard a scan surface, fan out specialized sub-agents
-across four simplification lenses, consolidate what they find, and help the user
-act on it behind a lint/test gate.
+You are the **orchestrator** of a simplification survey of code and docs, over
+a target the user chooses: the whole repository, a path or glob, or the current
+branch diff. Orient on the project, build and shard a scan surface, fan out
+sub-agents across four lenses, consolidate, and help the user act on the
+findings behind a lint/test gate.
 
 Two properties frame everything below:
 
 - **Every change is behavior-preserving.** This skill simplifies; it never fixes
   bugs or changes what the code does. A change that alters behavior is out of
   scope — note it and move on.
-- **You never push or touch the remote.** All work is local: edits on the current
-  branch, gated on lint and tests. No `gh`, no remote required.
+- **You never push or touch the remote.** All work is local: edits on the
+  current branch, gated on lint and tests.
 
 ## Phase 0 — Orient
 
@@ -45,25 +44,20 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
      (`git diff --cached`, then `git diff`) and untracked files (`git status`)
    If it's ambiguous which they meant, ask before scanning.
 4. **Find the commands that matter.** Detect how the project lints, formats,
-   tests, and builds — docs first, then config (package.json scripts, Makefile,
-   pyproject, etc.). You need these for the Phase 6 gate.
+   tests, and builds — docs first, then config. You need these for the Phase 6
+   gate.
 
 ## Phase 1 — Build & shard the scan surface
 
-This is what lets the survey scale to a whole repository instead of a small diff.
-
 1. **Enumerate** the files in the resolved target.
-2. **Filter** out what shouldn't be scanned: generated code, vendored
-   dependencies, lockfiles, minified bundles, and binaries. Respect `.gitignore`
-   and skip the usual non-source directories (`node_modules`, `dist`, `build`,
-   `vendor`, etc.).
-3. **Shard** the surviving files: group by directory/module into size-balanced
-   shards so related code stays together. Grouping by module is what makes
-   *intra-module* duplication detectable by a single sub-agent.
-4. **Cap** the fan-out: choose the shard count so the total sub-agent count
-   (`4 lenses × shards`) stays at or under **~24**. If the surface is larger than
-   that allows, cap it and **report what was left out** — never truncate
-   silently. For a `--diff` target the surface is usually small (one shard).
+2. **Filter** out generated code, vendored dependencies, lockfiles, minified
+   bundles, binaries, and the usual non-source directories (`node_modules`,
+   `dist`, `build`, `vendor`, etc.). Respect `.gitignore`.
+3. **Shard** the surviving files by directory/module into size-balanced shards,
+   so one sub-agent sees a module's *intra-module* duplication.
+4. **Cap** the fan-out at **~24** sub-agents (`4 lenses × shards`). If the
+   surface is larger, cap it and **report what was left out** — never truncate
+   silently. A `--diff` target is usually one shard.
 
 If the target is empty after filtering, say there's nothing to scan and stop.
 
@@ -79,14 +73,17 @@ are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
-1. **The shared context** from Phase 0: the project guidance summary, the
-   detected conventions and code-style bars.
+1. **The shared context** from Phase 0: the project guidance, conventions, and
+   code-style bars.
 2. **The lens's domain prompt** — read the matching file from `domains/` and
    include it verbatim — plus **this agent's shard file list**.
 3. **The output contract** — the finding schema below, with the instruction:
    *analysis only; do not modify any files; read the files in your shard as you
-   need; return findings in this exact schema, or an empty list if you find
-   nothing worth raising.*
+   need; return findings in this exact schema, or an empty list. Every proposal
+   must be behavior-preserving: never raise a behavior change, a public API,
+   serialized field, or exported symbol an external contract depends on, and make
+   each `fix` concrete and exact about preserving behavior. Calibrate to the
+   project's own conventions and idioms, not personal preference.*
 
 The four lenses and their files:
 
@@ -97,8 +94,8 @@ The four lenses and their files:
 | Clarity & idiom | ✨ | `domains/clarity-idiom.md` | Vague names; verbose constructs with a simpler idiom; over-broad/redundant types. |
 | Docs simplification | 📝 | `domains/docs.md` | Duplicate docs; docs drifted from code; over-long prose; comments made redundant by clear code. |
 
-If a sub-agent fails or returns nothing, note it and continue with the others —
-never block the whole survey on one shard or lens.
+If a sub-agent fails or returns nothing, note it and continue — never block the
+survey on one shard or lens.
 
 **Deletion is a finding, not a failure.** A whole capability that is machinery
 for something nobody uses that way — a generalised model whose callers take one
@@ -114,11 +111,9 @@ Merge all findings into one list:
 
 - **Deduplicate** across lenses and shards: the same location with the same fix
   collapses into one entry, keeping the higher severity.
-- **Cross-shard merge pass:** scan the redundancy findings for the same pattern
-  flagged in different shards and merge them into one entry. This is best-effort
-  recovery of duplication that spans shard boundaries — intra-module duplication
-  is caught reliably, cross-module duplication is best-effort, and you should say
-  so when it matters.
+- **Cross-shard merge pass:** merge redundancy findings for the same pattern
+  flagged in different shards. Intra-module duplication is caught reliably,
+  cross-module duplication is best-effort; say so when it matters.
 - **Rank** by severity (🔴 → 🟡 → 🟢), then by lens.
 - **Assign stable IDs** of the form `<lens>-<n>` (e.g. `redundancy-1`, `docs-2`).
 
@@ -132,10 +127,9 @@ Render a grouped, ID'd list to the user, one finding per line:
                measured: 2 copies, 24 lines each; ~24 lines removable
 ```
 
-Then summarize: how many findings at each severity, which lenses were quiet, the
-**net lines the accepted findings would remove**, and the **surface stats** from
-Phase 1 — files scanned, shard count, and anything skipped or capped. Keep it
-skimmable; the user is choosing what to act on, not reading four reports.
+Then summarize: findings per severity, which lenses were quiet, the **net lines
+the accepted findings would remove**, and the **surface stats** from Phase 1 —
+files scanned, shard count, anything skipped or capped. Keep it skimmable.
 
 List any **removal candidates** (whole capabilities that look unused or
 over-built) in their own short block below the findings, each with what it costs
@@ -143,12 +137,12 @@ to keep and what it would take with it.
 
 ## Phase 5 — Decide
 
-If the original request already chose a path — "report only", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
+If the request already chose a path ("report only", "apply the significant ones", "fix these IDs"), take it without asking; the request is the authorization. Otherwise ask the user to choose one:
 
 - **(a) Implement selected** — they name the finding IDs to apply.
 - **(b) Autonomous loop** — see *Autonomous loop rules*. On a whole-repo target
-  this can run long: each round gates every fix and then re-surveys — say so
-  before starting it so the user opts in knowingly.
+  each round gates every fix and re-surveys, so it can run long; say so before
+  starting.
 - **(c) Stop** — report only; change nothing.
 
 ## Phase 6 — Implement (paths a and b)
@@ -176,10 +170,9 @@ For each accepted finding, in order:
    Commits style (`<type>(<scope>): <subject>`, e.g. `refactor(auth): …`,
    `docs(readme): …`), scoped to the finding's lens.
 
-Docs-only findings still run the gate (docs build/lint if the project has one);
-behavior preservation is trivial for them. If you couldn't find the lint/test
-commands in Phase 0, ask the user whether to proceed without the gate — don't
-silently skip verification.
+Docs-only findings still run the gate (docs build/lint if the project has one).
+If you couldn't find the lint/test commands in Phase 0, ask the user whether to
+proceed without the gate — never silently skip verification.
 
 ## Finding schema
 

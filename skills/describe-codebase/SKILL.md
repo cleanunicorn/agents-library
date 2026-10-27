@@ -32,8 +32,7 @@ findings to fix.
 3. **Gather a top-level listing** of the resolved target (directory tree, key
    files) to bundle into each explorer so they don't each re-enumerate the tree.
 
-No main-branch detection and no `gh` are required — this works on any checkout,
-including a fresh clone. If the target has no source files in scope, say there's
+This works on any checkout, including a fresh clone. If the target has no source files in scope, say there's
 nothing to map and stop.
 
 ## Phase 1 — Fan out (shape depends on scope)
@@ -56,7 +55,7 @@ Each sub-agent's prompt is assembled from three parts:
    this exact schema with a `file:line` reference on every finding, or an empty
    list if you find nothing.*
 
-**Map scopes (whole-repo, path) — three lens explorers:**
+**Map scopes (whole-repo, path) — one explorer per lens:**
 
 | Explorer | Emoji | File | Maps |
 |----------|-------|------|------|
@@ -99,15 +98,13 @@ For a **map scope**, render the brief in this shape:
 
 Fill each line from the explorers' findings, each pointing at a `file:line`. The
 **Start here** list is your synthesis — the handful of files that best orient a
-newcomer, drawn from across the three lenses. If an explorer reported "not found"
+newcomer, drawn from across the lenses. If an explorer reported "not found"
 for something (e.g. no central config, commands undiscoverable), mark that line
 "not found" rather than omitting or fabricating it.
 
 For a **flow trace**, render an ordered, numbered walkthrough instead: each hop a
 `file:line` reference, from the entry point through to the data/external boundary
 and back, with the meaningful branch points called out.
-
-Keep it skimmable — an orientation, not an essay.
 
 ## Phase 3 — Persist only when requested
 

@@ -11,19 +11,18 @@ description: >-
 
 # review-design
 
-You are the **orchestrator** of a multi-lens visual-design review. The user
-wants a UI judged against core UI/UX design principles — across a target they
-choose: a single view or component, a path or glob of frontend files, or the
-current branch diff. Your job is to orient on the project's design system, fan
-out specialized sub-agents across five design lenses, consolidate what they find,
-and help the user act on it behind a lint/build gate.
+You are the **orchestrator** of a multi-lens visual-design review of a UI,
+judged against core UI/UX principles, over a target the user chooses: a view or
+component, a path or glob of frontend files, or the current branch diff. Orient
+on the project's design system, fan out sub-agents across five design lenses,
+consolidate, and help the user act on the findings behind a lint/build gate.
 
 Two properties frame everything below:
 
 - **Every finding traces to a principle.** A design critique that can't name the
   principle it serves is taste, not review — the lenses below are the rubric.
-- **You never push or touch the remote.** All work is local: edits on the current
-  branch, gated on the project's lint and build. No `gh`, no remote required.
+- **You never push or touch the remote.** All work is local: edits on the
+  current branch, gated on the project's lint and build.
 
 ## Phase 0 — Orient
 
@@ -32,8 +31,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
 1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
    `CONTRIBUTING`, and any design-system or component-library notes. Capture the
    conventions, commit format, and confidence-indicator rules verbatim.
-2. **Learn the design system.** This is the heart of orientation — the lenses are
-   judged against the project's *own* system, not generic ideals:
+2. **Learn the design system.** The heart of orientation — lenses judge against
+   the project's *own* system, not generic ideals:
    - the **spacing scale** (4px/8px base?) and layout grid;
    - the **type scale**, typefaces, and base body size;
    - the **color palette**, neutrals, and semantic colors, plus the **theme(s)**
@@ -41,8 +40,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
    - the **elevation/shadow tokens**;
    - the **component library** — how buttons, inputs, cards, modals, and icons
      are built and themed.
-   Find where these live (a tokens file, a Tailwind/theme config, a component
-   directory) and capture them so findings reuse real tokens, not invented ones.
+   Find where these live (tokens file, theme config, component directory) and
+   capture them so findings reuse real tokens, not invented ones.
 3. **Detect the main branch** as `<main>`: `git symbolic-ref
    refs/remotes/origin/HEAD`, else whichever of `main`/`master` exists — never
    hard-code `main`.
@@ -56,8 +55,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
      needs a focused surface.
    Capture the resolved file list.
 5. **Find the commands that matter.** Detect how the project lints, formats, and
-   builds the frontend — docs first, then config (package.json scripts, etc.).
-   You'll need these for the gate in Phase 5.
+   builds the frontend — docs first, then config. You need these for the Phase 5
+   gate.
 
 If the resolved target has **no visual surface** (no components, templates,
 styles, or rendered output — e.g. it's pure backend or a library), say there's
@@ -65,9 +64,8 @@ nothing to design-review and stop.
 
 ## Phase 1 — Fan out the review
 
-Dispatch all five independent lens sub-agents concurrently, batching to the
-host's limits. If the target is large, give each sub-agent the file list and let
-it read what its lens needs.
+Dispatch all five lens sub-agents concurrently, batching to the host's limits.
+Give each the file list and let it read what its lens needs.
 
 **Model choice:** honor a user-selected model. Otherwise use an explicitly
 available cheaper model for bounded read-only review, or inherit the session
@@ -76,16 +74,17 @@ are missing.
 
 Each sub-agent's prompt is assembled from three parts:
 
-1. **The shared context** you gathered in Phase 0: the project guidance summary,
-   the **design-system map** (tokens, scales, palette, theme, components), and
-   the resolved target file list (plus the diff, for a `--diff` target).
+1. **The shared context** from Phase 0: the project guidance summary, the
+   **design-system map** (tokens, scales, palette, theme, components), and the
+   resolved target file list (plus the diff, for a `--diff` target).
 2. **The lens prompt** — read the matching file from `domains/` and include it
-   verbatim. That file is the sub-agent's entire instruction set for what to look
-   for.
+   verbatim; it is the sub-agent's entire instruction set for what to look for.
 3. **The output contract** — the finding schema below, with the instruction:
    *analysis only; do not modify any files; read the files in the target as you
-   need; return findings in this exact schema, or an empty list if you find
-   nothing worth raising.*
+   need; return findings in this exact schema, or an empty list. Judge against
+   the project's own design-system map, and make every `fix` concrete and
+   reuse its tokens, scales, and components — never invent a value, color, font,
+   or pattern.*
 
 The five lenses and their files:
 
@@ -97,16 +96,16 @@ The five lenses and their files:
 | Depth, icons & buttons | 🧱 | `domains/depth-icons-buttons.md` | Consistent shadows/elevation (one light source); icon style/weight; button weight maps to priority; touch targets. |
 | Interaction, states & motion | ⚡ | `domains/interaction-states.md` | Signifiers (looks interactive); all states incl. focus; motion timing & reduced-motion; overlay structure. |
 
-If a sub-agent fails or returns nothing, note it and continue with the others —
-never block the whole review on one lens.
+If a sub-agent fails or returns nothing, note it and continue — never block the
+review on one lens.
 
 ## Phase 2 — Consolidate
 
 Merge all findings into one list:
 
 - **Deduplicate across lenses.** The same location with the same fix collapses
-  into one entry; keep the higher severity. (Several lenses will legitimately
-  flag the same element for different reasons — surface that once.)
+  into one entry; keep the higher severity (lenses may flag one element for
+  different reasons — surface it once).
 - **Rank** by severity (🔴 → 🟡 → 🟢), then by lens (hierarchy and color/contrast
   before micro-polish — lead with what most changes how the UI reads).
 - **Assign stable IDs** of the form `<lens>-<n>` (e.g. `hierarchy-1`, `color-2`).
@@ -120,12 +119,12 @@ Render a grouped, ID'd list to the user, one finding per line:
           fails WCAG AA — use the `--text-secondary` token (#595959, 7.0:1) — small
 ```
 
-Then summarize: how many findings at each severity, and which lenses were quiet.
-Keep it skimmable — the user is choosing what to act on, not reading five essays.
+Then summarize: findings per severity and which lenses were quiet. Keep it
+skimmable.
 
 ## Phase 4 — Decide
 
-If the original request already chose a path — "report only", "fix everything", "apply the significant ones", "fix these IDs" — take that path without asking; the request is the authorization. Otherwise ask the user to choose one path:
+If the request already chose a path ("report only", "fix everything", "apply the significant ones", "fix these IDs"), take it without asking; the request is the authorization. Otherwise ask the user to choose one:
 
 - **(a) Implement selected** — they name the finding IDs to apply.
 - **(b) Autonomous loop, significant only** — see *Autonomous loop rules*.
@@ -161,11 +160,11 @@ For each accepted finding, in order:
    continue with the remaining findings. Never commit red.
 5. **Commit on the current branch** — one commit per finding, Conventional
    Commits style (`<type>(<scope>): <subject>`, e.g. `fix(ui): …`,
-   `style(banner): …`), scoped to the finding's lens. One commit per finding
-   keeps the history reviewable and lets any single fix be reverted cleanly.
+   `style(banner): …`), scoped to the finding's lens, so any single fix can be
+   reverted cleanly.
 
 If you couldn't find the lint/build commands in Phase 0, ask the user for them or
-whether to proceed without the gate — don't silently skip verification.
+whether to proceed without the gate — never silently skip verification.
 
 ## Finding schema
 

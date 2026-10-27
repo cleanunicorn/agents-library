@@ -58,11 +58,10 @@ manufacturing one.
 Set `principle` to "loss aversion / status-quo bias". `problem` names the weak
 (gain/no-stakes) framing and the inaction it invites; `fix` is concrete — the
 real loss to surface, the specific owned items to name, the dismiss copy that
-makes the trade-off honest — reusing the project's existing patterns. **Every
+makes the trade-off honest. **Every
 proposed loss must be true**; if there's no real loss, don't invent one — say
-the prompt may simply lack genuine stakes. `hypothesis` names the metric the fix
-should move and the direction (e.g. "↑ upgrade/retention; watch dismiss rate and
-reactivation"). Severity: 🔴 for a consequential decision (downgrade,
+the prompt may simply lack genuine stakes. `hypothesis` e.g. "↑ upgrade/retention; watch dismiss
+rate and reactivation". Severity: 🔴 for a consequential decision (downgrade,
 cancellation, deletion) that hides a real loss the user needs to see, or
 gain-framing at a key metric moment with a strong real loss going unused; 🟡 for
 gain-framing where an honest loss frame would land; 🟢 for refinement.

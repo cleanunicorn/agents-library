@@ -32,10 +32,9 @@ Two guardrails frame everything below:
 1. **Label the workspace.** Run
    `bash <skill>/scripts/rename-herdr-workspace.sh issues`, `<skill>` being
    this skill's directory. Inside Herdr (`HERDR_ENV=1`, `HERDR_WORKSPACE_ID`
-   set) it renames the workspace to `issues` — no project name, since
-   Herdr's sidebar already shows each workspace's directory. Outside Herdr
-   it does nothing; a failed rename prints one warning and never blocks
-   startup. Run it once; do not retry it.
+   set) it renames the workspace to `issues`; outside Herdr it does nothing.
+   A failed rename prints one warning and never blocks startup. Run it once;
+   do not retry it.
 2. **Check `gh`.** `command -v gh` and `gh auth status`. Either failing →
    say which and stop.
 3. **Learn the repository's conventions**, once, and reuse them every loop:
@@ -117,8 +116,8 @@ For each description, in order:
 
 ## Requests that are not issues
 
-- **"Fix it", "implement it", "open a PR"** — decline in one line, keep the
-  session a desk, and offer to file or refine the issue.
+- **"Fix it", "implement it", "open a PR"** — decline per the first
+  guardrail and offer to file or refine the issue.
 - **Triage of existing issues** (labeling, closing, grooming the backlog) —
   out of scope here; the `triage-issues` skill does that.
 - **A question about the code** — answer briefly from what you read, then

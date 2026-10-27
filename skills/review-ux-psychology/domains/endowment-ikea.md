@@ -61,9 +61,8 @@ Set `principle` to "endowment/IKEA effect". `problem` names where commitment is
 asked against a blank slate and why leaving costs the user nothing there; `fix`
 is concrete — what the user should build/choose *before* the gate, which
 personalization to move earlier, the button copy change ("Sign up" →
-"Continue"), how to persist the pre-signup work — reusing the project's existing
-patterns. `hypothesis` names the metric the fix should move and the direction
-(e.g. "↑ signup completion; watch drop-off at the account step"). Severity: 🔴
+"Continue"), how to persist the pre-signup work. `hypothesis` e.g. "↑ signup
+completion; watch drop-off at the account step". Severity: 🔴
 for a commitment gate against a completely blank slate at a key drop-off; 🟡 for
 missed pre-commitment personalization or chore-framed button copy; 🟢 for
 refinement.

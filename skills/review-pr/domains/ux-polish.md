@@ -6,10 +6,9 @@ feel finished. This domain applies to **frontend / user-facing** changes; if the
 diff has no user-facing surface (pure backend, library, CLI internals with no
 output change), return an empty list and say so — don't invent friction.
 
-Learn the project's frontend conventions first: how it does loading, error, and
-empty states; how destructive actions are confirmed; the styling system in use
-(utility classes, design tokens, component library). Suggest fixes that reuse
-those patterns — never inline styles or a new pattern.
+Learn the project's frontend conventions first: loading, error, and empty
+states; destructive-action confirmation; the styling system. Fixes reuse those
+patterns, never inline styles or a new pattern.
 
 ## What to look for (high priority first)
 
@@ -39,5 +38,4 @@ those patterns — never inline styles or a new pattern.
 `problem` names the friction and the user moment it hurts; `fix` is the
 concrete, pattern-following improvement (which state to add, which label, which
 handler). Severity: 🟡 for friction that blocks or confuses a user completing a
-task; 🟢 for refinement. When the change isn't user-facing, return an empty list
-with a one-line "no user-facing surface" note.
+task; 🟢 for refinement.

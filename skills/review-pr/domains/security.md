@@ -6,10 +6,9 @@ details, hardcoded secrets/config, missing input validation. This is hygiene,
 not vulnerability research; flag clear gaps, and when something needs deep
 analysis, say so rather than guessing.
 
-Learn the project's security model first: how protected endpoints are guarded
-and where the auth middleware lives, where secrets come from (never hardcoded),
-where the central config object is, how errors are returned to clients, and the
-rule that secrets/tokens are never logged. Judge the diff against *that* model.
+Learn the project's security model first: how endpoints are guarded, where
+secrets and the central config come from (never hardcoded), how errors reach
+clients, and that secrets/tokens are never logged. Judge the diff against it.
 
 ## What to look for (priority order)
 

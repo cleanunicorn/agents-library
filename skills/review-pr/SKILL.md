@@ -12,22 +12,20 @@ description: >-
 # review-pr
 
 You are the **orchestrator** of a multi-domain review of the current branch:
-orient on the project, fan out ten review sub-agents, independently verify what
-they report, consolidate the findings that survive, and help the user act on
-them. The target is always the **local branch diff** — everything not yet in
-the main branch, plus uncommitted and untracked work — so it works before a PR
-exists, without `gh` or a remote.
+orient, fan out ten review sub-agents, verify what they report, consolidate the
+survivors, and help the user act on them. The target is always the **local
+branch diff** — everything not yet in the main branch, plus uncommitted and
+untracked work — so it works before a PR exists, without `gh` or a remote.
 
 ## Phase 0 — Orient
 
 Gather this context **once** and bundle it into every sub-agent's prompt.
 
-1. **Read the project's guidance.** Look for `AGENTS.md`, `README`, `CLAUDE.md`,
-   `CONTRIBUTING`, and any architecture notes. These tell you the layering,
-   conventions, commit style, and quality bars the change will be judged
-   against. If the project declares its own rules (commit format, confidence
-   indicators, code-style bars), capture them verbatim — the conventions domain
-   checks the diff against exactly these.
+1. **Read the project's guidance** (`AGENTS.md`, `README`, `CLAUDE.md`,
+   `CONTRIBUTING`, architecture notes): the layering, conventions, commit style,
+   and quality bars the change is judged against. Capture the project's own
+   declared rules (commit format, confidence indicators, code-style bars)
+   verbatim — the conventions domain checks the diff against exactly these.
 2. **Compute the review target.** Run `bash scripts/diff-target.sh` — it
    detects the main branch deterministically (call it `<main>`; never
    hard-code `main`) and prints the changed-file list: committed vs `<main>`,
@@ -40,9 +38,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
    branch detectable), ask the user which branch to diff against instead of
    guessing.
 3. **Find the commands that matter.** Detect how the project lints, formats,
-   tests, and builds — from the docs first, then config files (package.json
-   scripts, Makefile, pyproject, etc.). You'll need these for the gate in
-   Phase 5.
+   tests, and builds — docs first, then config files (package.json scripts,
+   Makefile, pyproject). Phase 5's gate needs them.
 
 If the branch is even with `<main>` and the working tree is clean, there's
 nothing to review — say so and stop.
@@ -67,7 +64,11 @@ Each sub-agent's prompt is assembled from three parts:
    look for.
 3. **The output contract** — the finding schema below, with the instruction:
    *analysis only; do not modify any files; return findings in this exact
-   schema, or an empty list if you find nothing worth raising.*
+   schema, or an empty list if you find nothing worth raising. Learn the
+   project's own patterns first and judge the diff against them, never against
+   taste; suggest fixes that reuse them. Raise only what this diff introduces or
+   touches, and stay in your domain — overlap between domains is merged in
+   Phase 3.*
 
 The ten domains and their files:
 
@@ -89,15 +90,14 @@ never block the whole review on one domain.
 
 ## Phase 2 — Verify findings (don't trust the finders blindly)
 
-The finders are optimistic: each is primed to raise problems in its lens, so the
-raw pile they return contains false positives. Never present a finding — and
-never, in the autonomous loop, apply one — on a finder's word alone. Every
-finding is independently re-checked here first.
+Finders are primed to raise problems in their lens, so the raw pile contains
+false positives. Never present a finding — or apply one — on a finder's word
+alone; every finding is re-checked here first.
 
 Dispatch at most four verification batches concurrently, grouped by domain and
-severity. A fresh, skeptical verifier that produced none of its batch's findings
-returns a separate verdict for every finding. Use the Phase 1 model rule.
-Each verifier's prompt is:
+severity. Each batch goes to a fresh verifier that produced none of its
+findings and returns a separate verdict for every one. Use the Phase 1 model
+rule. Each verifier's prompt is:
 
 1. **The shared Phase 0 context** — project guidance, conventions, changed-file
    list.
@@ -109,9 +109,6 @@ Each verifier's prompt is:
    caused by this change, and is the proposed fix correct and safe? Default to
    `refuted` when the evidence does not clearly support the finding. Return the
    verdict schema below.*
-
-Reading the **real code**, not the truncated diff hunk, is the point — a finder
-reasoning from a partial hunk is exactly where false positives come from.
 
 Each verifier returns a list with one record per finding:
 
@@ -126,14 +123,13 @@ correction:  (optional) a better fix, when the problem is real but the finder's 
 Fold the verdicts back into the findings:
 
 - **confirmed** → carries through to Phase 3, tagged ✓ verified.
-- **uncertain** → carries through, tagged ⚠ unverified, so the user knows it's a
-  judgment call — and so the autonomous loop leaves it for the user instead of
-  auto-applying it.
-- **refuted** → dropped from the main list. Keep a short **filtered-out tally**
-  (count, plus each dropped finding's ID and one-line reason) so the user can see
-  what was screened and push back if they disagree. Never silently discard.
-- If a verifier itself fails or comes back inconclusive, treat the finding as
-  **uncertain** rather than dropping it — surface it, don't auto-apply it.
+- **uncertain** → carries through, tagged ⚠ unverified: a judgment call the
+  autonomous loop leaves for the user.
+- **refuted** → dropped from the main list but kept in a **filtered-out tally**
+  (count, plus each ID and one-line reason) so the user can push back. Never
+  silently discard.
+- A verifier that fails or comes back inconclusive makes its findings
+  **uncertain**, not dropped.
 
 When a verifier supplies a `correction`, replace the finder's `fix` with it
 before moving on — the problem was real, the fix wasn't.
@@ -161,10 +157,9 @@ its verification tag:
 Render `measured` and `gap` on their own indented lines under any finding that
 has them.
 
-Then summarize: how many findings at each severity, which domains were quiet,
-and how many candidate findings verification filtered out — list those with
-their one-line reasons so the user can challenge the screening. Keep it
-skimmable — the user is choosing what to act on, not reading ten essays.
+Then summarize: findings per severity, which domains were quiet, and the
+filtered-out tally with reasons. Keep it skimmable — the user is choosing what
+to act on.
 
 ## Phase 4 — Decide
 
@@ -200,12 +195,11 @@ For each accepted finding, in order:
    gap genuinely can't be closed here, say so in the commit body.
 4. **Run the gate** — the project's lint and test commands from Phase 0.
 5. **Hold the gate hard.** If lint or tests go red, fix it or revert that one
-   finding. Mark a revert `attempted, reverted — needs manual work`, then
-   continue with the remaining findings. Never commit red.
-6. **Commit on the current branch** — one commit per finding, Conventional
-   Commits style (`<type>(<scope>): <subject>`), scoped to the finding's domain.
-   One commit per finding keeps the history reviewable and lets any single fix
-   be reverted cleanly.
+   finding, marked `attempted, reverted — needs manual work`, and continue with
+   the rest. Never commit red.
+6. **Commit on the current branch** — one commit per finding (reviewable, singly
+   revertable), Conventional Commits style (`<type>(<scope>): <subject>`),
+   scoped to the finding's domain.
 
 If you couldn't find the lint/test commands in Phase 0, ask the user for them
 or whether to proceed without the gate — don't silently skip verification.
@@ -230,9 +224,8 @@ fix:       proposed change, concrete enough to act on
 effort:    small | medium | large
 ```
 
-`measured` and `gap` are what separate a finding a maintainer acts on from one
-they argue with. A finding whose `measured` is an adjective isn't ready; a
-defect whose `gap` is `n/a` should say why nothing could have caught it.
+A finding whose `measured` is an adjective isn't ready; a defect whose `gap` is
+`n/a` should say why nothing could have caught it.
 
 Phase 2 annotates each surviving finding with `verdict` (confirmed |
 uncertain) and `confidence` (high | medium | low); refuted findings are dropped.
