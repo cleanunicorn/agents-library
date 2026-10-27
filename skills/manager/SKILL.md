@@ -36,7 +36,7 @@ starts uses that transport. Then label your workspace: `bash
 
 ## Flow
 
-Each item follows the software loop: **plan → build → review → test**, then
+Each item follows the software loop: **plan → review → build → review → test**, then
 hand back.
 
 1. **Intake (you).** State outcome, constraints, non-goals, numbered

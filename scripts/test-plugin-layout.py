@@ -278,7 +278,7 @@ class PluginLayoutTests(unittest.TestCase):
         root_text = " ".join((skill / "SKILL.md").read_text(encoding="utf-8").split())
         for rule in ("You do no work.", "Single writer.", "Independence.", "Evidence, not reports."):
             self.assertIn(f"**{rule}**", root_text, f"SKILL.md lost the rule `{rule}`")
-        self.assertIn("**plan → build → review → test**", root_text, "SKILL.md lost the software loop")
+        self.assertIn("**plan → review → build → review → test**", root_text, "SKILL.md lost the software loop")
         self.assertRegex(root_text, r"(?i)one coordinator", "SKILL.md no longer runs one coordinator per item")
         # The coordinator picks its roles; the prose fixes no team, tier or cap.
         self.assertNotRegex(root_text, r"(?i)\| `?(trivial|standard|full)`? \||\bplan reviewer\b|\btier\b",

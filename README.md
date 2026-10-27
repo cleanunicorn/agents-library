@@ -178,7 +178,7 @@ Pick the skill that matches the job:
 [`/manager`](skills/manager/SKILL.md) turns this session into a console. It
 starts **one coordinator per work item** through Herdr (else native
 subagents), tracks a status board, and never does the work itself. The
-coordinator follows the software loop **plan → build → review → test** in the
+coordinator follows the software loop **plan → review → build → review → test** in the
 item's GitHub issue: a plan with `## Progress` checkboxes, then findings and
 decisions in the issue and PR. It picks its own roles by the item's
 complexity: a small change needs few, risk (security, stored data, a public

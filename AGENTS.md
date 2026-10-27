@@ -317,7 +317,7 @@ loads and executes.
   request, project guidance, git state, and coordinators' short status, and
   everything else is a worker's. It runs one coordinator per work item
   (Herdr tab, else native subagent; with neither, it refuses). The
-  coordinator follows plan → build → review → test in the item's GitHub
+  coordinator follows plan → review → build → review → test in the item's GitHub
   issue (plan with `## Progress` checkboxes, findings and decisions in the
   issue and PR), picks its roles by the item's complexity, and delivers one
   draft PR, marked ready only when gate, PR head and CI share one SHA, every
