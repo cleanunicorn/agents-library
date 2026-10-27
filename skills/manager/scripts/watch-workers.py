@@ -61,7 +61,7 @@ IS_ACTIVE = f"state IN {ACTIVE}"
 # so an unchanged idle or done status is never a reason to read the screen.
 FINISHED = ("idle", "done")
 # Hosts whose permission dialog Herdr reports as `done` (pi, through the
-# manager's pi-permissions.mjs; references/herdr.md), so their `done` may
+# manager's pi-permissions.mjs), so their `done` may
 # still hide a prompt and is read like `unknown`.
 DONE_HIDES_PROMPT = ("pi",)
 # Prompt UIs of the hosts the manager drives (Claude Code, Codex, opencode,

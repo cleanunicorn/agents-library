@@ -10,152 +10,81 @@ description: >-
 
 # install-agents
 
-You are the **installer** of the library's periodic maintenance agents. The
-user wants this project to maintain itself: the single-purpose agents
-(architecture alignment, dead-code removal, docs, micro-refactors, security
-hygiene, test gaps, visual design, UX polish) installed into the repo and run
-on a recurring schedule, each run producing at most one small reviewable PR.
-Your job is to locate the agent definitions, install the chosen ones into
-`.claude/agents/`, and wire a periodic schedule — **weekly by default**, unless
-the user decides something else.
+## Overview
 
-## Phase 0 — Orient & locate the agent sources
+Install the library's single-purpose maintenance agents into
+`.claude/agents/` and put them on a recurring schedule, each run producing at
+most one small reviewable PR.
 
-1. **Find the agent definitions.** Check, in order, and use the first hit:
-   - `"$CLAUDE_PLUGIN_ROOT/agents/"` — set when this skill runs from the
-     installed plugin.
-   - `agents/` at the current repo root whose `*.md` files carry `name:`
-     frontmatter — a checkout or vendored copy of the library.
-   - A best-effort search of the local plugin caches (under
-     `~/.claude/plugins/` and `~/.codex/plugins/cache/`) for an
-     `agents-library` install containing `agents/*.md`.
-   - Otherwise ask the user for the path to their agents-library checkout.
-2. **Confirm the target.** The install target is the current project's repo
-   root (`git rev-parse --show-toplevel`; the current directory outside git —
-   installing still works, but warn that the agents themselves expect a git
-   repo, since every run branches and opens a PR, and skip mechanisms that need
-   a remote).
-3. **Detect prior installs.** List what already exists in `.claude/agents/` so
-   the proposal distinguishes fresh installs from updates, and look for an
-   existing `.github/workflows/periodic-agents.yml` or scheduled jobs from an
-   earlier run (this makes re-runs an upgrade, not a duplicate).
+## When to use
 
-If no agent sources can be found, report exactly what you looked for and stop —
-never fabricate agent definitions from memory.
+Use when the user wants the agents installed in a repo or on recurring
+maintenance. To run one agent once, act as it directly; to install this
+plugin, use `/plugin`.
 
-## Phase 1 — Choose agents, cadence, and mechanism (one confirmation)
+## What good looks like
 
-Present one proposal table and take one confirmation on it. Defaults:
-**all agents found in the source**, **weekly cadence**, staggered slots
-assigned in this order (first installed agent gets the first slot, and so on):
+- **Find the sources, never invent them.** Use `$CLAUDE_PLUGIN_ROOT/agents/`,
+  else `agents/` at the repo root with `name:` frontmatter, else the plugin
+  caches under `~/.claude/plugins/` and `~/.codex/plugins/cache/`, else ask
+  for the checkout path. If none exist, report where you looked and stop.
+- **Target the repo root** (`git rev-parse --show-toplevel`). Outside git,
+  warn that agents expect a repo (each run branches and opens a PR).
+- **One confirmation covers everything.** Propose agents (default all),
+  cadence (default weekly) and mechanism, noting what is fresh versus an
+  update (existing `.claude/agents/`, `periodic-agents.yml`, schedules). Skip
+  the ask for choices the user already made. "Install only" and "install
+  nothing" are valid.
+- **Stagger runs so only one agent runs at a time.** Weekly default, 06:00
+  UTC in alphabetical order: architect Mon, deadwood Tue, docbot Wed,
+  refactor Thu, sentinel Fri, testforge Sat, uidesigner Sun, uxpolish Mon
+  12:00. Daily: separate hours. Monthly: separate days stepping by 3.
+- **Pick the mechanism by preference, else in this order**: Claude Code
+  scheduled agents (one per agent, via `CronCreate` or a `/schedule` skill;
+  no secrets needed), then GitHub Actions if there is a GitHub remote, then
+  local cron lines.
+- **GitHub Actions** goes in exactly `.github/workflows/periodic-agents.yml`:
+  one `schedule:` cron per agent, a case mapping `github.event.schedule` to
+  the agent, a `workflow_dispatch` `agent` input, `contents: write` and
+  `pull-requests: write` permissions, checkout with `fetch-depth: 0`, then
+  `anthropics/claude-code-action@v1` with the run prompt. Verify input names
+  against that action's README rather than guessing. Tell the user it needs
+  the `ANTHROPIC_API_KEY` secret and the repo setting allowing Actions to
+  create pull requests. Add dependency setup steps if lint or tests need them.
+- **The run prompt**, identical for every mechanism: read
+  `.claude/agents/<name>.md` and act as that agent for exactly one run; learn
+  the project, pick one problem and fix every instance of it, verify with the
+  project's linter and tests, open a reviewable PR, never commit to the
+  default branch; first check open PRs from earlier runs, and if one covers
+  the same ground or nothing qualifies, stop and report.
+- **Re-runs are upgrades**: show what would change, and never duplicate an
+  agent's schedule.
 
-| # | Slot (UTC) | Cron | Default assignee |
-|---|------------|-------------|------------|
-| 1 | Mon 06:00 | `0 6 * * 1` | architect |
-| 2 | Tue 06:00 | `0 6 * * 2` | deadwood |
-| 3 | Wed 06:00 | `0 6 * * 3` | docbot |
-| 4 | Thu 06:00 | `0 6 * * 4` | refactor |
-| 5 | Fri 06:00 | `0 6 * * 5` | sentinel |
-| 6 | Sat 06:00 | `0 6 * * 6` | testforge |
-| 7 | Sun 06:00 | `0 6 * * 0` | uidesigner |
-| 8 | Mon 12:00 | `0 12 * * 1` | uxpolish |
+## Boundaries
 
-The user can drop agents, pick a subset, or change the cadence. Keep the
-one-run-at-a-time staggering at any cadence: **daily** → separate hours
-(`0 6 * * *`, `0 7 * * *`, …); **monthly** → separate days of month stepping
-by 3 (`0 6 1 * *`, `0 6 4 * *`, …); custom cadences by the same principle.
+- Never overwrite a differing installed agent without the user's per-agent
+  approval; show the diff first (it is usually local customization).
+- Modify the user's crontab only on explicit approval; otherwise just show
+  the lines, and note the permission tradeoff for unattended runs rather than
+  recommending skipped permissions.
+- Don't schedule an agent whose install failed.
+- Suggest committing `.claude/agents/` and the workflow, unless `.claude/`
+  is gitignored.
 
-The same confirmation covers the **mechanism** (Phase 3 lists the options and
-how to pick a default). If the user already made these choices in their
-invocation — named the agents, the cadence, or the mechanism, or said to
-proceed without confirmation — skip the ask and use their choices, filling
-gaps with the defaults. "Install but don't schedule" is a valid choice:
-run Phases 2 and 4 only. If the user declines everything, write nothing and
-report what would have been done.
+## Scripts
 
-## Phase 2 — Install the definitions (script)
+`scripts/install-agents.sh <source-dir> [--force] [agent ...]`, run from the
+repo root, copies each agent (all if none named) into `.claude/agents/` and
+seeds an empty journal in `.claude/agents/journals/`. Status lines:
+`INSTALLED`, `IDENTICAL` (nothing to do), `CONFLICT` (differs, left alone),
+`UPDATED` (overwritten, `--force` only), `JOURNAL` (newly seeded; existing
+journals are never touched), `FAILED` (reason on stderr). Exit 1 is a fatal
+setup or input error, 2 conflicts, 3 any `FAILED` (wins over 2). To keep a
+conflicting copy, record "kept local version".
 
-Run `scripts/install-agents.sh <source-dir> [agent ...]` from the repo root.
-It copies each chosen `<agent>.md` into `.claude/agents/`, seeds an empty
-journal at `.claude/agents/journals/<agent>.md`, and prints one status line
-per agent:
+## Output
 
-- `INSTALLED <name>` — new file written.
-- `IDENTICAL <name>` — destination already matches; nothing to do.
-- `CONFLICT <name>` — destination exists and **differs**; left untouched.
-- `UPDATED <name>` — destination overwritten (only with `--force`).
-- `JOURNAL <name>` — journal newly seeded (existing journals are never touched).
-- `FAILED <name>` — invalid definition destination or failed write; show the stderr reason and do not schedule that agent.
-
-Exit 1 means fatal setup/input failure, 2 means conflicts, and 3 means any
-`FAILED` (takes precedence over conflicts). Write success records follow
-successful writes; a journal failure can follow a successful definition copy.
-
-On `CONFLICT`, show the user the diff between their copy and the source — a
-differing file usually means local customization. Overwrite (re-run with
-`--force <name>`) only on their explicit per-agent approval; otherwise keep
-their copy and record "kept local version" for the ledger. Never silently
-clobber a customized agent.
-
-Suggest committing `.claude/agents/` (and the workflow file, if any) so the
-install travels with the repo — but follow the project's lead if `.claude/`
-is gitignored.
-
-## Phase 3 — Wire the schedule
-
-Pick the mechanism with the user in Phase 1. Selection order when they have
-no preference:
-
-1. **Claude Code scheduled agents** — if this session exposes scheduling
-   tools (e.g. a `CronCreate` tool or a `/schedule` routines skill), prefer
-   them: create **one schedule per agent** with its cron slot and the run
-   prompt below. This needs no CI secrets and runs even for repos without a
-   GitHub remote.
-2. **GitHub Actions** — if the repo has a GitHub remote, or the user asked
-   for it: write **`.github/workflows/periodic-agents.yml`** (exactly this
-   path, so re-runs and uninstalls can find it), adapted from
-   `references/github-workflow.md` — one `schedule:` cron entry per agent,
-   a trigger→agent mapping, and a `workflow_dispatch` input for manual runs.
-   Tell the user what the workflow needs before it will work: the
-   `ANTHROPIC_API_KEY` repository secret, and repo Actions settings that
-   allow workflows to create pull requests. The template is a starting
-   point — if unsure an input is still current, verify against the action's
-   own documentation rather than guessing.
-3. **Local cron** — fallback for machine-local repos: emit one crontab line
-   per agent (cron slot + `cd <repo> && claude -p "<run prompt>"`) and show
-   them. Modifying the user's crontab is machine state: install the lines
-   only on explicit approval, otherwise just present them. Note the
-   permission tradeoff for unattended runs (a project permission allowlist
-   or an explicit permission mode) rather than silently recommending
-   skipped permissions.
-
-With no mechanism available (no scheduler tools, no GitHub remote, cron
-declined), finish as install-only and say how to run an agent manually: paste
-the run prompt into a session. An existing `periodic-agents.yml` or schedules
-from an earlier install make this an upgrade: show what would change before
-rewriting, and never duplicate an agent's schedule.
-
-**The run prompt** — identical across mechanisms, one per agent:
-
-> Read `.claude/agents/<name>.md` and act as that agent for exactly one run
-> in this repository. Learn the project first, pick one problem and fix
-> every instance of it in the repository, verify with the project's linter
-> and tests, and open a reviewable pull request — never
-> commit to the default branch. Before starting, check open pull requests from
-> previous runs; if one already covers the same ground, or nothing qualifies
-> today, stop and report instead of forcing a change.
-
-## Phase 4 — Report the ledger
-
-End with one compact report:
-
-- **Installed** — each agent's status from Phase 2 (installed / updated /
-  identical / kept local version / failed), and the journals seeded.
-- **Scheduled** — the mechanism, and each agent's slot (day + cron), or
-  "not scheduled" for an install-only run.
-- **Before the first run** — anything the schedule still needs from the user
-  (e.g. the `ANTHROPIC_API_KEY` secret, Actions PR permissions, crontab lines
-  they chose to install themselves).
-- **Changing it later** — re-run this skill to add/remove agents or change
-  cadence; uninstall by deleting `.claude/agents/<name>.md` (and its journal)
-  and removing the agent's cron entry / schedule / workflow mapping.
+A short ledger: each agent's status and the journals seeded; the mechanism and
+each agent's slot (or "not scheduled"); what the user must still do before
+the first run; and how to change it later (re-run this skill, or delete
+`.claude/agents/<name>.md`, its journal, and its schedule entry).

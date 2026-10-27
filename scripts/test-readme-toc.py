@@ -314,7 +314,7 @@ class TocDriftTests(unittest.TestCase):
 
 
 
-GATE_SCRIPT = re.compile(r"scripts/[\w-]+\.(?:py|sh)|run_evals\.py")
+GATE_SCRIPT = re.compile(r"scripts/[\w-]+\.(?:py|sh)")
 
 
 def unnamed_gate_scripts(check_sh, guide):

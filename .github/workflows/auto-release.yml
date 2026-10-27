@@ -14,10 +14,6 @@ name: Auto release
 # release is created right here with generated notes. Those release notes ARE
 # this repo's changelog — there is nothing to build for a markdown-only plugin,
 # so no separate build workflow is dispatched.
-#
-# Deliberately NOT part of this workflow: the skill evals (run_evals.py). They
-# spawn real agent runs and are manual-only by policy — never wire them into
-# CI. See docs/evals.md.
 
 on:
   pull_request:
