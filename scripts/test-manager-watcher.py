@@ -497,6 +497,65 @@ class HandlingTests(unittest.TestCase):
         again = run.cli("claim", "--event", event, now=2001)
         self.assertEqual(again.returncode, 0, "the user's answer cannot be applied")
 
+    def claim_answer_and_resolve(self, run, event, now):
+        claimed = run.cli("claim", "--event", event, now=now)
+        if claimed.returncode != 0:
+            return claimed
+        token = re.search(r"token=(\S+)", claimed.stdout).group(1)
+        run.agent("coord", "working", WORKING_TEXT)
+        run.sweep(now=now + 1)
+        resolved = run.cli("resolve", "--event", event, "--token", token, now=now + 2)
+        self.assertEqual(resolved.returncode, 0, resolved.stdout)
+        return claimed
+
+    def test_the_manager_resuming_anywhere_in_the_notify_path_answers_once(self):
+        # The manager can resume on its own at any point while a notice is on
+        # its way; each point must end in one claim, so one answer.
+        for resume in ("before the first notice", "between notices", "with a notice printed but unread"):
+            with self.subTest(resume=resume):
+                run, event = self.blocked_run()
+                late = None
+                if resume == "between notices":
+                    self.assertEqual(event_ids(run.wait(now=1000).stdout), [event])
+                if resume == "with a notice printed but unread":
+                    late = run.wait(now=1000).stdout
+                claims = [self.claim_answer_and_resolve(run, event, now=1003)]
+                if late is not None:
+                    self.assertEqual(event_ids(late), [event])
+                    claims.append(run.cli("claim", "--event", event, now=1006))
+                    self.assertIn(f"NOT_CLAIMABLE {event}", claims[-1].stdout)
+                self.assertEqual(sum(c.returncode == 0 for c in claims), 1, "the prompt was answered twice")
+                for now in (1005, 1010, 1100):
+                    self.assertEqual(event_ids(run.wait(now=now).stdout), [], "a handled event was notified again")
+                verbs = {" ".join(c.split()[:2]) for c in run.calls()}
+                self.assertEqual(verbs, {"agent get", "agent read"}, "the watcher wrote to a terminal")
+
+    def test_a_confirmation_dialog_mid_claim_is_answered_once_and_the_old_claim_sends_nothing(self):
+        run, event = self.blocked_run()
+        token = re.search(r"token=(\S+)", run.cli("claim", "--event", event, now=1001).stdout).group(1)
+        # The answer to the first prompt raised a confirmation dialog.
+        run.agent("coord", "blocked", CONFIRM_PROMPT)
+        run.sweep(now=1005)
+        late = run.cli("resolve", "--event", event, "--token", token, now=1006)
+        self.assertEqual((late.returncode, late.stdout.strip()), (0, f"ALREADY superseded {event}"),
+                         "settling the first prompt's claim did not report it replaced")
+        [dialog] = event_ids(run.wait(now=1006).stdout)
+        self.assertNotEqual(dialog, event, "the dialog reused the first prompt's event")
+        self.assertEqual(run.cli("claim", "--event", event, now=1007).returncode, 1,
+                         "the replaced prompt could still be answered")
+        self.assertEqual([run.cli("claim", "--event", dialog, now=1007).returncode,
+                          run.cli("claim", "--event", dialog, now=1007).returncode], [0, 1],
+                         "the dialog was claimable more than once")
+        # The next consecutive prompt, after the dialog cleared, is its own event.
+        run.agent("coord", "working", WORKING_TEXT)
+        run.sweep(now=1010)
+        run.agent("coord", "blocked", PI_PROMPT)
+        run.sweep(now=1015)
+        [following] = event_ids(run.wait(now=1015).stdout)
+        self.assertNotIn(following, (event, dialog), "a consecutive prompt reused an earlier event")
+        self.assertEqual({e["id"]: e["state"] for e in run.events()},
+                         {event: "superseded", dialog: "cleared", following: "pending"})
+
     def test_unregister_clears_the_workers_open_events(self):
         run, event = self.blocked_run()
         run.cli("unregister", "--name", "coord", now=1001)
@@ -624,7 +683,9 @@ class LifecycleTests(unittest.TestCase):
         run.agent("coord", "blocked", CLAUDE_PROMPT)
         out, _ = waiting.communicate(timeout=5)
         self.assertEqual(waiting.returncode, 0)
-        self.assertRegex(out, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=blocked$",
+        # A sweep can read the old `working` status and then the new prompt
+        # screen, which is rightly `suspected`; either kind is a wake-up.
+        self.assertRegex(out, r"(?m)^EVENT \S+ worker=coord item=item-a role=coordinator kind=(blocked|suspected)$",
                          "a blocking wait never woke for the new prompt")
 
     def test_a_superseded_watcher_exits_instead_of_competing(self):
