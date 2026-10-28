@@ -197,6 +197,41 @@ assert_contains "$patch" '+committed-stage' 'committed transition retained'
 assert_contains "$patch" '+index-stage' 'index transition retained'
 assert_contains "$patch" '+worktree-stage' 'worktree transition retained'
 
+# The default branch may exist only as a remote-tracking ref, including
+# names containing slashes. A stale local branch must not override it.
+for default in main release/stable; do
+  fixture "remote-${default//\//-}"
+  git update-ref "refs/remotes/origin/$default" main
+  git symbolic-ref refs/remotes/origin/HEAD "refs/remotes/origin/$default"
+  git branch -D main >/dev/null
+  printf 'remote-only-change\n' > sample.txt
+  git add sample.txt
+  git commit -qm change
+  run_target
+  assert_equal "$(printf 'MAIN %s\nsample.txt' "$default")" "$actual" 'remote-only summary'
+  run_target diff
+  assert_contains "$actual" '+remote-only-change' 'remote-only patch'
+done
+
+fixture stale-local-main
+git update-ref refs/remotes/origin/main HEAD
+git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+printf 'already-on-remote\n' > sample.txt
+git add sample.txt
+git commit -qm upstream-change
+git update-ref refs/remotes/origin/main HEAD
+run_target files
+assert_equal '' "$actual" 'remote default wins over stale local main'
+
+fixture broken-remote-head
+git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/missing
+for mode in files diff; do
+  code=0
+  bash "$SCRIPT" "$mode" > "$tmp/actual" 2> "$tmp/stderr" || code=$?
+  assert_equal 1 "$code" 'invalid comparison fails'
+  assert_contains "$(cat "$tmp/stderr")" 'FATAL' 'invalid comparison diagnostic'
+done
+
 case_name=usage
 code=0
 bash "$SCRIPT" invalid > "$tmp/actual" 2> "$tmp/stderr" || code=$?

@@ -78,9 +78,10 @@ attribute failures to merge commits. Report unauthorized suites as skipped.
 ## Phase 3 — Review
 
 Start one read-only reviewer using **review-pr**, report-only (Phase 4 path
-*d*), against `<remote>/<main>`. Supply that base explicitly if local
-`<main>` is behind: review-pr's `diff-target.sh` otherwise includes upstream
-work in the batch diff. Its domain fan-out remains review-pr's responsibility.
+*d*), against `<remote>/<main>`. Supply that base explicitly: review-pr's
+`diff-target.sh` uses `origin/HEAD` when available and otherwise local
+`main` or `master`, which may differ from this batch's remote and base.
+Its domain fan-out remains review-pr's responsibility.
 
 Review and tip tests may run together because neither writes. Wait for the
 reviewer before failure attribution, which checks out other commits. Report

@@ -13,18 +13,22 @@
 #
 # Exits non-zero with FATAL on stderr if no main branch can be detected.
 
-set -u
+set -euo pipefail
 
 detect_main() {
   local ref
   if ref=$(git symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null); then
-    echo "${ref##*/}"
+    if ! git rev-parse --verify "$ref^{commit}" >/dev/null 2>&1; then
+      echo "FATAL default branch ref $ref is unavailable" >&2
+      return 1
+    fi
+    echo "$ref"
     return 0
   fi
   local b
   for b in main master; do
     if git show-ref --verify --quiet "refs/heads/$b"; then
-      echo "$b"
+      echo "refs/heads/$b"
       return 0
     fi
   done
@@ -32,11 +36,21 @@ detect_main() {
   return 1
 }
 
-main=$(detect_main) || exit 1
+case "${1:-summary}" in
+  main|files|diff|summary) ;;
+  *)
+    echo "usage: $0 [main|files|diff]" >&2
+    exit 2
+    ;;
+esac
+
+main_ref=$(detect_main) || exit 1
+main=${main_ref#refs/remotes/origin/}
+main=${main#refs/heads/}
 
 changed_files() {
   {
-    git diff --name-only "$main...HEAD" 2>/dev/null
+    git diff --name-only "$main_ref...HEAD"
     git diff --cached --name-only
     git diff --name-only
     git ls-files -o --exclude-standard
@@ -51,16 +65,12 @@ case "${1:-summary}" in
     changed_files
     ;;
   diff)
-    git diff "$main...HEAD" 2>/dev/null
+    git diff "$main_ref...HEAD"
     git diff --cached
     git diff
     ;;
   summary)
     echo "MAIN $main"
     changed_files
-    ;;
-  *)
-    echo "usage: $0 [main|files|diff]" >&2
-    exit 2
     ;;
 esac
