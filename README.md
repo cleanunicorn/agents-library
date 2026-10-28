@@ -654,7 +654,12 @@ title drives the version bump:
 
 The workflow bumps the version in `.codex-plugin/plugin.json`, commits
 `release: vX.Y.Z` to main, tags it, and creates the GitHub release with
-generated notes. **Those release notes are the changelog** — there is no
+generated notes. `scripts/release-version.sh` records the triggering merge SHA
+in the release commit; retries reuse that version, including after later
+releases. Version commits and tags publish atomically; the workflow makes
+three publication attempts before reporting failure if another release
+advances main. Offline recovery tests run in the local gate (`python3 scripts/test-release-version.py`).
+**Those release notes are the changelog** — there is no
 `CHANGELOG.md` to update. The Claude Code plugin stays versioned by commit SHA
 rather than by release tag, so both tools track `main` — see
 [Update](#update) for how an installed

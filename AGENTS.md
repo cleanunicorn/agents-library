@@ -349,7 +349,11 @@ loads and executes.
   `fix:`/`perf:`/`refactor:` → patch, anything else or `[skip release]` →
   none), the version lands in `.codex-plugin/plugin.json`, main gets a
   `release: vX.Y.Z` commit plus a `v<version>` tag, and a GitHub release is
-  created with generated notes. **Those release notes are the changelog** —
+  created with generated notes. `scripts/release-version.sh` records a
+  `Release-Merge: <merge-sha>` trailer and reuses that version on retries;
+  it publishes commits and tags atomically, making three publication
+  attempts in the workflow's disposable checkout before reporting failure.
+  **Those release notes are the changelog** —
   there is no `CHANGELOG.md`; don't create one. PR
   titles are load-bearing and CI-checked (`.github/workflows/pr-title.yml`).
   Never add the skill evals to any workflow — they are manual-only
@@ -424,7 +428,8 @@ loads and executes.
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
   in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
   behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
+  tests (`scripts/test-diff-target.sh`), release retry tests against local bare
+  remotes (`scripts/test-release-version.py`), the shared Herdr workspace-rename step
   against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval
   runner's offline transcript parsing and delegation traces
   (`scripts/test-run-evals.py`), and eval case validation (`--dry-run`).
