@@ -27,15 +27,15 @@ eval-results/                     # JSON results per run (gitignored)
 
 For each trial the runner:
 
-1. creates a fresh temp workspace **outside the repo** (no access to prior
-   context or this repo's files);
+1. creates a fresh temp workspace **outside the repo**, without copied
+   conversation history;
 2. materializes the case's fixture — files first, then setup shell commands
    (git repos, branches, fake remotes); anything under `bin/` is made
    executable and prepended to `PATH`, which is how the fake `gh` shims work,
    so **no network or real GitHub access is needed**;
 3. copies every repo skill into the workspace's `.claude/skills/` — minus each
-   skill's `evals/` directory, so the agent can never read the expected
-   assertions;
+   skill's `evals/` directory, so expected assertions are not copied into
+   the trial workspace;
 4. runs `claude -p "<prompt>"` in the workspace with
    `--dangerously-skip-permissions` and (when the CLI supports it)
    `--setting-sources project`, so user-level skills and settings don't leak
@@ -43,6 +43,10 @@ For each trial the runner:
 5. grades the **outcome**: every assertion must pass. Whether/which skill
    loaded is parsed from the transcript and reported separately as
    `trigger-ok` telemetry — a case never passes or fails on triggering alone.
+
+This separates the trial's workspace and project settings; it does **not**
+provide filesystem isolation. The agent retains the invoking user's filesystem
+access, including access to the source repository and its eval assertions.
 
 A case passes a trial iff all its assertions pass. Default is 3 trials per
 case; per-case and per-skill pass rates are printed and written to

@@ -35,6 +35,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Decide version bump from the PR title
         id: bump
@@ -64,37 +65,11 @@ jobs:
         if: steps.bump.outputs.bump != ''
         env:
           BUMP: ${{ steps.bump.outputs.bump }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          version=$(python3 - <<'EOF'
-          import json, os
-          path = ".codex-plugin/plugin.json"
-          with open(path) as f:
-              manifest = json.load(f)
-          major, minor, patch = map(int, manifest["version"].split("."))
-          bump = os.environ["BUMP"]
-          if bump == "major":
-              major, minor, patch = major + 1, 0, 0
-          elif bump == "minor":
-              minor, patch = minor + 1, 0
-          else:
-              patch += 1
-          manifest["version"] = f"{major}.{minor}.{patch}"
-          with open(path, "w") as f:
-              json.dump(manifest, f, indent=2)
-              f.write("\n")
-          print(manifest["version"])
-          EOF
-          )
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          git commit -am "release: v$version"
-          # Annotated tag + explicit ref push: `--follow-tags` only pushes
-          # annotated tags, and a lightweight `git tag` silently stayed local
-          # (v0.2.0 failed exactly this way — the release step then refused
-          # the unpushed tag). Pushing the tag ref explicitly can't miss.
-          git tag -a "v$version" -m "release: v$version"
-          git push origin main "v$version"
+          bash scripts/release-version.sh "$BUMP" "$MERGE_SHA"
 
       - name: Create the GitHub release with generated notes
         if: steps.bump.outputs.bump != ''
