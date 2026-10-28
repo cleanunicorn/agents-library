@@ -627,10 +627,12 @@ does not require either CLI or depend on their user-specific plugin caches.
 Every skill ships an eval suite (`skills/<name>/evals/cases.json`) — at least
 10 outcome-based cases each, including cross-triggering negatives that must
 route to a *different* skill — executed by [`run_evals.py`](run_evals.py) at the repo
-root. Each trial runs the prompt through a real agent in a clean, isolated
+root. Each trial runs the prompt through a real agent in a fresh temporary
 workspace (fixtures include fake `gh` shims, so no network is needed) and
 grades outcomes, not whether the skill loaded. The runner also supports
 ablation (`--ablation`) to detect skills the bare model can already replace.
+The temporary workspace does not restrict filesystem access; see the eval
+guide for the limits of this separation.
 
 Evals are **manual-only** — never wired to CI or git hooks. Start with
 `python3 run_evals.py --dry-run`; see [docs/evals.md](docs/evals.md) for the

@@ -3,11 +3,12 @@
 
 Each skill directory carries an evals/cases.json describing prompts, fixture
 workspaces, and cheap outcome assertions. This runner materializes a clean,
-isolated workspace per trial (temp dir outside the repo, fixture files + setup
+temporary workspace per trial (temp dir outside the repo, fixture files + setup
 commands, all repo skills copied into .claude/skills/ minus their evals/), runs
 the prompt through `claude -p`, and grades the *outcome* — assertions on the
 final output and workspace state — not whether the skill loaded on the first
-turn. Skill-trigger telemetry is recorded separately from pass/fail.
+turn. Skill-trigger telemetry is recorded separately from pass/fail. Workspace
+separation does not restrict the agent's filesystem access.
 
 Usage:
   python3 run_evals.py                          # all skills, 3 trials/case
