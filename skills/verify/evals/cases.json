@@ -278,7 +278,12 @@
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?is)(AC3|task\\s*3|--limit).*(fail|not met|not verified|ignor|does not|doesn't|no effect|all four|every word)"
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
         },
         {
           "type": "file_regex",
@@ -309,7 +314,17 @@
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?is)(AC3|task\\s*3|--limit).*(fail|not met|not verified|ignor|does not|doesn't|no effect|all four|every word)"
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
         },
         {
           "type": "file_regex",
@@ -349,12 +364,12 @@
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?i)(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
+          "pattern": "(?im)^[^\\n]*\\btask\\s*3\\b[^\\n]*(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
         },
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?is)AC3.*(fail|not met|not verified)|(fail|not met|not verified).*AC3"
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
         },
         {
           "type": "file_not_regex",
@@ -431,7 +446,7 @@
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?i)(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
+          "pattern": "(?im)^[^\\n]*\\btask\\s*3\\b[^\\n]*(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
         },
         {
           "type": "file_not_regex",
@@ -467,7 +482,17 @@
         {
           "type": "file_regex",
           "path": ".fixture/comment-7.md",
-          "pattern": "(?is)(AC3|task\\s*3|--limit).*(fail|not met|not verified|ignor|does not|doesn't|no effect|all four|every word)"
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
         },
         {
           "type": "file_regex",
