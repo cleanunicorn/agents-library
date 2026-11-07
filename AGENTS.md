@@ -358,8 +358,8 @@ loads and executes.
   Never add the skill evals to any workflow — they are manual-only
   (`docs/evals.md`).
 - **No auth / error handling / logging / database / migrations** — agents
-  inspect *target* projects for these; this repo holds none. The only durable
-  per-project state is the per-agent journals in `agents/journals/`.
+  inspect *target* projects for these; this repo holds none, and no durable
+  per-project state.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
   (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and

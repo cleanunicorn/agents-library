@@ -484,10 +484,6 @@ Each agent is written against generic roles. To use one on a specific codebase, 
 
 The agents are designed to discover most of this themselves, but supplying it up front makes them sharper.
 
-### Journals
-
-An agent keeps durable, codebase-specific notes in a journal at `.claude/agents/journals/<agent>.md` in the target project. The copies in `agents/journals/` are intentionally empty — they accumulate per project.
-
 ## Architect
 
 🏗️ **[Architect](agents/architect.md)** — Aligns code with the project's established architecture without changing behavior. Use when a layer bypasses its boundary, business code reads the environment directly, a shared helper is duplicated across modules, or equivalent operations return different shapes.
