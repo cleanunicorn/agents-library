@@ -1,6 +1,6 @@
 {
   "name": "agents-library",
-  "version": "2.5.2",
+  "version": "3.0.0",
   "description": "Orchestrator skills for defining, planning, building, verifying, reviewing and shipping work, UX-psychology review, issue filing, batch merging, and a manager console that delegates work items to worker agents.",
   "author": {
     "name": "Daniel Luca",
