@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # explicit decision here rather than silently escaping the contract.
 AGENTS = {"architect", "deadwood", "docbot", "refactor", "sentinel", "testforge",
           "uidesigner", "uxpolish"}
-FIXING_SKILLS = {"manager", "review", "review-ux-psychology"}
+FIXING_SKILLS = {"manager", "review-ux-psychology"}
 
 APPLIES_FIXES = re.compile(r"(?i)\*\*apply the (edit|change|fix)\*\*")
 # Agents carry only identity and purpose, so the rule lives in the purpose:
@@ -69,18 +69,6 @@ class FixEverywhereTests(unittest.TestCase):
                 self.expect(name, text, FIXES_EVERY_INSTANCE,
                             "apply phase does not fix the other instances")
                 self.refute(name, text, CAP, "a per-area cap is back")
-
-    def test_build_fixes_every_instance(self):
-        """build fixes bugs but is not in FIXING_SKILLS: it has no apply phase.
-
-        The detector above finds skills by their apply-the-fix marker, so a
-        skill that fixes code in its green step needs its own check.
-        """
-        path = "skills/build/SKILL.md"
-        text = " ".join(self.read(path).split())
-        self.expect(path, text, re.compile(r"(?i)fix every (mechanical )?instance"),
-                    "the green step does not sweep for the same problem")
-        self.refute(path, text, CAP, "a per-area cap is back")
 
     def test_manager_coordinator_fixes_every_instance(self):
         path = "skills/manager/references/coordinator-brief.md"

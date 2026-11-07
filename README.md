@@ -220,27 +220,27 @@ installed alone. The manager never merges a PR.
 
 ### The Define Skill
 
-[`/define`](skills/define/SKILL.md) turns a request into a problem statement, a scope (what is in and what is out), and done-criteria, and writes them to the issue. It asks only the questions whose answers would change the plan, and designs no solution. With no issue yet, it has a conversation with you and files nothing until you confirm the definition.
+[`/define`](skills/define/SKILL.md) turns the request into a problem statement, a scope (in and out), and done-criteria, and writes them to the issue. It asks only the questions whose answers change the plan, converses with you when there is no issue yet, and designs no solution.
 
 ### The Plan Skill
 
-[`/plan`](skills/plan/SKILL.md) reads the definition and breaks the request into small tasks that can each be verified alone. It maps the dependency graph between components, slices the work vertically (one complete path per task, never one layer at a time), gives every task acceptance criteria and a verification step, and adds the plan to the issue being developed. Each task is scope plus acceptance criteria plus verification steps, ordered by dependency, with a `## Progress` checkbox list. It writes no code.
+[`/plan`](skills/plan/SKILL.md) reads the definition and slices the work vertically: each task is one complete, verifiable path, written as scope, acceptance criteria and verification steps, ordered by dependency. It adds the task list to the issue, opening with a `## Progress` checklist. It writes no code.
 
 ### The Build Skill
 
-[`/build`](skills/build/SKILL.md) implements the plan one task at a time: it reads the task's acceptance criteria, loads the relevant context, writes the failing test (red), writes the minimum code to pass (green), runs the full suite for regressions, and commits with a Conventional Commit. It runs targeted tests on every cycle and the full suite once per task. When blocked, or when an acceptance criterion is wrong, it stops and updates the plan instead of widening scope.
+[`/build`](skills/build/SKILL.md) works one task at a time: read its acceptance criteria and the code it touches, write a failing test (red), write the minimum code to pass (green), run targeted tests each cycle and the full suite per task, and make one conventional commit. When blocked, or when a criterion is wrong, it stops and updates the plan instead of widening scope.
 
 ### The Verify Skill
 
-[`/verify`](skills/verify/SKILL.md) checks the finished work against the plan: it exercises each acceptance criterion end to end, records pass or fail with evidence, confirms every task was done, and lists the gaps in the issue. It reports; it does not fix.
+[`/verify`](skills/verify/SKILL.md) exercises each acceptance criterion in the plan end to end, records pass or fail in the issue, confirms every task was done, and lists the gaps. It reports; it does not fix.
 
 ### The Review Skill
 
-[`/review`](skills/review/SKILL.md) reviews the work on your current branch. Seven specialized reviewers (correctness, readability, architecture, security, performance, dead code, docs currency) inspect the local diff, and a separate verification pass screens their findings before presenting a ranked list. By default it fixes the trivial findings behind the project's lint and test gate and reports the rest by severity; it can also apply chosen findings or run an improve-until-converged loop. No GitHub remote is required.
+[`/review`](skills/review/SKILL.md) reviews the diff against the main branch for correctness, readability, architecture, security, performance, dead code, and docs currency. It outputs findings with severity, fixes the trivial ones, and reports the rest.
 
 ### The Ship Skill
 
-[`/ship`](skills/ship/SKILL.md) delivers finished work the way you ask: a pull request, a pushed branch, a local commit, or a merge. The request wins, then instructions that came with the task; by default it pushes the branch, opens a draft PR that summarizes the changes and links the issue, and marks it ready once local checks, CI and the verify result are all clean. It re-runs the project's checks first and never pushes red.
+[`/ship`](skills/ship/SKILL.md) delivers as you specified. By default it pushes the branch, opens a draft PR that summarizes the changes and links the issue, and marks it ready when the work is fully done.
 
 ### The UX Psychology Review Skill
 
@@ -550,8 +550,7 @@ extension cases need `node` and report a skip without it), the manager's
 persistent console
 (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
 (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
-stub `herdr` (`scripts/test-manager-watcher.py`), staged/unstaged review-target
-regressions (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
+stub `herdr` (`scripts/test-manager-watcher.py`), the shared Herdr workspace-rename step
 against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval runner's
 offline transcript parsing and delegation traces (`scripts/test-run-evals.py`),
 and eval cases with `run_evals.py --dry-run`.

@@ -68,33 +68,6 @@
           ]
         }
       ]
-    },
-    "task-desk-no-issue": {
-      "steps": [
-        {
-          "files": {
-            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
-            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the behavior tests with `make test` (Python standard library only).\n",
-            "AGENTS.md": "# Agent guide - taskbox\n\n- Layering is a rule: `src/app.py` only dispatches, `src/service.py` validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
-            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
-            "src/__init__.py": "",
-            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
-            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
-            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
-            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
-            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/taskbox\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/taskbox/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
-          }
-        },
-        {
-          "run": [
-            "git init -q -b main",
-            "git add -A",
-            "git commit -qm 'feat: initial task service'",
-            "git tag baseline"
-          ]
-        }
-      ]
     }
   },
   "cases": [
@@ -215,41 +188,6 @@
         {
           "type": "shell",
           "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
-        }
-      ]
-    },
-    {
-      "id": "pl-h5",
-      "prompt": "There is no issue for this yet. Plan a feature: let users rename a task by id. Don't write code.",
-      "should_trigger": true,
-      "fixture": "task-desk-no-issue",
-      "assertions": [
-        {
-          "type": "file_exists",
-          "path": "PLAN.md"
-        },
-        {
-          "type": "file_regex",
-          "path": "PLAN.md",
-          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
-        },
-        {
-          "type": "file_regex",
-          "path": "PLAN.md",
-          "pattern": "(?i)acceptance criteria"
-        },
-        {
-          "type": "file_regex",
-          "path": "PLAN.md",
-          "pattern": "(?i)verif"
-        },
-        {
-          "type": "shell",
-          "cmd": "! grep -qE '^gh issue (comment|edit|create)' .gh-calls.log 2>/dev/null"
-        },
-        {
-          "type": "shell",
-          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\""
         }
       ]
     },

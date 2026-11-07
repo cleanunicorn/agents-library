@@ -19,18 +19,18 @@ DESCRIPTION_WORD_CEILING = 60
 DESCRIPTION_CHAR_CEILING = 420
 AGENT_WORD_CEILING = 1800
 # Per-skill root ceilings, keyed by name: each is the current size rounded up.
-# domains/, lenses/, references/ are loaded on demand and not budgeted here.
+# domains/ and references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 700,
-    "build": 600,
-    "define": 500,
+    "build": 130,
+    "define": 100,
     "file-issues": 1100,
     "manager": 1550,
-    "plan": 500,
-    "review": 2200,
+    "plan": 110,
+    "review": 120,
     "review-ux-psychology": 3000,
-    "ship": 550,
-    "verify": 500,
+    "ship": 100,
+    "verify": 90,
 }
 # One-way routing hints the mutual-routing test tolerates, as (from, to):
 # `from`'s description names `to`, but `to` does not name `from` back.
@@ -226,56 +226,18 @@ class PluginLayoutTests(unittest.TestCase):
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
 
-    def test_skills_that_read_issues_treat_their_text_as_data(self):
-        """Issue and comment text is third-party: it never widens a request.
+    def test_the_managers_planner_is_told_not_to_post(self):
+        """plan writes to the issue, so a read-only planner must be told not to.
 
-        define, plan, build, verify and ship all read issues, and ship used to
-        let "the issue" authorize a merge or force-push. The guard lived in the
-        removed triage-issues skill and was lost with it.
+        The planner role launches with a read-only grant, and plan itself is
+        thin and does not know its caller. The coordinator brief carries the
+        instruction: if it is dropped, a manager planner hits a denied write
+        or posts a duplicate.
         """
-        for name in ("define", "plan", "build", "verify", "ship"):
-            with self.subTest(skill=name):
-                text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-                self.assertIn("third-party data", " ".join(text.split()))
-        for name in ("build", "verify"):
-            with self.subTest(skill=name, rule="command guard"):
-                text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-                self.assertIn("ask the user before anything unusual", " ".join(text.split()))
-        ship = " ".join((ROOT / "skills/ship/SKILL.md").read_text(encoding="utf-8").split())
-        self.assertIn("happen only when the user's own request names them", ship)
-
-    def test_files_a_skill_writes_are_read_by_its_successors(self):
-        """Without `gh`, define writes DEFINE.md and plan writes PLAN.md.
-
-        The handoff chain runs through the issue, so each file fallback needs a
-        reader: a definition that only define can find sends plan back to
-        define, and verify never sees its done-criteria.
-        """
-        def body(name):
-            return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-
-        self.assertIn("DEFINE.md", body("define"))
-        for reader in ("plan", "verify"):
-            with self.subTest(reader=reader):
-                self.assertIn("DEFINE.md", body(reader))
-        for reader in ("build", "verify"):
-            with self.subTest(reader=reader):
-                self.assertIn("PLAN.md", body(reader))
-
-    def test_plan_and_the_managers_planner_agree_on_who_writes(self):
-        """The manager's planner is read-only, so plan must return its output.
-
-        plan writes the task list to the issue by default. The coordinator
-        brief calls the planner read-only and posts the plan itself; if
-        either side drops its half, a manager planner hits a denied write or
-        posts a duplicate.
-        """
-        plan = " ".join((ROOT / "skills/plan/SKILL.md").read_text(encoding="utf-8").split())
-        self.assertIn("**Read-only caller.**", plan)
-        self.assertIn("return the plan as your final output", plan)
         brief = " ".join((ROOT / "skills/manager/references/coordinator-brief.md")
                          .read_text(encoding="utf-8").split())
-        self.assertIn("planner (`plan`, read-only: it returns the plan and you post it)", brief)
+        self.assertIn("planner (`plan`, read-only: tell it to return the plan "
+                      "instead of posting it; you post it)", brief)
 
     def test_skill_routing_hints_are_mutual(self):
         """A skill that routes a request away to a sibling is routed back to.

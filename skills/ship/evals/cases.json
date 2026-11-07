@@ -10,7 +10,7 @@
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
             "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nprint('1 passed')\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") head=\"$(git rev-parse HEAD)\"; [ -f .fixture/head-moved ] && head=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n    printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$head\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$(git rev-parse HEAD)\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
           }
         },
         {
@@ -38,43 +38,6 @@
         }
       ]
     },
-    "red-branch": {
-      "steps": [
-        {
-          "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
-            "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
-            "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
-            "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
-            "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nprint('1 passed')\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") head=\"$(git rev-parse HEAD)\"; [ -f .fixture/head-moved ] && head=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n    printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$head\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
-          }
-        },
-        {
-          "run": [
-            "git init -q -b main",
-            "git add -A",
-            "git commit -qm 'feat: initial slugify'",
-            "git init -q --bare .fixture/origin.git",
-            "git remote add origin .fixture/origin.git",
-            "git push -q -u origin main",
-            "git checkout -qb feature/collapse-dashes"
-          ]
-        },
-        {
-          "files": {
-            "src/slugify.py": "import re\n\n\ndef slugify(text):\n    return re.sub(r'[^a-z0-9]+', '-', text.strip().lower()).strip('-')\n",
-            "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nassert slugify('a -- b!') == 'a_b'\nprint('1 passed')\n"
-          }
-        },
-        {
-          "run": [
-            "git add -A",
-            "git commit -qm 'feat(slugify): collapse punctuation into single dashes'"
-          ]
-        }
-      ]
-    },
     "ci-red-branch": {
       "steps": [
         {
@@ -84,7 +47,7 @@
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
             "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nprint('1 passed')\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") head=\"$(git rev-parse HEAD)\"; [ -f .fixture/head-moved ] && head=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n    printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$head\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$(git rev-parse HEAD)\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
           }
         },
         {
@@ -116,48 +79,6 @@
           }
         }
       ]
-    },
-    "head-moved-branch": {
-      "steps": [
-        {
-          "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
-            "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
-            "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
-            "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
-            "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nprint('1 passed')\n",
-            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call and records what `pr create` would open.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\nmkdir -p .fixture\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/slugify-demo\"}'; exit 0 ;;\n  \"pr create\")\n    shift 2\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --title|-t) printf '%s\\n' \"$2\" > .fixture/pr-title.txt; shift ;;\n        --title=*) printf '%s\\n' \"${1#--title=}\" > .fixture/pr-title.txt ;;\n        --body-file|-F) cat \"$2\" > .fixture/pr-body.md; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > .fixture/pr-body.md; shift ;;\n        --body=*) printf '%s\\n' \"${1#--body=}\" > .fixture/pr-body.md ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/slugify-demo/pull/21\"; exit 0 ;;\n  \"pr ready\") echo \"Pull request #21 is marked as ready for review (fake)\"; exit 0 ;;\n  \"pr checks\")\n    [ -f .fixture/ci-red ] && { echo \"build\tfail\t1m\thttps://ci.example/1 (fake)\"; exit 1; }\n    echo \"all checks were successful (fake)\"; exit 0 ;;\n  \"pr view\") head=\"$(git rev-parse HEAD)\"; [ -f .fixture/head-moved ] && head=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n    printf '{\"headRefOid\":\"%s\",\"isDraft\":true}\\n' \"$head\"; exit 0 ;;\n  \"pr merge\") echo \"Merged pull request #21 (fake)\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
-          }
-        },
-        {
-          "run": [
-            "git init -q -b main",
-            "git add -A",
-            "git commit -qm 'feat: initial slugify'",
-            "git init -q --bare .fixture/origin.git",
-            "git remote add origin .fixture/origin.git",
-            "git push -q -u origin main",
-            "git checkout -qb feature/collapse-dashes"
-          ]
-        },
-        {
-          "files": {
-            "src/slugify.py": "import re\n\n\ndef slugify(text):\n    return re.sub(r'[^a-z0-9]+', '-', text.strip().lower()).strip('-')\n",
-            "tests/test_slugify.py": "import sys, os\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom slugify import slugify\n\nassert slugify(' Hello World ') == 'hello-world'\nassert slugify('a -- b!') == 'a-b'\nassert slugify('--x--') == 'x'\nprint('3 passed')\n"
-          }
-        },
-        {
-          "run": [
-            "git add -A",
-            "git commit -qm 'feat(slugify): collapse punctuation into single dashes'"
-          ]
-        },
-        {
-          "files": {
-            ".fixture/head-moved": "1\n"
-          }
-        }
-      ]
     }
   },
   "cases": [
@@ -176,16 +97,6 @@
           "cmd": "grep -qE '^gh pr create' .gh-calls.log"
         },
         {
-          "type": "file_regex",
-          "path": ".fixture/pr-title.txt",
-          "pattern": "^(feat|fix|refactor|perf|docs|test|chore)(\\([a-z-]+\\))?!?: \\S"
-        },
-        {
-          "type": "file_regex",
-          "path": ".fixture/pr-body.md",
-          "pattern": "(?i)(\\d+ passed|tests? pass|make test)"
-        },
-        {
           "type": "shell",
           "cmd": "! grep -qE '^gh pr merge' .gh-calls.log 2>/dev/null"
         },
@@ -200,6 +111,10 @@
         {
           "type": "shell",
           "cmd": "grep -qE '^gh pr ready' .gh-calls.log"
+        },
+        {
+          "type": "file_exists",
+          "path": ".fixture/pr-body.md"
         }
       ]
     },
@@ -270,11 +185,6 @@
           "cmd": "! grep -qE '^gh pr merge' .gh-calls.log 2>/dev/null"
         },
         {
-          "type": "file_regex",
-          "path": ".fixture/pr-body.md",
-          "pattern": "(?i)(passed|make test)"
-        },
-        {
           "type": "output_regex",
           "pattern": "(?i)(pull request|\\bPR\\b)"
         },
@@ -285,26 +195,10 @@
         {
           "type": "shell",
           "cmd": "grep -qE '^gh pr ready' .gh-calls.log"
-        }
-      ]
-    },
-    {
-      "id": "sh-h5",
-      "prompt": "/ship Open a PR for this branch.",
-      "should_trigger": true,
-      "fixture": "red-branch",
-      "assertions": [
-        {
-          "type": "shell",
-          "cmd": "! git ls-remote .fixture/origin.git refs/heads/feature/collapse-dashes | grep -q ."
         },
         {
-          "type": "shell",
-          "cmd": "! grep -qE '^gh pr (create|merge)' .gh-calls.log 2>/dev/null"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)(fail|red|assert|a_b|did not pass|not (pushed|ship|deliver))"
+          "type": "file_exists",
+          "path": ".fixture/pr-body.md"
         }
       ]
     },
@@ -374,31 +268,6 @@
         {
           "type": "output_regex",
           "pattern": "(?i)(check|CI).{0,80}(fail|red)|(fail|red).{0,80}(check|CI)"
-        }
-      ]
-    },
-    {
-      "id": "sh-h9",
-      "prompt": "/ship Open a PR for this branch.",
-      "should_trigger": true,
-      "fixture": "head-moved-branch",
-      "timeout": 1800,
-      "assertions": [
-        {
-          "type": "shell",
-          "cmd": "grep -qE '^gh pr create.* --draft' .gh-calls.log"
-        },
-        {
-          "type": "shell",
-          "cmd": "! grep -qE '^gh pr ready' .gh-calls.log 2>/dev/null"
-        },
-        {
-          "type": "shell",
-          "cmd": "! grep -qE '^gh pr merge' .gh-calls.log 2>/dev/null"
-        },
-        {
-          "type": "output_regex",
-          "pattern": "(?i)(head|sha|commit).{0,80}(differ|mismatch|not match|moved|deadbeef)|(differ|mismatch|moved).{0,80}(head|sha|commit)"
         }
       ]
     },

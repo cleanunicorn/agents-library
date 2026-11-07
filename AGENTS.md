@@ -250,13 +250,13 @@ loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode and Kilo register them as
-  subagents). `skills/<name>/SKILL.md` are 10 skills. define, plan, build, verify, ship and file-issues are
-  single-file linear skills; review and review-ux-psychology fan out to
-  sub-prompt files in `domains/`; batch-merge-prs and manager load
-  `references/`. define → plan → build → verify → review → ship is the
-  step-by-step workflow, each step handing its output to the next through
-  the issue. Each skill
-  also carries an eval suite in `evals/cases.json`. Deterministic
+  subagents). `skills/<name>/SKILL.md` are 10 skills. define, plan, build, verify, review, ship and file-issues
+  are thin single-file skills (a short list of rules, no phases);
+  review-ux-psychology fans out to sub-prompt files in `domains/`;
+  batch-merge-prs and manager load `references/`.
+  define → plan → build → verify → review → ship is the step-by-step
+  workflow, each step handing its output to the next through the issue. Each
+  skill also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
   main already contains), `merge-prs.sh` (which auto-names the target branch
@@ -264,8 +264,7 @@ loads and executes.
   pauses on a conflict for the agent to resolve and resume with `--continue`
   or skip with `--skip`), `test-commands.sh`,
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
-  test), review has `diff-target.sh` (main-branch detection +
-  diff computation), manager has `watch-workers.py` (Python 3.9+, stdlib: one background
+  test), manager has `watch-workers.py` (Python 3.9+, stdlib: one background
   watcher per Herdr run that polls every worker every 5 s, records prompts
   as deduplicated events in `<run_dir>/watcher.sqlite3`, and wakes the
   manager through a host background `wait`, never terminal input) and
@@ -287,18 +286,16 @@ loads and executes.
   Kilo get symlinks (global `~/.config/<host>/`) or copies (`--project`, the
   target project's `.<host>/`) of the checked items. `--yes` skips the
   checklist for unattended runs.
-- **Skill shape** — the review and survey skills follow Phase 0 *orient* →
-  Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review and
-  review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
-  each finding) between fan-out and consolidate, so their consolidate step is
-  Phase 3. define writes problem, scope and done-criteria to the issue; plan
-  reads that and writes vertically sliced, verifiable tasks; build runs
-  red → green → full suite per task, one commit each, and stops to update
-  the plan when blocked; verify exercises each acceptance criterion and
-  reports gaps; ship resolves the delivery (request, then task
-  instructions, then the default draft PR, marked ready when everything is
-  clean) and re-runs the checks before sending.
-  None of the five fans out.
+- **Skill shape** — review-ux-psychology follows Phase 0 *orient* →
+  Phase 1 *fan out in parallel* → a *verify* pass (fresh skeptical agents
+  re-check each finding) → *consolidate/rank* → later phases *apply or
+  persist*. The six workflow skills are thin: define writes problem, scope
+  and done-criteria to the issue; plan writes vertically sliced, verifiable
+  tasks; build runs red → green → full suite per task, one commit each, and
+  stops to update the plan when blocked; verify exercises each acceptance
+  criterion and lists gaps; review checks seven lenses, fixes the trivial
+  findings and reports the rest; ship delivers as asked, by default a draft
+  PR marked ready when the work is done. None of the six fans out.
   batch-merge-prs takes the user's PR list as the selection: orient and
   classify → merge onto a new local branch, resolving conflicts or skipping
   them with a reason → test under the project's rules,
@@ -363,10 +360,8 @@ loads and executes.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
   (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
-  the in-skill finding records sub-agents return (`{id, severity, domain,
-  location, problem, measured, gap, fix, effort}` for review, which its verify
-  pass then annotates with `{verdict, confidence}`; `{id, severity, lens, principle, location, problem, fix,
-  hypothesis, effort}` for review-ux-psychology, which (like review) runs a verify pass that annotates
+  the in-skill finding records sub-agents return (`{id, severity, lens, principle, location, problem, fix,
+  hypothesis, effort}` for review-ux-psychology, which runs a verify pass that annotates
   survivors with `{verdict, confidence}`; the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
   Follow-ups, Confidence}` for manager, with the gate-log and CI-log format in
   `references/console.md` (`command:`/`head:`/`exit:`) and the board's
@@ -417,8 +412,7 @@ loads and executes.
   opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
-  in a sandboxed `HOME` (`scripts/test-install.py`), review target regression
-  tests (`scripts/test-diff-target.sh`), release retry tests against local bare
+  in a sandboxed `HOME` (`scripts/test-install.py`), release retry tests against local bare
   remotes (`scripts/test-release-version.py`), the shared Herdr workspace-rename step
   against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval
   runner's offline transcript parsing and delegation traces
