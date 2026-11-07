@@ -240,6 +240,24 @@ class PluginLayoutTests(unittest.TestCase):
         ship = " ".join((ROOT / "skills/ship/SKILL.md").read_text(encoding="utf-8").split())
         self.assertIn("happen only when the user's own request names them", ship)
 
+    def test_files_a_skill_writes_are_read_by_its_successors(self):
+        """Without `gh`, define writes DEFINE.md and plan writes PLAN.md.
+
+        The handoff chain runs through the issue, so each file fallback needs a
+        reader: a definition that only define can find sends plan back to
+        define, and verify never sees its done-criteria.
+        """
+        def body(name):
+            return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("DEFINE.md", body("define"))
+        for reader in ("plan", "verify"):
+            with self.subTest(reader=reader):
+                self.assertIn("DEFINE.md", body(reader))
+        for reader in ("build", "verify"):
+            with self.subTest(reader=reader):
+                self.assertIn("PLAN.md", body(reader))
+
     def test_skill_routing_hints_are_mutual(self):
         """A skill that routes a request away to a sibling is routed back to.
 

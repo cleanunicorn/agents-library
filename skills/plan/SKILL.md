@@ -15,7 +15,7 @@ asking you anything. You read and write the plan; you never change code.
 ## Phase 0 — Orient
 
 1. **Find the issue and read the Define output** in it (problem, scope in
-   and out, done-criteria): `gh issue view <n> --comments`. The plan serves
+   and out, done-criteria): `gh issue view <n> --comments`, or `DEFINE.md`. The plan serves
    those done-criteria and stays inside that scope. No definition and the
    request is loose → ask for `define` first. No issue at all → write the
    plan to `PLAN.md` in the worktree root instead of inventing an issue
