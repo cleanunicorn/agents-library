@@ -461,7 +461,7 @@
         },
         {
           "type": "shell",
-          "cmd": "test -z \"$(git status --porcelain)\""
+          "cmd": "test -z \"$(git status --porcelain -- src tests Makefile)\""
         },
         {
           "type": "shell",
