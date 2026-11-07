@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agents-library",
-  "description": "Stack-agnostic coding agents and orchestrator skills for feature planning, PR review, design review, PR batching, issue triage, simplification, codebase mapping, installing the agents on a periodic schedule, and a manager console that delegates work items to worker agents.",
+  "description": "Stack-agnostic coding agents and orchestrator skills for defining, planning, building, verifying, reviewing and shipping work, UX-psychology review, PR batching, issue filing, and a manager console that delegates work items to worker agents.",
   "owner": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com"
@@ -13,7 +13,7 @@
         "source": "github",
         "repo": "cleanunicorn/agents-library"
       },
-      "description": "Eleven skills (/review-pr, /review-design, /review-ux-psychology, /batch-merge-prs, /triage-issues, /file-issues, /simplify-sweep, /describe-codebase, /plan-feature, /install-agents, /manager) plus single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
+      "description": "Ten skills (/define, /plan, /build, /verify, /review, /ship, /review-ux-psychology, /batch-merge-prs, /file-issues, /manager) plus single-purpose coding subagents: architecture, dead code, docs, refactor, security, tests, UX polish, and visual design.",
       "category": "development",
       "homepage": "https://github.com/cleanunicorn/agents-library"
     }

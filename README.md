@@ -38,7 +38,7 @@ cd agents-library
 
 1. **Hosts**: Claude Code, Codex, opencode, and Kilo Code. Hosts whose CLI
    is on your `PATH` start checked.
-2. **Agents and skills**: the eight agents and eleven skills. Uncheck any you
+2. **Agents and skills**: the eight agents and ten skills. Uncheck any you
    don't want. This screen appears only when opencode or Kilo is checked,
    because Claude Code and Codex install the plugin as a whole.
 
@@ -61,10 +61,8 @@ reported as `KEPT`.
 
 Restart the host afterwards (a new Claude Code session, a new Codex thread).
 In Claude Code the agents become subagents (e.g. `architect`, `refactor`,
-`testforge`) and the skills are available as `/review-pr`, `/review-design`,
-`/review-ux-psychology`, `/batch-merge-prs`, `/triage-issues`, `/file-issues`,
-`/simplify-sweep`, `/describe-codebase`, `/plan-feature`, `/install-agents`,
-and `/manager`.
+`testforge`) and the skills are available as `/define`, `/plan`, `/build`, `/verify`, `/review`, `/ship`,
+`/review-ux-psychology`, `/batch-merge-prs`, `/file-issues`, and `/manager`.
 
 **Without the checklist** (scripts, CI, a remote shell), pass `--yes`. The
 installer then uses the saved selection, or everything on a first run. Flags
@@ -73,8 +71,8 @@ change the selection and are saved the same way:
 ```sh
 ./install.py --yes                                # saved selection
 ./install.py --yes --hosts opencode,kilo          # choose hosts
-./install.py --yes --skip manager,triage-issues   # uncheck (and remove) items
-./install.py --yes --only review-pr,architect     # keep these, remove the rest
+./install.py --yes --skip manager,file-issues   # uncheck (and remove) items
+./install.py --yes --only review,architect     # keep these, remove the rest
 ./install.py --yes --all                          # re-check every item
 ./install.py --list                               # hosts, items, what is saved
 ./install.py --yes --dry-run                      # show, change nothing
@@ -158,7 +156,7 @@ Check installation with `claude plugin list --json` in Claude Code and
 
 Running `opencode` or `kilo` in the clone's root needs no install. They
 auto-discover `.opencode/` and `.kilo/`, whose `agents/*.md` (eight subagents,
-each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (eleven skills,
+each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (ten skills,
 loaded on demand via the `skill` tool) are symlinks to the canonical `agents/`
 and `skills/` at the repo root, so there is a single source of truth.
 
@@ -166,10 +164,10 @@ and `skills/` at the repo root, so there is a single source of truth.
 
 Pick the skill that matches the job:
 
-- **Deliver work:** [`/manager`](#the-manager-skill) or [`/plan-feature`](#the-feature-planning-skill).
-- **Review or improve:** [`/review-pr`](#the-pr-review-skill), [`/review-design`](#the-review-design-skill), [`/review-ux-psychology`](#the-ux-psychology-review-skill), or [`/simplify-sweep`](#the-simplify-sweep-skill).
-- **Handle project queues and maintenance:** [`/batch-merge-prs`](#the-batch-pr-merge-skill), [`/triage-issues`](#the-issue-triage-skill), [`/file-issues`](#the-issue-filing-skill), or [`/install-agents`](#the-install-agents-skill).
-- **Understand a codebase:** [`/describe-codebase`](#the-describe-codebase-skill).
+- **Deliver work, step by step:** [`/define`](#the-define-skill), [`/plan`](#the-plan-skill), [`/build`](#the-build-skill), [`/verify`](#the-verify-skill), [`/review`](#the-review-skill), then [`/ship`](#the-ship-skill).
+- **Deliver work, hands off:** [`/manager`](#the-manager-skill) runs plan, build, review, and test through to one PR.
+- **Review UX:** [`/review-ux-psychology`](#the-ux-psychology-review-skill).
+- **Handle project queues:** [`/batch-merge-prs`](#the-batch-pr-merge-skill) or [`/file-issues`](#the-issue-filing-skill).
 
 ### The Manager Skill
 
@@ -220,38 +218,34 @@ terminal, so the watcher never types into it. Native subagents get no
 watcher. Transport instructions are local to each skill so either can be
 installed alone. The manager never merges a PR.
 
-### The Feature Planning Skill
+### The Define Skill
 
-[`/plan-feature`](skills/plan-feature/SKILL.md) turns a feature request into a
-plan grounded in the current repository before coding starts: reuse and
-integration points, acceptance criteria mapped to real tests and the command
-that runs them, and an ordered checklist covering implementation, wiring, and
-delivery risk. Missing test infrastructure becomes the first step. The plan
-stays in chat unless you ask for a file, and a request to plan *and* implement
-continues into implementation without asking again; no GitHub remote is
-required.
+[`/define`](skills/define/SKILL.md) turns a request into a problem statement, a scope (what is in and what is out), and done-criteria, and writes them to the issue. It asks only the questions whose answers would change the plan, and designs no solution. With no issue yet, it has a conversation with you and files nothing until you confirm the definition.
 
-### The PR Review Skill
+### The Plan Skill
 
-[`/review-pr`](skills/review-pr/SKILL.md) reviews the work on your current branch
-before you finalize it. Ten specialized reviewers inspect the local diff, and a
-separate verification pass screens their findings before presenting a ranked
-list. It can apply approved fixes or run an improve-until-converged loop behind
-the project's lint and test gate; no GitHub remote is required.
+[`/plan`](skills/plan/SKILL.md) reads the definition and breaks the request into small tasks that can each be verified alone. It maps the dependency graph between components, slices the work vertically (one complete path per task, never one layer at a time), gives every task acceptance criteria and a verification step, and adds the plan to the issue being developed. Each task is scope plus acceptance criteria plus verification steps, ordered by dependency, with a `## Progress` checkbox list. It writes no code.
 
-### The Review Design Skill
+### The Build Skill
 
-[`/review-design`](skills/review-design/SKILL.md) is the design-focused
-counterpart to `review-pr`: it reviews a view, component, frontend path, or
-branch diff against the project's visual system and core UI principles. It
-ranks findings across five design lenses, then can apply approved fixes or run
-an improve-until-converged loop behind the lint and build gate. No `gh` or
-remote is required.
+[`/build`](skills/build/SKILL.md) implements the plan one task at a time: it reads the task's acceptance criteria, loads the relevant context, writes the failing test (red), writes the minimum code to pass (green), runs the full suite for regressions, and commits with a Conventional Commit. It runs targeted tests on every cycle and the full suite once per task. When blocked, or when an acceptance criterion is wrong, it stops and updates the plan instead of widening scope.
+
+### The Verify Skill
+
+[`/verify`](skills/verify/SKILL.md) checks the finished work against the plan: it exercises each acceptance criterion end to end, records pass or fail with evidence, confirms every task was done, and lists the gaps in the issue. It reports; it does not fix.
+
+### The Review Skill
+
+[`/review`](skills/review/SKILL.md) reviews the work on your current branch. Seven specialized reviewers (correctness, readability, architecture, security, performance, dead code, docs currency) inspect the local diff, and a separate verification pass screens their findings before presenting a ranked list. By default it fixes the trivial findings behind the project's lint and test gate and reports the rest by severity; it can also apply chosen findings or run an improve-until-converged loop. No GitHub remote is required.
+
+### The Ship Skill
+
+[`/ship`](skills/ship/SKILL.md) delivers finished work the way you ask: a pull request, a pushed branch, a local commit, or a merge. The request wins, then instructions that came with the task; by default it pushes the branch, opens a draft PR that summarizes the changes and links the issue, and marks it ready once local checks, CI and the verify result are all clean. It re-runs the project's checks first and never pushes red.
 
 ### The UX Psychology Review Skill
 
 [`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
-behavior-and-conversion counterpart to `review-design`. It reviews a screen,
+behavior-and-conversion counterpart to `review`: it targets conversion rather than code quality. It. It reviews a screen,
 flow, path, or branch diff against behavioral principles for a named product
 metric, using rendered evidence when available and independently verifying each
 finding. It can apply approved fixes or iterate behind the project's lint and
@@ -267,7 +261,7 @@ intent and recording each file's resolution, or skips the PR with a stated
 reason when it can't resolve it with confidence; the rest still merge. It
 then runs the tests the project's own docs and CI call for, skipping any suite
 marked as touching live or shared resources unless you authorize it. It names
-the PR behind each failure and reviews the merged branch with `review-pr`.
+the PR behind each failure and reviews the merged branch with `review`.
 Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
 native subagents and the shell. Its transport guide needs no manager install.
 It answers its Herdr workers' routine permission prompts itself, logging each
@@ -276,14 +270,6 @@ main-branch commits, destruction outside the run, secrets or global
 settings, the project's ask-first list, and prompts it cannot classify.
 Without a PR list it shows open PRs and waits for your selection. Nothing is
 pushed or changed on GitHub. Requires the `gh` CLI.
-
-### The Issue Triage Skill
-
-[`/triage-issues`](skills/triage-issues/SKILL.md) triages the project's open
-GitHub issues into a code-grounded action plan covering duplicates, easy wins,
-needs-info cases, and larger work. Every GitHub write needs per-action approval;
-approved easy wins are fixed in separate worktrees and pull requests behind the
-project's lint and test gate. Requires the `gh` CLI.
 
 ### The Issue Filing Skill
 
@@ -295,32 +281,6 @@ permalinks to the code, and follows the repository's title convention and
 existing labels. It files issues only: no code edits, branches, commits, or
 pull requests. Inside Herdr it labels its tab `issues <project>`, as the
 manager labels its own `manager <project>`. Requires the `gh` CLI.
-
-### The Simplify Sweep Skill
-
-[`/simplify-sweep`](skills/simplify-sweep/SKILL.md) surveys a target you choose —
-the whole repository, a path/glob, or the current branch diff — for
-**behavior-preserving** simplifications across redundancy, complexity, clarity,
-and documentation. It ranks findings, then can apply approved changes or run an
-improve-until-converged loop behind the project's lint and test gate. No `gh` or
-remote is required.
-
-### The Describe Codebase Skill
-
-[`/describe-codebase`](skills/describe-codebase/SKILL.md) is the read-to-explain
-counterpart to `review-pr`. It maps a whole repository or subsystem, or traces
-one feature end to end, producing an orientation brief with `file:line`
-evidence. The analysis is read-only; it writes `ARCHITECTURE.md` or updates
-`AGENTS.md` only with explicit approval. No `gh` or remote is required.
-
-### The Install Agents Skill
-
-[`/install-agents`](skills/install-agents/SKILL.md) puts a project on automatic
-maintenance by copying a chosen set into `.claude/agents/`, seeding journals,
-and optionally scheduling staggered runs weekly by default. It supports Claude
-Code schedules, GitHub Actions, and local cron, and preserves locally customized
-agent files unless you explicitly approve an overwrite. Re-running upgrades or
-extends an installation.
 
 ## Update
 
@@ -504,9 +464,7 @@ the clone's location; restart Kilo after refreshing it.
 ## About the agents
 
 Eight agents, one section each below — the linked file is the full
-definition, and every host loads them as subagents. Install them into any
-project as weekly periodic agents with
-[`/install-agents`](skills/install-agents/SKILL.md).
+definition, and every host loads them as subagents.
 
 ### Shared Conventions
 
@@ -528,7 +486,7 @@ The agents are designed to discover most of this themselves, but supplying it up
 
 ### Journals
 
-`/install-agents` seeds an empty journal per agent at `.claude/agents/journals/<agent>.md` for durable, codebase-specific notes. The copies in `agents/journals/` are intentionally empty — they accumulate per project.
+An agent keeps durable, codebase-specific notes in a journal at `.claude/agents/journals/<agent>.md` in the target project. The copies in `agents/journals/` are intentionally empty — they accumulate per project.
 
 ## Architect
 
@@ -596,8 +554,7 @@ extension cases need `node` and report a skip without it), the manager's
 persistent console
 (`scripts/test-manager-console.py`), the Herdr prompt-delivery gate
 (`scripts/test-herdr-prompt-delivery.py`), the manager's worker watcher against a
-stub `herdr` (`scripts/test-manager-watcher.py`), skill-installer write failures and ledger
-behavior (`scripts/test-install-agents.sh`), staged/unstaged review-target
+stub `herdr` (`scripts/test-manager-watcher.py`), staged/unstaged review-target
 regressions (`scripts/test-diff-target.sh`), the shared Herdr workspace-rename step
 against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval runner's
 offline transcript parsing and delegation traces (`scripts/test-run-evals.py`),

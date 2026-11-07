@@ -18,7 +18,7 @@ the run directory. An empty list is valid; say which domains produced it.
 
 1. Compare `git rev-parse HEAD` with the commit you were given. Differ or
    dirty tree: stop and report; check nothing out yourself.
-2. Run `review-pr` on the branch diff against the main branch, report-only
+2. Run `review` on the branch diff against the main branch, report-only
    path, verification pass included. Keep its finding schema and add
    `reviewer: <label>`.
 3. Check the diff against each acceptance criterion. No code, or no test that

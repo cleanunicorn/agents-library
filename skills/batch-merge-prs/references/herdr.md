@@ -8,7 +8,7 @@ reference is self-contained so batch-merge works without the manager skill.
 
 Use one tab per read-only reviewer or investigator in the current workspace:
 
-1. Choose an installed kind from `herdr agent`, with review-pr available for
+1. Choose an installed kind from `herdr agent`, with review available for
    the reviewer; prefer a kind different from yours for independent review.
 2. Create: `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd
    <repo-root> --label <name> --no-focus`. Use unique

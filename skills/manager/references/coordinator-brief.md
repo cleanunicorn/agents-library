@@ -37,7 +37,7 @@ further on, not in full.
 
 ## Team
 
-Choose the roles you need: planner (`plan-feature`, read-only), implementer,
+Choose the roles you need: planner (`plan`, read-only: it returns the plan and you post it), implementer,
 reviewers, tester. Small change, few roles. Security, stored data, a public
 contract or an ask-first boundary: more review. A reviewer differs in kind
 from the implementer when installed.

@@ -239,7 +239,6 @@
       "id": "fi-n1",
       "prompt": "Triage the open issues: find duplicates and label them.",
       "should_trigger": false,
-      "expect_skill": "triage-issues",
       "fixture": "issue-desk",
       "assertions": [
         {
@@ -252,7 +251,7 @@
       "id": "fi-n2",
       "prompt": "Review the changes on my current branch before I merge.",
       "should_trigger": false,
-      "expect_skill": "review-pr",
+      "expect_skill": "review",
       "fixture": "issue-desk",
       "assertions": [
         {
@@ -265,7 +264,7 @@
       "id": "fi-n3",
       "prompt": "Plan how to add a --delimiter option to the exporter; don't write code yet.",
       "should_trigger": false,
-      "expect_skill": "plan-feature",
+      "expect_skill": "plan",
       "fixture": "issue-desk",
       "assertions": [
         {
@@ -278,7 +277,6 @@
       "id": "fi-n4",
       "prompt": "Explain how this codebase is structured and how an export flows through it.",
       "should_trigger": false,
-      "expect_skill": "describe-codebase",
       "fixture": "issue-desk",
       "assertions": [
         {

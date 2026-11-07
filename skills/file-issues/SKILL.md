@@ -4,8 +4,8 @@ description: >-
   Keep a long-lived session that turns each description you give into a
   well-formed GitHub issue: duplicate search, code-grounded permalinks, the
   repo's title and label conventions. Files issues only — never edits code,
-  branches, commits, or opens PRs. Requires `gh`. Not for triaging existing
-  issues (triage-issues).
+  branches, commits, or opens PRs. Requires `gh`. Not for working existing
+  issues.
 ---
 
 # file-issues
@@ -120,7 +120,7 @@ For each description, in order:
 - **"Fix it", "implement it", "open a PR"** — decline in one line, keep the
   session a desk, and offer to file or refine the issue.
 - **Triage of existing issues** (labeling, closing, grooming the backlog) —
-  out of scope here; the `triage-issues` skill does that.
+  out of scope here; say so in one line.
 - **A question about the code** — answer briefly from what you read, then
   offer to file an issue if the answer reveals one.
 

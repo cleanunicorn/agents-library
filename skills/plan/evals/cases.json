@@ -1,0 +1,414 @@
+{
+  "skill": "plan",
+  "fixtures": {
+    "task-desk": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the behavior tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - taskbox\n\n- Layering is a rule: `src/app.py` only dispatches, `src/service.py` validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/taskbox\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/taskbox/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-12.txt": "title:\tfeat: complete a task and filter the list by completed\nstate:\tOPEN\nlabels:\tenhancement\n--\nUsers need to mark a task done and see only open or only completed tasks.\n\n- New command `complete(id=...)` sets `completed` to True; an unknown id is an error.\n- `list(completed=True|False)` filters; no argument still returns every task.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag baseline"
+          ]
+        }
+      ]
+    },
+    "task-desk-branch": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the behavior tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - taskbox\n\n- Layering is a rule: `src/app.py` only dispatches, `src/service.py` validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/taskbox\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/taskbox/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-12.txt": "title:\tfeat: complete a task and filter the list by completed\nstate:\tOPEN\nlabels:\tenhancement\n--\nUsers need to mark a task done and see only open or only completed tasks.\n\n- New command `complete(id=...)` sets `completed` to True; an unknown id is an error.\n- `list(completed=True|False)` filters; no argument still returns every task.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag baseline"
+          ]
+        },
+        {
+          "files": {
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    tasks = repository.list_tasks()\n    return tasks[:100]\n"
+          }
+        },
+        {
+          "run": [
+            "git checkout -qb feature/cap-list",
+            "git add -A",
+            "git commit -qm 'feat: cap list size'"
+          ]
+        }
+      ]
+    },
+    "task-desk-no-issue": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# taskbox\n\nAn offline Python task service. Call src.app.execute(command, **params).\nCommands: add(title=...), list(). Lists return every task in insertion order.\nTask records have id, title, and completed (initially False).\n\nLayering: app dispatches commands; service validates input; repository owns\nin-memory task storage. Settings belong in src/config.py. There is no UI,\nnetwork, database, authentication, or deployment pipeline.\n\nRun the behavior tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - taskbox\n\n- Layering is a rule: `src/app.py` only dispatches, `src/service.py` validates input, `src/repository.py` owns storage.\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "src/__init__.py": "",
+            "src/config.py": "MAX_TITLE_LENGTH = 80\n",
+            "src/app.py": "from src import service\n\n\ndef execute(command, **params):\n    if command == \"add\":\n        return service.add_task(**params)\n    if command == \"list\":\n        return service.list_tasks(**params)\n    raise ValueError(\"unknown command\")\n",
+            "src/service.py": "from src import config, repository\n\n\ndef add_task(title):\n    if not isinstance(title, str) or not title.strip():\n        raise ValueError(\"title must be nonempty text\")\n    title = title.strip()\n    if len(title) > config.MAX_TITLE_LENGTH:\n        raise ValueError(\"title too long\")\n    return repository.add_task(title)\n\n\ndef list_tasks():\n    return repository.list_tasks()\n",
+            "src/repository.py": "TASKS = []\n\n\ndef add_task(title):\n    task = {\"id\": len(TASKS) + 1, \"title\": title, \"completed\": False}\n    TASKS.append(task)\n    return dict(task)\n\n\ndef list_tasks():\n    return [dict(task) for task in TASKS]\n",
+            "tests/test_tasks.py": "import unittest\n\nfrom src.app import execute\nfrom src import repository\n\n\nclass TaskTests(unittest.TestCase):\n    def setUp(self):\n        repository.TASKS.clear()\n\n    def test_add_and_list_preserve_order(self):\n        first = execute(\"add\", title=\"first\")\n        second = execute(\"add\", title=\"second\")\n        self.assertEqual(execute(\"list\"), [first, second])\n        self.assertFalse(first[\"completed\"])\n\n    def test_invalid_titles(self):\n        for title in (\"\", \"  \", None, \"x\" * 81):\n            with self.subTest(title=title), self.assertRaises(ValueError):\n                execute(\"add\", title=title)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/taskbox\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/taskbox/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial task service'",
+            "git tag baseline"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "pl-h1",
+      "prompt": "Plan issue #12 before we write any code. Add the plan to the issue as a comment.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "src/(service|repository|app)\\.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-h2",
+      "prompt": "Break issue #12 into small tasks, each with acceptance criteria and how to verify it, and post the plan on the issue.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?is)acceptance criteria.*verif"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "tests/test_tasks\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?i)complete"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-h3",
+      "prompt": "Write an implementation plan for issue #12 with the task order and what depends on what. Comment it on the issue; don't implement anything.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?i)depends on"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?i)depends on:?\\**\\s*(none|-|n/a)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-h4",
+      "prompt": "Plan how to add the complete command and the list filter from issue #12. Slice it so each task works end to end, and tell me the issue URL and task count when you are done.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "src/app\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "src/service\\.py"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-12.md",
+          "pattern": "src/repository\\.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "issues/12"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(\\d+|one|two|three|four|five)\\s+(tasks?|steps?)|tasks?\\W+(\\d+|count)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-h5",
+      "prompt": "There is no issue for this yet. Plan a feature: let users rename a task by id. Don't write code.",
+      "should_trigger": true,
+      "fixture": "task-desk-no-issue",
+      "assertions": [
+        {
+          "type": "file_exists",
+          "path": "PLAN.md"
+        },
+        {
+          "type": "file_regex",
+          "path": "PLAN.md",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "file_regex",
+          "path": "PLAN.md",
+          "pattern": "(?i)acceptance criteria"
+        },
+        {
+          "type": "file_regex",
+          "path": "PLAN.md",
+          "pattern": "(?i)verif"
+        },
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh issue (comment|edit|create)' .gh-calls.log 2>/dev/null"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-h6",
+      "prompt": "Plan issue #12 and put the plan in the issue body itself, not a comment.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue edit' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/body-12.md",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/body-12.md",
+          "pattern": "(?i)acceptance criteria"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-n1",
+      "prompt": "Implement issue #12: add the complete command and the list filter. Make test green.",
+      "should_trigger": false,
+      "expect_skill": "build",
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test -n \"$(git status --porcelain -- src tests)$(git log baseline..HEAD --oneline)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "make test"
+        }
+      ]
+    },
+    {
+      "id": "pl-n2",
+      "prompt": "Review my diff on this branch and report findings. Change nothing.",
+      "should_trigger": false,
+      "expect_skill": "review",
+      "fixture": "task-desk-branch",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(review|finding|diff|list_tasks|100|cap|limit)"
+        },
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-n3",
+      "prompt": "This branch is done. Ship it: push it and open a pull request.",
+      "should_trigger": false,
+      "expect_skill": "ship",
+      "fixture": "task-desk-branch",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(pull request|\\bPR\\b|push|remote|origin)"
+        }
+      ]
+    },
+    {
+      "id": "pl-n4",
+      "prompt": "What is the capital of France? Answer in one word.",
+      "should_trigger": false,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)paris"
+        },
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        }
+      ]
+    },
+    {
+      "id": "pl-n5",
+      "prompt": "Explain how this codebase is laid out and how a command flows from app to storage.",
+      "should_trigger": false,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)repository"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)service"
+        },
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git status --porcelain)\""
+        }
+      ]
+    },
+    {
+      "id": "pl-n6",
+      "prompt": "What does MAX_TITLE_LENGTH do in this repo?",
+      "should_trigger": false,
+      "fixture": "task-desk",
+      "assertions": [
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(80|title)"
+        },
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        }
+      ]
+    }
+  ]
+}

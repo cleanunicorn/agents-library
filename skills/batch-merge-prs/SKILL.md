@@ -5,7 +5,7 @@ description: >-
   skipping any already in main, then run the project's tests and review the
   merged branch. Use to batch, combine, or bulk-merge specific PRs into one
   branch. Requires `gh`; never pushes or closes PRs. Not for reviewing one
-  PR (review-pr) or triaging issues (triage-issues).
+  PR (review).
 ---
 
 # batch-merge-prs
@@ -77,11 +77,11 @@ attribute failures to merge commits. Report unauthorized suites as skipped.
 
 ## Phase 3 — Review
 
-Start one read-only reviewer using **review-pr**, report-only (Phase 4 path
-*d*), against `<remote>/<main>`. Supply that base explicitly: review-pr's
+Start one read-only reviewer using **review**, report-only (Phase 4 path
+*d*), against `<remote>/<main>`. Supply that base explicitly: review's
 `diff-target.sh` uses `origin/HEAD` when available and otherwise local
 `main` or `master`, which may differ from this batch's remote and base.
-Its domain fan-out remains review-pr's responsibility.
+Its domain fan-out remains review's responsibility.
 
 Review and tip tests may run together because neither writes. Wait for the
 reviewer before failure attribution, which checks out other commits. Report
@@ -97,7 +97,7 @@ Return one ledger:
 - **Skipped:** already-in-main evidence, fetch failure, or unresolved reason.
 - **Tests:** command, source, exit status, passed/failed counts; skipped suites
   and reasons; each failure's culprit PR, `pre-existing`, or `none`.
-- **Review:** ranked verified findings and review-pr's filtered-out tally.
+- **Review:** ranked verified findings and review's filtered-out tally.
 - **Approvals:** `<run-dir>/approvals.md` and its count of answered,
   relayed, and rejected prompts.
 - **Next steps:** the user may inspect, fix or drop a culprit, push, or open

@@ -78,7 +78,6 @@
       "id": "ux-n1",
       "prompt": "Review the visual design of the pricing page — spacing, typography, and color.",
       "should_trigger": false,
-      "expect_skill": "review-design",
       "fixture": "signup-flow",
       "assertions": [
         {"type": "output_not_regex", "pattern": "\\[(defaults|progress|reciprocity|endowment|loss-aversion|anchoring)-\\d"}
@@ -88,7 +87,7 @@
       "id": "ux-n2",
       "prompt": "Review my branch diff before merge.",
       "should_trigger": false,
-      "expect_skill": "review-pr",
+      "expect_skill": "review",
       "fixture": "signup-flow",
       "assertions": [
         {"type": "output_regex", "pattern": "(?i)(nothing to review|no (diff|change|commit|new)|even with|clean|up.to.date|same as)"}
@@ -98,7 +97,6 @@
       "id": "ux-n3",
       "prompt": "Explain how the signup flow code is organized.",
       "should_trigger": false,
-      "expect_skill": "describe-codebase",
       "fixture": "signup-flow",
       "assertions": [
         {"type": "output_regex", "pattern": "Signup"},
@@ -119,7 +117,6 @@
       "id": "ux-n5",
       "prompt": "Simplify the whole repo — find dead code and duplication and report.",
       "should_trigger": false,
-      "expect_skill": "simplify-sweep",
       "fixture": "signup-flow",
       "assertions": [
         {"type": "output_not_regex", "pattern": "\\[(defaults|progress|reciprocity|endowment|loss-aversion|anchoring)-\\d"}

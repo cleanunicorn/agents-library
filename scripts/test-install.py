@@ -89,9 +89,9 @@ class FileHostTests(Sandbox):
         self.assertEqual(code, 0)
         self.assertEqual(len(out), 2 * (len(AGENTS) + len(SKILLS)))
         self.assertIn("LINKED opencode/architect", out)
-        self.assertIn("LINKED kilo/review-pr", out)
-        link = self.opencode("skills", "review-pr")
-        self.assertEqual(link.resolve(), REPO / "skills" / "review-pr")
+        self.assertIn("LINKED kilo/review", out)
+        link = self.opencode("skills", "review")
+        self.assertEqual(link.resolve(), REPO / "skills" / "review")
 
     def test_rerun_reports_ok(self):
         self.run_installer("--yes", "--hosts", "opencode")
@@ -121,18 +121,18 @@ class FileHostTests(Sandbox):
         self.assertEqual(self.saved()["excluded"], [])
 
     def test_only_keeps_the_named_items(self):
-        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--only", "review-pr")
-        self.assertEqual(out, ["LINKED opencode/review-pr"])
+        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--only", "review")
+        self.assertEqual(out, ["LINKED opencode/review"])
         self.assertEqual(len(self.saved()["excluded"]), len(AGENTS) + len(SKILLS) - 1)
 
     def test_only_removes_every_other_installed_item(self):
         self.run_installer("--yes", "--hosts", "opencode")
-        code, out, _ = self.run_installer("--yes", "--force", "--only", "review-pr")
+        code, out, _ = self.run_installer("--yes", "--force", "--only", "review")
         self.assertEqual(code, 0)
-        self.assertIn("OK opencode/review-pr", out)
+        self.assertIn("OK opencode/review", out)
         self.assertIn("REMOVED opencode/architect", out)
         self.assertEqual(sum(line.startswith("REMOVED ") for line in out), len(AGENTS) + len(SKILLS) - 1)
-        self.assertEqual([p.name for p in self.opencode("skills").iterdir()], ["review-pr"])
+        self.assertEqual([p.name for p in self.opencode("skills").iterdir()], ["review"])
 
     def test_unchecked_item_that_differs_is_kept(self):
         target = self.opencode("agents", "architect.md")
@@ -157,9 +157,9 @@ class FileHostTests(Sandbox):
         self.assertTrue(target.is_symlink())
 
     def test_copy_flag_copies_globally(self):
-        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review-pr")
-        self.assertEqual(out, ["COPIED opencode/review-pr"])
-        copied = self.opencode("skills", "review-pr")
+        code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review")
+        self.assertEqual(out, ["COPIED opencode/review"])
+        copied = self.opencode("skills", "review")
         self.assertTrue(copied.is_dir() and not copied.is_symlink())
 
     def test_list_prints_hosts_and_items_and_writes_nothing(self):
@@ -215,7 +215,7 @@ class CopyRemovalTests(Sandbox):
     def install_copies(self):
         code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy")
         self.assertEqual(code, 0)
-        self.assertIn("COPIED opencode/review-pr", out)
+        self.assertIn("COPIED opencode/review", out)
 
     def skip(self, name):
         code, out, _ = self.run_installer("--yes", "--hosts", "opencode", "--copy", "--skip", name)
@@ -224,8 +224,8 @@ class CopyRemovalTests(Sandbox):
 
     def test_identical_copy_is_removed(self):
         self.install_copies()
-        self.assertIn("REMOVED opencode/review-pr", self.skip("review-pr"))
-        self.assertFalse(self.opencode("skills", "review-pr").exists())
+        self.assertIn("REMOVED opencode/review", self.skip("review"))
+        self.assertFalse(self.opencode("skills", "review").exists())
 
     def test_edited_agent_copy_is_kept(self):
         self.install_copies()
@@ -240,18 +240,18 @@ class CopyRemovalTests(Sandbox):
             with self.subTest(name=name):
                 shutil.rmtree(self.home / ".config", ignore_errors=True)
                 self.install_copies()
-                added = self.opencode("skills", "review-pr", name)
+                added = self.opencode("skills", "review", name)
                 added.write_text("mine\n")
-                self.assertIn("KEPT opencode/review-pr", self.skip("review-pr"))
+                self.assertIn("KEPT opencode/review", self.skip("review"))
                 self.assertEqual(added.read_text(), "mine\n")
 
     def test_directory_replaced_by_a_file_keeps_it(self):
         self.install_copies()
-        skill = self.opencode("skills", "review-pr")
+        skill = self.opencode("skills", "review")
         subdir = next(path for path in sorted(skill.iterdir()) if path.is_dir())
         shutil.rmtree(subdir)
         subdir.write_text("mine\n")
-        self.assertIn("KEPT opencode/review-pr", self.skip("review-pr"))
+        self.assertIn("KEPT opencode/review", self.skip("review"))
         self.assertEqual(subdir.read_text(), "mine\n")
 
 
@@ -275,14 +275,14 @@ class FilesystemErrorTests(Sandbox):
         self.assertEqual(status, installer.EXIT_FAILED)
         self.assertIn("FAILED opencode/architect", out)
         self.assertIn("FAILED opencode/manager", out)
-        self.assertIn("OK opencode/review-pr", out)
+        self.assertIn("OK opencode/review", out)
 
     def test_comparison_error_is_failed_and_later_items_continue(self):
-        self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review-pr")
+        self.run_installer("--yes", "--hosts", "opencode", "--copy", "--only", "review")
         unreadable = mock.Mock(side_effect=PermissionError("denied"))
         status, out = self.run_in_process([], same_copy=unreadable, same_link=unreadable)
         self.assertEqual(status, installer.EXIT_FAILED)
-        self.assertIn("FAILED opencode/review-pr", out)
+        self.assertIn("FAILED opencode/review", out)
         self.assertEqual(len(out), len(AGENTS) + len(SKILLS))
 
     def test_unwritable_selection_is_fatal(self):
@@ -527,21 +527,21 @@ class ProjectTests(Sandbox):
         self.assertIn("SKIPPED codex/agents-library", out)
         self.assertIn("INSTALLED claude/agents-library", out)
         self.assertIn("--scope project", " ".join(self.calls()))
-        copied = self.project / ".opencode" / "skills" / "review-pr"
+        copied = self.project / ".opencode" / "skills" / "review"
         self.assertTrue(copied.is_dir() and not copied.is_symlink())
         self.assertEqual(self.saved(project=True)["excluded"], ["manager"])
         self.assertFalse((self.home / ".config" / "agents-library").exists())
 
         code, out, _ = self.run_installer("--yes", "--project")
-        self.assertIn("OK opencode/review-pr", out)
+        self.assertIn("OK opencode/review", out)
 
     def test_symlink_flag_links_into_a_project(self):
         code, out, _ = self.run_installer("--yes", "--project", "--hosts", "opencode", "--symlink",
-                                          "--only", "review-pr")
-        self.assertEqual(out, ["LINKED opencode/review-pr"])
-        link = self.project / ".opencode" / "skills" / "review-pr"
+                                          "--only", "review")
+        self.assertEqual(out, ["LINKED opencode/review"])
+        link = self.project / ".opencode" / "skills" / "review"
         self.assertTrue(link.is_symlink())
-        self.assertEqual(link.resolve(), REPO / "skills" / "review-pr")
+        self.assertEqual(link.resolve(), REPO / "skills" / "review")
 
 
 class ChecklistTests(unittest.TestCase):

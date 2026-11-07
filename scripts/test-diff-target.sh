@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-SCRIPT="$(cd "$(dirname "$0")/../skills/review-pr/scripts" && pwd)/diff-target.sh"
+SCRIPT="$(cd "$(dirname "$0")/../skills/review/scripts" && pwd)/diff-target.sh"
 pass=0
 fail=0
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY

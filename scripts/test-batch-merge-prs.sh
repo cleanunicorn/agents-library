@@ -378,7 +378,7 @@ skill_dir="$ROOT/skills/batch-merge-prs"
 skill=$(cat "$skill_dir/SKILL.md")
 assert_contains "$skill" 'references/conflicts.md' 'Phase 1 links the conflict procedure'
 assert_contains "$skill" 'references/test-gate.md' 'resolved merges still reach the test gate'
-assert_contains "$skill" 'read-only reviewer using **review-pr**' 'and the read-only review'
+assert_contains "$skill" 'read-only reviewer using **review**' 'and the read-only review'
 procedure=$(cat "$skill_dir/references/conflicts.md")
 for op in --continue --skip; do
   assert_contains "$procedure" "merge-prs.sh $op" "procedure shows $op"

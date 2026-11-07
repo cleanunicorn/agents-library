@@ -46,7 +46,7 @@ Each turn, in this order:
 1. **The user's message**, whatever it says and whether or not it names the
    manager. A new change → intake, or the queue at the active-item limit. A
    question your own reads cannot answer, a skill the user invokes now
-   (`/review-pr`, `/describe-codebase`, …), or "start an agent to …" → a
+   (`/review`, `/plan`, …), or "start an agent to …" → a
    helper (§ Helpers), or intake when it asks for a change. An answer → the
    worker that asked. "Status" → the board. A change to a running item → its
    coordinator, logged on the board. "Do it yourself" → say the console
@@ -64,7 +64,7 @@ A timeout is not a failure; check the worker before re-prompting.
 ## Helpers
 
 A request that changes nothing — a question, an investigation, a read-only
-skill such as `review-pr` in report mode or `describe-codebase` — is its own
+skill such as `review` in report mode or `plan` — is its own
 board item with **one helper** and no other team. It launches with the
 read-only grant (`references/herdr.md` § Pre-grants per kind, the planner,
 reviewer column) on the recorded transport, in a tab labelled

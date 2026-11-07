@@ -22,28 +22,20 @@ AGENT_WORD_CEILING = 1800
 # domains/, lenses/, references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 700,
-    "describe-codebase": 1000,
+    "build": 600,
+    "define": 500,
     "file-issues": 1100,
-    "install-agents": 1400,
     "manager": 1550,
-    "plan-feature": 1300,
-    "review-design": 1800,
-    "review-pr": 2200,
+    "plan": 500,
+    "review": 2200,
     "review-ux-psychology": 3000,
-    "simplify-sweep": 1800,
-    "triage-issues": 2800,
+    "ship": 550,
+    "verify": 500,
 }
 # One-way routing hints the mutual-routing test tolerates, as (from, to):
 # `from`'s description names `to`, but `to` does not name `from` back.
-# review-pr is the hub every reviewing skill points at; its description is at
-# the ceiling, so these wait on an eval run to decide which ones earn a word.
 # Shrink this set; never grow it to admit a new one-way hint.
-ONE_WAY_ROUTING_HINTS = {
-    ("batch-merge-prs", "review-pr"),
-    ("manager", "plan-feature"),
-    ("manager", "review-pr"),
-    ("triage-issues", "review-pr"),
-}
+ONE_WAY_ROUTING_HINTS = set()
 
 
 def block_description(text):
