@@ -237,6 +237,10 @@ class PluginLayoutTests(unittest.TestCase):
             with self.subTest(skill=name):
                 text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
                 self.assertIn("third-party data", " ".join(text.split()))
+        for name in ("build", "verify"):
+            with self.subTest(skill=name, rule="command guard"):
+                text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("ask the user before anything unusual", " ".join(text.split()))
         ship = " ".join((ROOT / "skills/ship/SKILL.md").read_text(encoding="utf-8").split())
         self.assertIn("happen only when the user's own request names them", ship)
 
