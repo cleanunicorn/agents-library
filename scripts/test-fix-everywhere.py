@@ -70,6 +70,18 @@ class FixEverywhereTests(unittest.TestCase):
                             "apply phase does not fix the other instances")
                 self.refute(name, text, CAP, "a per-area cap is back")
 
+    def test_build_fixes_every_instance(self):
+        """build fixes bugs but is not in FIXING_SKILLS: it has no apply phase.
+
+        The detector above finds skills by their apply-the-fix marker, so a
+        skill that fixes code in its green step needs its own check.
+        """
+        path = "skills/build/SKILL.md"
+        text = " ".join(self.read(path).split())
+        self.expect(path, text, re.compile(r"(?i)fix every (mechanical )?instance"),
+                    "the green step does not sweep for the same problem")
+        self.refute(path, text, CAP, "a per-area cap is back")
+
     def test_manager_coordinator_fixes_every_instance(self):
         path = "skills/manager/references/coordinator-brief.md"
         text = self.read(path)
