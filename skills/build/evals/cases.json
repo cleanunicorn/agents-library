@@ -1,0 +1,399 @@
+{
+  "skill": "build",
+  "fixtures": {
+    "plan-branch": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n__pycache__/\n*.pyc\n",
+            "README.md": "# textkit\n\nSmall text helpers.\n\n## Commands\n\n- test: `make test`\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests\n",
+            "PLAN.md": "# Plan: textkit helpers\n\n## Progress\n\n- [ ] Task 1: slugify\n- [ ] Task 2: truncate (depends on nothing; do after task 1)\n\n## Task 1: slugify\n\nAdd `slugify(text)` to `src/textkit.py`.\n\nAcceptance criteria:\n- `slugify(\"Hello World\")` returns `\"hello-world\"`\n- Punctuation is dropped: `slugify(\"Hi, there!\")` returns `\"hi-there\"`\n- Repeated separators collapse: `slugify(\"a  --  b\")` returns `\"a-b\"`\n- Leading and trailing separators are removed\n\n## Task 2: truncate\n\nAdd `truncate(text, limit)` to `src/textkit.py`.\n\nAcceptance criteria:\n- Text of `limit` characters or fewer is returned unchanged\n- Longer text is cut so the result, including a trailing `...`, is exactly `limit` characters\n- A `limit` below 3 raises `ValueError`\n",
+            "src/textkit.py": "def word_count(text):\n    \"\"\"Count the words in text.\"\"\"\n    return len(text.split(' '))\n",
+            "tests/test_textkit.py": "import os\nimport sys\nimport unittest\n\nsys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))\nfrom textkit import word_count\n\n\nclass WordCountTest(unittest.TestCase):\n    def test_two_words(self):\n        self.assertEqual(word_count('hello world'), 2)\n\n    def test_one_word(self):\n        self.assertEqual(word_count('hello'), 1)\n\n\nif __name__ == '__main__':\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'feat: initial textkit with word_count'",
+            "git checkout -qb feature/textkit-helpers"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "bu-h1",
+      "prompt": "Implement task 1 of PLAN.md (slugify). Follow the plan's acceptance criteria.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -q 'def slugify' src/textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import slugify as s; assert s('Hi, there!')=='hi-there' and s('a  --  b')=='a-b'\""
+        }
+      ]
+    },
+    {
+      "id": "bu-h2",
+      "prompt": "Build everything in PLAN.md, task by task.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -q 'def slugify' src/textkit.py && grep -q 'def truncate' src/textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import truncate as t; assert t('hello world',8)=='hello...' and t('hi',5)=='hi'\""
+        }
+      ]
+    },
+    {
+      "id": "bu-h3",
+      "prompt": "word_count is wrong: word_count('') returns 1 and word_count('a  b') returns 3. Fix it.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import word_count as w; assert w('')==0 and w('a  b')==2 and w('hello world')==2\""
+        }
+      ]
+    },
+    {
+      "id": "bu-h4",
+      "prompt": "Do task 2 from the plan (truncate), test first, and commit it.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -q 'def truncate' src/textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import truncate as t; assert t('hello world',8)=='hello...'\"; python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import truncate as t; t('abc',2)\" 2>&1 | grep -q ValueError"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(pass|green|ok|commit)"
+        }
+      ]
+    },
+    {
+      "id": "bu-h5",
+      "prompt": "Implement the slugify task from the plan and tell me how the test suite did when you're done.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "grep -q 'def slugify' src/textkit.py"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(\\d+\\s*(tests?\\s*)?(passed|ok)|passed|all tests)"
+        }
+      ]
+    },
+    {
+      "id": "bu-h6",
+      "prompt": "There's a bug in word_count with extra spaces ('a  b' gives 3). Reproduce it with a failing test first, then fix it and commit.",
+      "should_trigger": true,
+      "timeout": 1800,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --name-only main | grep -q '^tests/'"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -gt 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git log --format=%s main..HEAD | grep -Ev '^(feat|fix|test|refactor)(\\(.+\\))?: ')\" && test -n \"$(git log --format=%s main..HEAD)\""
+        },
+        {
+          "type": "shell",
+          "cmd": "test -z \"$(git diff --diff-filter=D --name-only main)\" && grep -q 'test_two_words' tests/test_textkit.py"
+        },
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count main) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -c \"import sys; sys.path.insert(0,'src'); from textkit import word_count as w; assert w('a  b')==2\""
+        }
+      ]
+    },
+    {
+      "id": "bu-n1",
+      "prompt": "Write an implementation plan for adding a caesar_cipher function to textkit. Don't code it yet.",
+      "should_trigger": false,
+      "expect_skill": "plan",
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bu-n2",
+      "prompt": "Review my diff on this branch and tell me what you think.",
+      "should_trigger": false,
+      "expect_skill": "review",
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bu-n3",
+      "prompt": "Open a pull request for this branch.",
+      "should_trigger": false,
+      "expect_skill": "ship",
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bu-n4",
+      "prompt": "What's the difference between a list and a tuple in Python?",
+      "should_trigger": false,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bu-n5",
+      "prompt": "Explain how this codebase is organized and what word_count does.",
+      "should_trigger": false,
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    },
+    {
+      "id": "bu-n6",
+      "prompt": "Plan how we would add a title_case helper to textkit, with acceptance criteria. No code.",
+      "should_trigger": false,
+      "expect_skill": "plan",
+      "fixture": "plan-branch",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "test $(git rev-list --count HEAD) -eq 1"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet main -- src tests"
+        },
+        {
+          "type": "shell",
+          "cmd": "git rev-parse --abbrev-ref HEAD | grep -qv '^main$' || test $(git rev-list --count main) -eq 1"
+        }
+      ]
+    }
+  ]
+}

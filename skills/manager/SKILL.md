@@ -5,7 +5,7 @@ description: >-
   item through Herdr (else subagents). Each coordinator plans, builds, reviews
   and tests in the issue and delivers one ready PR; the manager tracks a board
   and never does the work. Use to manage or shepherd work through a PR. Not
-  for planning alone (plan-feature) or review alone (review-pr).
+  for one step alone.
 ---
 
 # manager

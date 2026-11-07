@@ -18,9 +18,8 @@ the run directory. An empty list is valid; say which domains produced it.
 
 1. Compare `git rev-parse HEAD` with the commit you were given. Differ or
    dirty tree: stop and report; check nothing out yourself.
-2. Run `review-pr` on the branch diff against the main branch, report-only
-   path, verification pass included. Keep its finding schema and add
-   `reviewer: <label>`.
+2. Run `review` on the branch diff against the main branch, report only:
+   fix nothing. Add `reviewer: <label>` to each finding.
 3. Check the diff against each acceptance criterion. No code, or no test that
    fails without it, is a finding. Check the project's own rules: commit
    format, one feature one PR, expected docs and wiring.

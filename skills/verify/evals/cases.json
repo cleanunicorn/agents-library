@@ -1,0 +1,642 @@
+{
+  "skill": "verify",
+  "fixtures": {
+    "all-good": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# wordtally\n\nA tiny Python CLI that counts words in a text file.\n\nUsage: `python3 -m src.cli FILE [--min-length N] [--limit N]`\nOutput is one `word count` line per word, most frequent first, ties alphabetical.\n\nRun the tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - wordtally\n\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "sample.txt": "the cat the dog the cat bird\n",
+            "src/__init__.py": "",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/wordtally\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/wordtally/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-7.txt": "title:\tfeat: word-frequency CLI with --min-length and --limit\nstate:\tOPEN\nlabels:\tenhancement\n--\nCount words in a file and print the most frequent first.\n\nDone when: `python3 -m src.cli sample.txt` prints a ranked word count, and both flags below work from the command line.\n\n## Plan\n\n## Progress\n\n- [x] Task 1: count and print words\n- [x] Task 2: --min-length filter\n- [x] Task 3: --limit cap\n\n### Task 1: count and print words\n- AC1: `python3 -m src.cli sample.txt` prints `the 3`, `cat 2`, `bird 1`, `dog 1` in that order.\n- Verify: run the command on sample.txt and compare; `make test`.\n\n### Task 2: --min-length filter\n- AC2: `python3 -m src.cli sample.txt --min-length 4` prints only `bird 1`.\n- Verify: run the command; `make test`.\n\n### Task 3: --limit cap\n- AC3: `python3 -m src.cli sample.txt --limit 2` prints only the top two lines, `the 3` and `cat 2`.\n- Verify: run the command; `make test`.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'chore: scaffold wordtally'",
+            "git checkout -q -b feat/wordtally-flags"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text):\n    return Counter(text.lower().split())\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: count and print words (task 1)'"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text, min_length=1):\n    words = text.lower().split()\n    return Counter(word for word in words if len(word) >= min_length)\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    parser.add_argument(\"--min-length\", type=int, default=1)\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text, args.min_length)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n    def test_min_length(self):\n        self.assertEqual(dict(count_words(\"a bb ccc\", min_length=2)), {\"bb\": 1, \"ccc\": 1})\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add --min-length filter (task 2)'"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text, min_length=1):\n    words = text.lower().split()\n    return Counter(word for word in words if len(word) >= min_length)\n\n\ndef ranked(counts, limit=None):\n    items = sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n    return items if limit is None else items[:limit]\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    parser.add_argument(\"--min-length\", type=int, default=1)\n    parser.add_argument(\"--limit\", type=int, default=None)\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text, args.min_length)\n    for word, count in ranked(counts, args.limit):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n    def test_min_length(self):\n        self.assertEqual(dict(count_words(\"a bb ccc\", min_length=2)), {\"bb\": 1, \"ccc\": 1})\n    def test_ranked_limit(self):\n        self.assertEqual(ranked(count_words(\"a b a c\"), limit=1), [(\"a\", 2)])\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add --limit cap (task 3)'"
+          ]
+        },
+        {
+          "run": [
+            "git tag baseline"
+          ]
+        }
+      ]
+    },
+    "one-gap": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# wordtally\n\nA tiny Python CLI that counts words in a text file.\n\nUsage: `python3 -m src.cli FILE [--min-length N] [--limit N]`\nOutput is one `word count` line per word, most frequent first, ties alphabetical.\n\nRun the tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - wordtally\n\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "sample.txt": "the cat the dog the cat bird\n",
+            "src/__init__.py": "",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/wordtally\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/wordtally/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-7.txt": "title:\tfeat: word-frequency CLI with --min-length and --limit\nstate:\tOPEN\nlabels:\tenhancement\n--\nCount words in a file and print the most frequent first.\n\nDone when: `python3 -m src.cli sample.txt` prints a ranked word count, and both flags below work from the command line.\n\n## Plan\n\n## Progress\n\n- [x] Task 1: count and print words\n- [x] Task 2: --min-length filter\n- [x] Task 3: --limit cap\n\n### Task 1: count and print words\n- AC1: `python3 -m src.cli sample.txt` prints `the 3`, `cat 2`, `bird 1`, `dog 1` in that order.\n- Verify: run the command on sample.txt and compare; `make test`.\n\n### Task 2: --min-length filter\n- AC2: `python3 -m src.cli sample.txt --min-length 4` prints only `bird 1`.\n- Verify: run the command; `make test`.\n\n### Task 3: --limit cap\n- AC3: `python3 -m src.cli sample.txt --limit 2` prints only the top two lines, `the 3` and `cat 2`.\n- Verify: run the command; `make test`.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'chore: scaffold wordtally'",
+            "git checkout -q -b feat/wordtally-flags"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text):\n    return Counter(text.lower().split())\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: count and print words (task 1)'"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text, min_length=1):\n    words = text.lower().split()\n    return Counter(word for word in words if len(word) >= min_length)\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    parser.add_argument(\"--min-length\", type=int, default=1)\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text, args.min_length)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n    def test_min_length(self):\n        self.assertEqual(dict(count_words(\"a bb ccc\", min_length=2)), {\"bb\": 1, \"ccc\": 1})\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add --min-length filter (task 2)'"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text, min_length=1):\n    words = text.lower().split()\n    return Counter(word for word in words if len(word) >= min_length)\n\n\ndef ranked(counts, limit=None):\n    items = sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n    return items if limit is None else items[:limit]\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    parser.add_argument(\"--min-length\", type=int, default=1)\n    parser.add_argument(\"--limit\", type=int, default=None)\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text, args.min_length)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n    def test_min_length(self):\n        self.assertEqual(dict(count_words(\"a bb ccc\", min_length=2)), {\"bb\": 1, \"ccc\": 1})\n    def test_ranked_limit(self):\n        self.assertEqual(ranked(count_words(\"a b a c\"), limit=1), [(\"a\", 2)])\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add --limit cap (task 3)'"
+          ]
+        },
+        {
+          "run": [
+            "git tag baseline"
+          ]
+        }
+      ]
+    },
+    "missing-task": {
+      "steps": [
+        {
+          "files": {
+            ".gitignore": ".claude/\n.worktrees/\n__pycache__/\n*.pyc\n.gh-calls.log\n.fixture/\nbin/\n",
+            "README.md": "# wordtally\n\nA tiny Python CLI that counts words in a text file.\n\nUsage: `python3 -m src.cli FILE [--min-length N] [--limit N]`\nOutput is one `word count` line per word, most frequent first, ties alphabetical.\n\nRun the tests with `make test` (Python standard library only).\n",
+            "AGENTS.md": "# Agent guide - wordtally\n\n- Gate: run `make test` before every commit.\n- Conventional Commits.\n",
+            "Makefile": "test:\n\tpython3 -m unittest discover -s tests -v\n",
+            "sample.txt": "the cat the dog the cat bird\n",
+            "src/__init__.py": "",
+            "bin/gh": "#!/usr/bin/env bash\n# Fake gh CLI for evals: logs every call, serves issue #12, and records what\n# `issue comment` / `issue edit` would write under .fixture/.\nprintf 'gh' >> .gh-calls.log; printf ' %q' \"$@\" >> .gh-calls.log; echo >> .gh-calls.log\ncase \"$1 $2\" in\n  \"auth status\") echo \"Logged in to github.com (fake)\"; exit 0 ;;\n  \"repo view\") echo '{\"nameWithOwner\":\"acme/wordtally\"}'; exit 0 ;;\n  \"issue view\") cat \".fixture/issue-${3#\\#}.txt\" 2>/dev/null || { echo \"issue not found\" >&2; exit 1; }; exit 0 ;;\n  \"issue comment\"|\"issue edit\")\n    kind=comment; [ \"$2\" = edit ] && kind=body\n    n=\"${3#\\#}\"; shift 3\n    while [ $# -gt 0 ]; do\n      case \"$1\" in\n        --body-file|-F) if [ \"$2\" = \"-\" ]; then cat > \".fixture/$kind-$n.md\"; else cat \"$2\" > \".fixture/$kind-$n.md\"; fi; shift ;;\n        --body|-b) printf '%s\\n' \"$2\" > \".fixture/$kind-$n.md\"; shift ;;\n      esac\n      shift\n    done\n    echo \"https://github.com/acme/wordtally/issues/$n\"; exit 0 ;;\n  *) echo \"{}\"; exit 0 ;;\nesac\n",
+            ".fixture/issue-7.txt": "title:\tfeat: word-frequency CLI with --min-length and --limit\nstate:\tOPEN\nlabels:\tenhancement\n--\nCount words in a file and print the most frequent first.\n\nDone when: `python3 -m src.cli sample.txt` prints a ranked word count, and both flags below work from the command line.\n\n## Plan\n\n## Progress\n\n- [x] Task 1: count and print words\n- [x] Task 2: --min-length filter\n- [x] Task 3: --limit cap\n\n### Task 1: count and print words\n- AC1: `python3 -m src.cli sample.txt` prints `the 3`, `cat 2`, `bird 1`, `dog 1` in that order.\n- Verify: run the command on sample.txt and compare; `make test`.\n\n### Task 2: --min-length filter\n- AC2: `python3 -m src.cli sample.txt --min-length 4` prints only `bird 1`.\n- Verify: run the command; `make test`.\n\n### Task 3: --limit cap\n- AC3: `python3 -m src.cli sample.txt --limit 2` prints only the top two lines, `the 3` and `cat 2`.\n- Verify: run the command; `make test`.\n"
+          }
+        },
+        {
+          "run": [
+            "git init -q -b main",
+            "git add -A",
+            "git commit -qm 'chore: scaffold wordtally'",
+            "git checkout -q -b feat/wordtally-flags"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text):\n    return Counter(text.lower().split())\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: count and print words (task 1)'"
+          ]
+        },
+        {
+          "files": {
+            "src/wordtally.py": "from collections import Counter\n\n\ndef count_words(text, min_length=1):\n    words = text.lower().split()\n    return Counter(word for word in words if len(word) >= min_length)\n\n\ndef ranked(counts):\n    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))\n",
+            "src/cli.py": "import argparse\n\nfrom src.wordtally import count_words, ranked\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"file\")\n    parser.add_argument(\"--min-length\", type=int, default=1)\n    args = parser.parse_args(argv)\n    with open(args.file) as handle:\n        text = handle.read()\n    counts = count_words(text, args.min_length)\n    for word, count in ranked(counts):\n        print(f\"{word} {count}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+            "tests/test_wordtally.py": "import unittest\n\nfrom src.wordtally import count_words, ranked\n\n\nclass WordtallyTests(unittest.TestCase):\n    def test_count_and_rank(self):\n        self.assertEqual(ranked(count_words(\"a b a\")), [(\"a\", 2), (\"b\", 1)])\n    def test_min_length(self):\n        self.assertEqual(dict(count_words(\"a bb ccc\", min_length=2)), {\"bb\": 1, \"ccc\": 1})\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+          }
+        },
+        {
+          "run": [
+            "git add -A",
+            "git commit -qm 'feat: add --min-length filter (task 2)'"
+          ]
+        },
+        {
+          "run": [
+            "git tag baseline"
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "ve-h1",
+      "prompt": "Verify issue #7 against its plan and post the verify report on the issue.",
+      "should_trigger": true,
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC1\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC2\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC3\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)pass"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "src\\.cli\\s+\\S*sample\\.txt"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\d+\\s*(tests?\\s+)?passed"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\|\\s*(fail|not verified)\\s*\\|"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h2",
+      "prompt": "Check whether the work on issue #7 meets the plan. Exercise each acceptance criterion and post what you find as a comment.",
+      "should_trigger": true,
+      "fixture": "one-gap",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC1\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC2\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC3\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bpass"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h3",
+      "prompt": "We just finished building #7. Is it really done? Run each acceptance criterion end to end and tell me what is missing.",
+      "should_trigger": true,
+      "fixture": "one-gap",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "src\\.cli\\s+\\S*sample\\.txt"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\d+\\s*(tests?\\s+)?passed"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)--limit"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h4",
+      "prompt": "Verify the feature branch against issue #7's plan and confirm every ticked task was actually done. Post the report on the issue.",
+      "should_trigger": true,
+      "fixture": "missing-task",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)task\\s*3"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\btask\\s*3\\b[^\\n]*(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h5",
+      "prompt": "Run the acceptance checks for issue #7 before we send it to review, and record pass or fail per criterion on the issue.",
+      "should_trigger": true,
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC1\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC2\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\bAC3\\b"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?is)AC1.*pass.*AC2.*pass.*AC3.*pass|pass.*AC1.*pass.*AC2.*pass.*AC3"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\d+\\s*(tests?\\s+)?passed"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h6",
+      "prompt": "Issue #7 has all its boxes ticked. Which ticked tasks have no commit on this branch? Verify against the plan and report on the issue.",
+      "should_trigger": true,
+      "fixture": "missing-task",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)task\\s*3"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\btask\\s*3\\b[^\\n]*(no (matching |corresponding )?commit|missing|not (done|implemented|found)|never|without a commit|lacks)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)task\\s*1[^\\n]*(missing|no commit)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-h7",
+      "prompt": "Verify #7: run the full test suite and every acceptance criterion's own command. Green tests are not enough, I want each criterion checked on the real CLI.",
+      "should_trigger": true,
+      "fixture": "one-gap",
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "grep -qE '^gh issue comment' .gh-calls.log"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)\\d+\\s*(tests?\\s+)?passed"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "src\\.cli\\s+\\S*sample\\.txt"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\b(fail|not met|not verified|ignor|does not|doesn't|no effect|unmet)"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?im)^[^\\n]*\\bAC3\\b[^\\n]*\\|\\s*\\**pass(ed)?\\**\\s*\\|"
+        },
+        {
+          "type": "file_not_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)(zero gaps|no gaps|0 gaps|gaps:?\\s*(none|0)\\b|no (remaining )?(issues|gaps) found)"
+        },
+        {
+          "type": "file_regex",
+          "path": ".fixture/comment-7.md",
+          "pattern": "(?i)--limit\\s+2"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
+      "id": "ve-n1",
+      "prompt": "Fix it: make the CLI actually honour --limit so `--limit 2` prints only two lines.",
+      "should_trigger": false,
+      "expect_skill": "build",
+      "fixture": "one-gap",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "python3 -m src.cli sample.txt --limit 2 | test $(wc -l) -eq 2"
+        },
+        {
+          "type": "shell",
+          "cmd": "make test >/dev/null 2>&1"
+        }
+      ]
+    },
+    {
+      "id": "ve-n2",
+      "prompt": "Write the implementation plan for adding a --reverse flag to wordtally, with acceptance criteria. No code.",
+      "should_trigger": false,
+      "expect_skill": "plan",
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)reverse"
+        }
+      ]
+    },
+    {
+      "id": "ve-n3",
+      "prompt": "Review the code quality of this branch's diff against main for naming, duplication and structure. Report only, change nothing.",
+      "should_trigger": false,
+      "expect_skill": "review",
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(wordtally|cli|ranked|count_words|finding|naming)"
+        }
+      ]
+    },
+    {
+      "id": "ve-n4",
+      "prompt": "Open a pull request for this branch.",
+      "should_trigger": false,
+      "expect_skill": "ship",
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile"
+        }
+      ]
+    },
+    {
+      "id": "ve-n5",
+      "prompt": "What does the --min-length flag do in this CLI?",
+      "should_trigger": false,
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)(shorter|length|ignore|skip|filter)"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile"
+        }
+      ]
+    },
+    {
+      "id": "ve-n6",
+      "prompt": "What is the difference between a tuple and a list in Python?",
+      "should_trigger": false,
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?i)immutable|mutable"
+        }
+      ]
+    },
+    {
+      "id": "ve-n7",
+      "prompt": "Help me work out what problem word statistics should solve for our users before anyone plans it.",
+      "should_trigger": false,
+      "expect_skill": "define",
+      "fixture": "all-good",
+      "assertions": [
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-7.md"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile"
+        }
+      ]
+    }
+  ]
+}

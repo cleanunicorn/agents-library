@@ -1,7 +1,7 @@
 {
   "name": "agents-library",
   "version": "2.5.2",
-  "description": "Orchestrator skills for feature planning, PR review, design review, issue triage, issue filing, simplification, batch merging, codebase mapping, installing periodic maintenance agents, and a manager console that delegates work items to worker agents.",
+  "description": "Orchestrator skills for defining, planning, building, verifying, reviewing and shipping work, UX-psychology review, issue filing, batch merging, and a manager console that delegates work items to worker agents.",
   "author": {
     "name": "Daniel Luca",
     "email": "lucadanielcostin@gmail.com",
@@ -12,17 +12,19 @@
   "license": "MIT",
   "keywords": [
     "agents",
+    "build",
     "code-review",
-    "design-review",
+    "define",
     "feature-planning",
-    "issue-triage",
-    "skills"
+    "ship",
+    "skills",
+    "verify"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Agents Library",
-    "shortDescription": "Feature planning, coding review, and triage skills.",
-    "longDescription": "Agents Library provides Codex skills for planning features with acceptance criteria and tests; reviewing pull requests, visual design, and UX psychology; triaging issues; filing new issues from a description; batch-merging pull requests; simplifying code; mapping a codebase; installing the library's maintenance agents into a project on a periodic schedule; and turning a session into a manager console that delegates each work item to worker agents \u2014 one coordinator per item, a team sized to its complexity, and a plan, review, build, review, and test loop \u2014 and tracks them on a status board without doing the work itself.",
+    "shortDescription": "Define, plan, build, verify, review, and ship skills.",
+    "longDescription": "Agents Library provides Codex skills for defining a request as problem, scope and done-criteria; planning it into small verifiable tasks; building them test first; verifying each acceptance criterion end to end; reviewing a branch across seven quality domains and reviewing UX psychology; shipping the result as a pull request, a push, or a commit; filing new issues from a description; batch-merging pull requests; and turning a session into a manager console that delegates each work item to worker agents \u2014 one coordinator per item, a team sized to its complexity, and a plan, review, build, review, and test loop \u2014 and tracks them on a status board without doing the work itself.",
     "developerName": "Daniel Luca",
     "category": "Developer Tools",
     "capabilities": [
@@ -31,9 +33,9 @@
     ],
     "websiteURL": "https://github.com/cleanunicorn/agents-library",
     "defaultPrompt": [
+      "Define this request before we plan it.",
       "Plan a feature before we build it.",
-      "Review this branch for correctness.",
-      "Triage open issues in this repo."
+      "Ship this branch as a pull request."
     ],
     "brandColor": "#2563EB"
   }

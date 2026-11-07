@@ -12,14 +12,14 @@ separation does not restrict the agent's filesystem access.
 
 Usage:
   python3 run_evals.py                          # all skills, 3 trials/case
-  python3 run_evals.py --skill review-pr        # one skill
-  python3 run_evals.py --skill review-pr --case rp-h1
+  python3 run_evals.py --skill review        # one skill
+  python3 run_evals.py --skill review --case rp-h1
   python3 run_evals.py --trials 1 --model haiku # cheaper smoke run
-  python3 run_evals.py --ablation --skill describe-codebase
+  python3 run_evals.py --ablation --skill plan
                                                 # happy-path cases WITH vs
                                                 # WITHOUT the skill loaded;
                                                 # flags retirement candidates
-  python3 run_evals.py --without-skill review-pr --skill review-pr
+  python3 run_evals.py --without-skill review --skill review
                                                 # single ablation arm
   python3 run_evals.py --skill manager --trace  # also record per-trial
                                                 # delegation traces

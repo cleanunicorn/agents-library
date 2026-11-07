@@ -250,7 +250,7 @@
         },
         {
           "type": "output_not_regex",
-          "pattern": "(?i)(super.?manager|final reviewer|simplify-sweep|\\bSWOT\\b|\\btier\\b)"
+          "pattern": "(?i)(super.?manager|final reviewer|\\bSWOT\\b|\\btier\\b)"
         },
         {
           "type": "output_regex",
@@ -712,7 +712,7 @@
       "id": "mg-n1",
       "prompt": "Plan optional list limits for this repo: scope, acceptance checks, implementation order. Plan only; don't implement and don't change any file.",
       "should_trigger": false,
-      "expect_skill": "plan-feature",
+      "expect_skill": "plan",
       "fixture": "task-service",
       "assertions": [
         {
@@ -733,7 +733,7 @@
       "id": "mg-n2",
       "prompt": "Review this branch before I merge it. Report only; don't change anything.",
       "should_trigger": false,
-      "expect_skill": "review-pr",
+      "expect_skill": "review",
       "fixture": "task-service-implemented",
       "assertions": [
         {
@@ -750,7 +750,6 @@
       "id": "mg-n3",
       "prompt": "Find duplication and dead code in this repo. Report only; don't change anything.",
       "should_trigger": false,
-      "expect_skill": "simplify-sweep",
       "fixture": "task-service-implemented",
       "assertions": [
         {
@@ -771,7 +770,6 @@
       "id": "mg-n4",
       "prompt": "Explain how the add and list commands flow through this codebase. No edits.",
       "should_trigger": false,
-      "expect_skill": "describe-codebase",
       "fixture": "task-service",
       "assertions": [
         {

@@ -347,7 +347,6 @@
       "id": "bm-n1",
       "prompt": "Triage the open issues and tell me which are duplicates.",
       "should_trigger": false,
-      "expect_skill": "triage-issues",
       "fixture": "pr-queue",
       "assertions": [
         {
@@ -364,7 +363,7 @@
       "id": "bm-n2",
       "prompt": "Review my current branch before I open a PR.",
       "should_trigger": false,
-      "expect_skill": "review-pr",
+      "expect_skill": "review",
       "fixture": "pr-queue",
       "assertions": [
         {
@@ -390,7 +389,6 @@
       "id": "bm-n4",
       "prompt": "Explain this codebase briefly.",
       "should_trigger": false,
-      "expect_skill": "describe-codebase",
       "fixture": "pr-queue",
       "assertions": [
         {

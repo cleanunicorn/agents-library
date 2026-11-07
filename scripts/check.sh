@@ -55,8 +55,6 @@ python3 scripts/test-manager-watcher.py
 bash scripts/check-host-sync.sh
 python3 scripts/test-check-host-sync.py
 python3 scripts/test-install.py
-bash scripts/test-install-agents.sh
-./scripts/test-diff-target.sh
 bash scripts/test-rename-herdr-workspace.sh
 
 echo "Checking the eval runner parses transcripts offline..."

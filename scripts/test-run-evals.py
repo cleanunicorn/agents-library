@@ -83,9 +83,9 @@ TRANSCRIPTS = {
         {"type": "user", "message": {"content": [{"type": "text", "text": "ignored"}]}},
         {"type": "stream_event", "event": {"text": "ignored too"}},
         assistant(
-            tool_use("Skill", "t2", skill="agents-library:review-pr"),
-            tool_use("Skill", "t3", skill="plan-feature"),
-            tool_use("Skill", "t4", skill="agents-library:review-pr"),
+            tool_use("Skill", "t2", skill="agents-library:review"),
+            tool_use("Skill", "t3", skill="plan"),
+            tool_use("Skill", "t4", skill="agents-library:review"),
         ),
         result("final answer"),
     ),
@@ -160,7 +160,7 @@ class ParseTranscriptTests(unittest.TestCase):
 
     def test_strips_skill_namespaces_into_a_set(self):
         _, skills = runner.parse_transcript(TRANSCRIPTS["parser_mix"])
-        self.assertEqual(skills, {"review-pr", "plan-feature"})
+        self.assertEqual(skills, {"review", "plan"})
 
     def test_skips_malformed_lines_and_non_object_json(self):
         self.assertEqual(runner.parse_transcript(TRANSCRIPTS["malformed_only"]), ("", set()))
@@ -249,7 +249,7 @@ class RunAgentTests(unittest.TestCase):
         (output, skills, trace, err), run = self.run_agent(
             [completed(TRANSCRIPTS["parser_mix"])])
         self.assertEqual((output, skills, err),
-                         ("first\nsecond\nfinal answer", {"review-pr", "plan-feature"}, ""))
+                         ("first\nsecond\nfinal answer", {"review", "plan"}, ""))
         self.assertEqual(trace["verdict"], "self-executed")
         self.assertEqual(run.call_args.args[0], [
             "claude", "-p", "do it", "--output-format", "stream-json", "--verbose",

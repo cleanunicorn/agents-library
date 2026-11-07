@@ -19,31 +19,23 @@ DESCRIPTION_WORD_CEILING = 60
 DESCRIPTION_CHAR_CEILING = 420
 AGENT_WORD_CEILING = 1800
 # Per-skill root ceilings, keyed by name: each is the current size rounded up.
-# domains/, lenses/, references/ are loaded on demand and not budgeted here.
+# domains/ and references/ are loaded on demand and not budgeted here.
 SKILL_ROOT_WORD_CEILINGS = {
     "batch-merge-prs": 700,
-    "describe-codebase": 1000,
+    "build": 130,
+    "define": 100,
     "file-issues": 1100,
-    "install-agents": 1400,
     "manager": 1550,
-    "plan-feature": 1300,
-    "review-design": 1800,
-    "review-pr": 2200,
+    "plan": 110,
+    "review": 120,
     "review-ux-psychology": 3000,
-    "simplify-sweep": 1800,
-    "triage-issues": 2800,
+    "ship": 100,
+    "verify": 90,
 }
 # One-way routing hints the mutual-routing test tolerates, as (from, to):
 # `from`'s description names `to`, but `to` does not name `from` back.
-# review-pr is the hub every reviewing skill points at; its description is at
-# the ceiling, so these wait on an eval run to decide which ones earn a word.
 # Shrink this set; never grow it to admit a new one-way hint.
-ONE_WAY_ROUTING_HINTS = {
-    ("batch-merge-prs", "review-pr"),
-    ("manager", "plan-feature"),
-    ("manager", "review-pr"),
-    ("triage-issues", "review-pr"),
-}
+ONE_WAY_ROUTING_HINTS = set()
 
 
 def block_description(text):
@@ -233,6 +225,19 @@ class PluginLayoutTests(unittest.TestCase):
                 ceiling = (AGENT_WORD_CEILING if path.parent.name == "agents"
                            else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
                 self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
+
+    def test_the_managers_planner_is_told_not_to_post(self):
+        """plan writes to the issue, so a read-only planner must be told not to.
+
+        The planner role launches with a read-only grant, and plan itself is
+        thin and does not know its caller. The coordinator brief carries the
+        instruction: if it is dropped, a manager planner hits a denied write
+        or posts a duplicate.
+        """
+        brief = " ".join((ROOT / "skills/manager/references/coordinator-brief.md")
+                         .read_text(encoding="utf-8").split())
+        self.assertIn("planner (`plan`, read-only: tell it to return the plan "
+                      "instead of posting it; you post it)", brief)
 
     def test_skill_routing_hints_are_mutual(self):
         """A skill that routes a request away to a sibling is routed back to.

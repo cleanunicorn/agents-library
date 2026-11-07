@@ -7,7 +7,7 @@ the first word, so `/plugin marketplace add owner/repo` followed by
 `/plugin install …` fails as an invalid owner/repo (issue #78). Each slash
 command a reader is meant to paste gets its own block.
 
-Only lines that open with a bare command word count (`/plugin …`, `/review-pr`);
+Only lines that open with a bare command word count (`/plugin …`, `/review`);
 a path such as `/path/to/install.py` does not.
 """
 
@@ -85,7 +85,7 @@ class PasteProblemTests(unittest.TestCase):
         self.assertEqual(len(paste_problems(text)), 1)
 
     def test_any_two_slash_commands_fail_in_tilde_and_tagged_fences(self):
-        text = "~~~text\n/review-pr\n  /agents-library:manager go\n~~~\n"
+        text = "~~~text\n/review\n  /agents-library:manager go\n~~~\n"
         self.assertEqual(len(paste_problems(text)), 1)
 
     def test_one_command_per_block_passes(self):

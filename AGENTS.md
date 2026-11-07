@@ -250,12 +250,13 @@ loads and executes.
 
 - **Layout** — `agents/<name>.md` are 8 standalone subagents (frontmatter +
   role; `mode: subagent` in frontmatter so opencode and Kilo register them as
-  subagents). `skills/<name>/SKILL.md` are 11 skills; all but file-issues are orchestrators that fan out to
-  sub-prompt files in `domains/` (review-pr, review-design,
-  review-ux-psychology, simplify-sweep), `lenses/` (describe-codebase,
-  plan-feature), or
-  `references/` (batch-merge-prs, triage-issues, install-agents, manager). Each skill
-  also carries an eval suite in `evals/cases.json`. Deterministic
+  subagents). `skills/<name>/SKILL.md` are 10 skills. define, plan, build, verify, review, ship and file-issues
+  are thin single-file skills (a short list of rules, no phases);
+  review-ux-psychology fans out to sub-prompt files in `domains/`;
+  batch-merge-prs and manager load `references/`.
+  define → plan → build → verify → review → ship is the step-by-step
+  workflow, each step handing its output to the next through the issue. Each
+  skill also carries an eval suite in `evals/cases.json`. Deterministic
   sub-procedures live as `scripts/` inside their skill, invoked by the phases
   instead of narrated as prose: batch-merge-prs has `check-prs.sh` (skips PRs
   main already contains), `merge-prs.sh` (which auto-names the target branch
@@ -263,11 +264,7 @@ loads and executes.
   pauses on a conflict for the agent to resolve and resume with `--continue`
   or skip with `--skip`), `test-commands.sh`,
   `run-gate.sh`, and `attribute-failure.sh` (names the merge that broke a
-  test), review-pr has `diff-target.sh` (main-branch detection +
-  diff computation), triage-issues has `list-issues.sh` (repo slug, labels,
-  issue work list), install-agents has `install-agents.sh` (copies
-  `agents/*.md` into a host project's `.claude/agents/` and seeds journals),
-  manager has `watch-workers.py` (Python 3.9+, stdlib: one background
+  test), manager has `watch-workers.py` (Python 3.9+, stdlib: one background
   watcher per Herdr run that polls every worker every 5 s, records prompts
   as deduplicated events in `<run_dir>/watcher.sqlite3`, and wakes the
   manager through a host background `wait`, never terminal input) and
@@ -288,28 +285,27 @@ loads and executes.
   through their plugin CLIs and always get the whole plugin; opencode and
   Kilo get symlinks (global `~/.config/<host>/`) or copies (`--project`, the
   target project's `.<host>/`) of the checked items. `--yes` skips the
-  checklist for unattended runs. install-agents keeps its own script because
-  a skill installed into opencode or Kilo carries only its own directory.
-- **Skill shape** — the review and survey skills follow Phase 0 *orient* →
-  Phase 1 *fan out in parallel* → *consolidate/rank* → later phases *apply or persist*. review-pr and
-  review-ux-psychology insert a *verify* pass (fresh skeptical agents re-check
-  each finding) between fan-out and consolidate, so their consolidate step is
-  Phase 3. plan-feature investigates integration and verification in parallel
-  when useful (locally for small changes or hosts without delegation), then
-  produces an implementation plan and saves it when requested. triage-issues
-  follows the same orient → fan out → consolidate shape and then adds
-  *decide* → *act* → *summarize* phases, acting only on what was approved.
+  checklist for unattended runs.
+- **Skill shape** — review-ux-psychology follows Phase 0 *orient* →
+  Phase 1 *fan out in parallel* → a *verify* pass (fresh skeptical agents
+  re-check each finding) → *consolidate/rank* → later phases *apply or
+  persist*. The six workflow skills are thin: define writes problem, scope
+  and done-criteria to the issue; plan writes vertically sliced, verifiable
+  tasks; build runs red → green → full suite per task, one commit each, and
+  stops to update the plan when blocked; verify exercises each acceptance
+  criterion and lists gaps; review checks seven lenses, fixes the trivial
+  findings and reports the rest; ship delivers as asked, by default a draft
+  PR marked ready when the work is done. None of the six fans out.
   batch-merge-prs takes the user's PR list as the selection: orient and
   classify → merge onto a new local branch, resolving conflicts or skipping
   them with a reason → test under the project's rules,
-  attributing failures → review with review-pr → report; inside Herdr its
+  attributing failures → review with review → report; inside Herdr its
   reviewer and helpers run in tabs and its tests in a pane
   (`references/herdr.md`, self-contained for standalone installation,
   including its approval rule: routine worker prompts answered and logged,
   escalations relayed),
   otherwise as native subagents and plain shell.
-  install-agents is a linear installer with no fan-out (orient → one
-  confirmation → install via script → schedule → ledger). file-issues is a
+  file-issues is a
   long-lived linear loop with no fan-out (accept a description → search
   open and closed issues → ground it in code → `gh issue create` → report
   the URL → wait) that files issues and never implements. manager turns
@@ -359,22 +355,14 @@ loads and executes.
   Never add the skill evals to any workflow — they are manual-only
   (`docs/evals.md`).
 - **No auth / error handling / logging / database / migrations** — agents
-  inspect *target* projects for these; this repo holds none. The only durable
-  per-project state is the per-agent journals in `agents/journals/`.
+  inspect *target* projects for these; this repo holds none, and no durable
+  per-project state.
 - **Schemas** — the `{mode, name, description}` frontmatter on every agent
   (`mode: subagent` for opencode/Kilo compatibility; ignored by Claude Code/Codex),
   the `{name, description}` frontmatter on every skill, and
-  the in-skill finding records sub-agents return (`{id, severity, domain,
-  location, problem, measured, gap, fix, effort}` for review-pr, which its verify
-  pass then annotates with `{verdict, confidence}`; `{id, severity, lens,
-  principle, location, problem, measured, fix, effort}` for review-design;
-  `{id, kind, severity, lens, location, problem, measured, fix, effort}` for
-  simplify-sweep; `{id, severity, lens, principle, location, problem, fix,
-  hypothesis, effort}` for review-ux-psychology, which (like review-pr) runs a verify pass that annotates
-  survivors with `{verdict, confidence}`; `{lens, topic, location, detail}` for
-  describe-codebase; `{topic, evidence, proposal, acceptance_ids}` for
-  plan-feature; `{issue, recommendation, kind, validity, evidence, labels,
-  …}` verdicts for triage-issues; the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
+  the in-skill finding records sub-agents return (`{id, severity, lens, principle, location, problem, fix,
+  hypothesis, effort}` for review-ux-psychology, which runs a verify pass that annotates
+  survivors with `{verdict, confidence}`; the hand-back block `{Shipped, Gate, CI, Progress, Team, Plan, Findings,
   Follow-ups, Confidence}` for manager, with the gate-log and CI-log format in
   `references/console.md` (`command:`/`head:`/`exit:`) and the board's
   `{time, item, worker=kind, asked, option}` approvals-answered rows there
@@ -384,9 +372,7 @@ loads and executes.
   <host>/<name>` status lines and its saved selection `{version, hosts:
   {<host>: bool}, excluded: [<name>]}` (user config, or `.agents-library.json`
   with `--project`) — `excluded` lists only unchecked items so later
-  additions default on; the
-  `INSTALLED|IDENTICAL|CONFLICT|UPDATED|FAILED|JOURNAL <name>` status lines
-  install-agents.sh emits for install-agents' ledger; and batch-merge-prs'
+  additions default on; and batch-merge-prs'
   script ledgers — `MAIN|REPO|IN_MAIN|TODO|SKIPPED` from check-prs.sh,
   `TARGET|MERGED <n> <sha>|RESOLVED <n> <sha> <record>|SKIPPED <n>
   <reason>|CONFLICT <n> <head> <path>|PENDING <n>...` from merge-prs.sh,
@@ -426,9 +412,7 @@ loads and executes.
   opencode/Kilo mirror link validation
   and regression tests (`scripts/check-host-sync.sh`,
   `scripts/test-check-host-sync.py`), installer tests against stub host CLIs
-  in a sandboxed `HOME` (`scripts/test-install.py`), skill-installer write failures and ledger
-  behavior (`scripts/test-install-agents.sh`), review-pr target regression
-  tests (`scripts/test-diff-target.sh`), release retry tests against local bare
+  in a sandboxed `HOME` (`scripts/test-install.py`), release retry tests against local bare
   remotes (`scripts/test-release-version.py`), the shared Herdr workspace-rename step
   against a stub `herdr` (`scripts/test-rename-herdr-workspace.sh`), the eval
   runner's offline transcript parsing and delegation traces
@@ -443,5 +427,5 @@ loads and executes.
 
 **Where to look:** README.md for install and update paths; this file for the
 working guide; `agents/architect.md` for the agent shape;
-`skills/review-pr/SKILL.md` for the orchestrator shape, and its `domains/` for
+`skills/review/SKILL.md` for the orchestrator shape, and its `domains/` for
 the shape of a sub-prompt.

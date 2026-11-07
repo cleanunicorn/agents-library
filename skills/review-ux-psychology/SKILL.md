@@ -5,8 +5,7 @@ description: >-
   anchoring — with behavioral psychology to move a named metric (signup,
   activation, checkout), and optionally apply fixes. Use to lift conversion
   or trial-to-paid, reduce drop-off, audit a form for decision fatigue, or
-  critique onboarding, signup, checkout, or pricing. Not for how the UI
-  looks (review-design) or code review (review-pr).
+  critique onboarding, signup, checkout, or pricing. Not for code review (review).
 ---
 
 # review-ux-psychology
@@ -87,8 +86,8 @@ Gather this context **once** and bundle it into every sub-agent's prompt.
 
 If the resolved target has **no user-facing decision surface** (pure backend, a
 library, or a purely presentational screen with no forms, choices, gates,
-pricing, or CTAs), say there's nothing to UX-psychology-review and stop — suggest
-`review-design` if they wanted a visual pass.
+pricing, or CTAs), say there's nothing to UX-psychology-review and stop — say that
+this skill does not review visual design.
 
 ## Phase 1 — Fan out the review
 
