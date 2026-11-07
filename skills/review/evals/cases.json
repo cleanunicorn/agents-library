@@ -5,7 +5,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n",
+            ".gitignore": ".claude/\n__pycache__/\n*.pyc\n",
             "README.md": "# demo-auth\n\nPassword policy: a valid password has **at least 8 characters** and at least one digit.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_auth.py\n",
             "src/auth.py": "def validate_password(password):\n    \"\"\"Valid passwords have at least 8 characters.\"\"\"\n    return len(password) >= 8\n",
@@ -38,7 +38,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n",
+            ".gitignore": ".claude/\n__pycache__/\n*.pyc\n",
             "README.md": "# demo-report\n\nBuilds a per-user order total report.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_report.py\n",
             "src/db.py": "ORDERS = {'ann': [5, 7], 'bob': [3]}\nQUERIES = []\n\n\ndef fetch_orders(user_id):\n    QUERIES.append(user_id)\n    return ORDERS.get(user_id, [])\n\n\ndef fetch_orders_for(user_ids):\n    QUERIES.append(tuple(user_ids))\n    return {u: ORDERS.get(u, []) for u in user_ids}\n",

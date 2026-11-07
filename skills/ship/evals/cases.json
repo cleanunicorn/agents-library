@@ -5,7 +5,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n",
+            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
             "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
@@ -42,7 +42,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n",
+            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
             "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
@@ -79,7 +79,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n",
+            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
             "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
@@ -121,7 +121,7 @@
       "steps": [
         {
           "files": {
-            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n",
+            ".gitignore": ".claude/\n.gh-calls.log\n.fixture/\nbin/\n__pycache__/\n*.pyc\n",
             "README.md": "# slugify-demo\n\nTurns titles into URL slugs.\n\n## Commands\n\n- test: `make test`\n",
             "Makefile": "test:\n\tpython3 tests/test_slugify.py\n",
             "src/slugify.py": "def slugify(text):\n    return text.strip().lower().replace(' ', '-')\n",
