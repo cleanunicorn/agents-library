@@ -258,6 +258,21 @@ class PluginLayoutTests(unittest.TestCase):
             with self.subTest(reader=reader):
                 self.assertIn("PLAN.md", body(reader))
 
+    def test_plan_and_the_managers_planner_agree_on_who_writes(self):
+        """The manager's planner is read-only, so plan must return its output.
+
+        plan writes the task list to the issue by default. The coordinator
+        brief calls the planner read-only and posts the plan itself; if
+        either side drops its half, a manager planner hits a denied write or
+        posts a duplicate.
+        """
+        plan = " ".join((ROOT / "skills/plan/SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("**Read-only caller.**", plan)
+        self.assertIn("return the plan as your final output", plan)
+        brief = " ".join((ROOT / "skills/manager/references/coordinator-brief.md")
+                         .read_text(encoding="utf-8").split())
+        self.assertIn("planner (`plan`, read-only: it returns the plan and you post it)", brief)
+
     def test_skill_routing_hints_are_mutual(self):
         """A skill that routes a request away to a sibling is routed back to.
 

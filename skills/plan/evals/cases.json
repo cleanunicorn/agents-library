@@ -280,6 +280,35 @@
       ]
     },
     {
+      "id": "pl-h7",
+      "prompt": "You are a read-only planner for a coordinator: do not write any file and do not post anything to GitHub. Plan issue #12 and return the plan as your answer.",
+      "should_trigger": true,
+      "fixture": "task-desk",
+      "timeout": 1800,
+      "assertions": [
+        {
+          "type": "shell",
+          "cmd": "! grep -qE '^gh issue (comment|edit|create)' .gh-calls.log 2>/dev/null"
+        },
+        {
+          "type": "file_absent",
+          "path": "PLAN.md"
+        },
+        {
+          "type": "file_absent",
+          "path": ".fixture/comment-12.md"
+        },
+        {
+          "type": "output_regex",
+          "pattern": "(?im)^#{2,3}\\s*Progress\\b[\\s\\S]*^\\s*[-*]\\s*\\[ \\]"
+        },
+        {
+          "type": "shell",
+          "cmd": "git diff --quiet baseline -- src tests Makefile && test -z \"$(git status --porcelain -- src tests Makefile)\" && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse baseline)\""
+        }
+      ]
+    },
+    {
       "id": "pl-n1",
       "prompt": "Implement issue #12: add the complete command and the list filter. Make test green.",
       "should_trigger": false,
