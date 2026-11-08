@@ -12,4 +12,4 @@ description: >-
 
 Deliver as the user specified.
 
-Default: push branch, open a draft PR summarizing changes, link issue (`Closes #n`), follow CI and fix until green.
+Default: push branch, open a draft PR summarizing changes, link issue (`Closes #n`), follow CI and fix until green. Mark ready.
