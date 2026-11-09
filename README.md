@@ -4,13 +4,14 @@ A set of stack-agnostic, single-purpose coding agents. Each agent picks one prob
 
 These are general-purpose definitions: they reference *roles* (linter, test suite, architecture, auth model) rather than any specific language, framework, or tooling. Point one at a codebase and it learns that project's conventions before acting.
 
-See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, communication, and quality bars) that applies to every agent here. Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)).
+Notable changes live in [GitHub Releases](https://github.com/cleanunicorn/agents-library/releases) (see [Releasing](#releasing)).
 
 <!-- toc:start -->
 **Contents**
 
 - [Install](#install)
 - [Choose a skill](#choose-a-skill)
+- [Install in detail](#install-in-detail)
 - [Update](#update)
 - [Troubleshooting](#troubleshooting)
 - [About the agents](#about-the-agents)
@@ -26,6 +27,160 @@ See [AGENTS.md](AGENTS.md) for the shared working guide (orientation, workflow, 
 <!-- toc:end -->
 
 ## Install
+
+```sh
+git clone https://github.com/cleanunicorn/agents-library.git
+cd agents-library
+./install.py
+```
+
+Press enter to accept the defaults, restart your agent, then type `/define`
+(in Claude Code, `/agents-library:define`; Claude Code prefixes a plugin's skills
+with its name, and this README uses the short names).
+Claude Code or Codex without a clone, other hosts, flags, and project scope are
+in [Install in detail](#install-in-detail).
+
+## Choose a skill
+
+Pick the skill that matches the job:
+
+- **Deliver work, step by step:** [`/define`](#the-define-skill), [`/plan`](#the-plan-skill), [`/build`](#the-build-skill), [`/verify`](#the-verify-skill), [`/review`](#the-review-skill), then [`/ship`](#the-ship-skill).
+- **Deliver work, hands off:** [`/manager`](#the-manager-skill) runs plan, build, review, and test through to one PR.
+- **Review UX:** [`/review-ux-psychology`](#the-ux-psychology-review-skill).
+- **Handle project queues:** [`/batch-merge-prs`](#the-batch-pr-merge-skill) or [`/file-issues`](#the-issue-filing-skill).
+
+### The Manager Skill
+
+![Manager workflow: a manager launches one coordinator per work item; each coordinator's planner, implementer, reviewers and tester take it through plan, review, build, review, test, then hand back one ready PR.](docs/assets/manager-workflow.png)
+
+[`/manager`](skills/manager/SKILL.md) turns this session into a console. It
+starts **one coordinator per work item** through Herdr (else native
+subagents), tracks a status board, and never does the work itself. The
+coordinator follows the software loop **plan → review → build → review → test** in the
+item's GitHub issue: a plan with `## Progress` checkboxes, then findings and
+decisions in the issue and PR. It picks its own roles by the item's
+complexity: a small change needs few, risk (security, stored data, a public
+contract, an ask-first boundary) gets more review. It delivers one draft PR,
+then marks it ready.
+
+The session stays a console until you end it: every later message — a new
+request, a question, a skill you invoke, "start an agent" — goes to a worker
+on the same transport, and a board header records the mode so it survives a
+context summary. In Herdr it pre-grants each worker the access its role needs
+at launch; as native subagents, which share its session's permissions, it
+checks that session at intake and each read-only worker's worktree after
+it. It answers routine permission prompts itself with the host's persistent
+option, logging each on the board. Only these kinds go to you: actions the
+skill forbids such as merging or force-pushing, destruction outside the item,
+secrets or global settings, the project's ask-first list, and prompts it
+cannot classify. Planners and reviewers stay read-only and write only to the
+run directory. The manager never edits code, plans, reviews, or runs tests
+itself, even when asked. It reads each coordinator's short status, not
+transcripts. Items run concurrently while capacity allows and the rest queue,
+each in its own worktree with one PR.
+
+The PR stays a draft until the gate log, the PR head, and the CI log share
+one SHA, the gate exits 0, every required check passes, and no finding is
+open. A failing check is a finding. The PR body carries the evidence:
+Progress, the gate result, CI status, and findings. Independent reviewers
+never see the author's report. With no remote or `gh`, the manager asks
+whether a branch is acceptable; unattended, the item ends `blocked: no
+remote`.
+
+With Herdr and its skill installed, each coordinator has a tab in your
+current workspace; otherwise it uses native subagents. With neither, the
+manager refuses. In Herdr, a background watcher polls every worker every five
+seconds and records each permission prompt or question as an event in the
+run directory, so a prompt raised between turns is not missed; the manager
+learns of it through a host background command and still decides every
+answer. Herdr 0.9.5 offers no safe way to message the manager's own
+terminal, so the watcher never types into it. Native subagents get no
+watcher. Transport instructions are local to each skill so either can be
+installed alone. The manager never merges a PR.
+
+### The Define Skill
+
+![/define: a loose request becomes a problem statement, scope and done-criteria written to the issue.](docs/assets/skill-define.png)
+
+[`/define`](skills/define/SKILL.md) turns the request into a problem statement, a scope (in and out), and done-criteria, and writes them to the issue. It asks only the questions whose answers change the plan, converses with you when there is no issue yet, and designs no solution.
+
+### The Plan Skill
+
+![/plan: a definition becomes vertical-slice tasks with acceptance criteria and a Progress checklist in the issue.](docs/assets/skill-plan.png)
+
+[`/plan`](skills/plan/SKILL.md) reads the definition and slices the work vertically: each task is one complete, verifiable path, written as scope, acceptance criteria and verification steps, ordered by dependency. It adds the task list to the issue, opening with a `## Progress` checklist. It writes no code.
+
+### The Build Skill
+
+![/build: red, green, full-suite gate, one commit per task, then the next task.](docs/assets/skill-build.png)
+
+[`/build`](skills/build/SKILL.md) works one task at a time: read its acceptance criteria and the code it touches, write a failing test (red), write the minimum code to pass (green), run targeted tests each cycle and the full suite per task, and make one conventional commit. When blocked, or when a criterion is wrong, it stops and updates the plan instead of widening scope.
+
+### The Verify Skill
+
+![/verify: each acceptance criterion exercised end to end, pass or fail recorded, gaps listed.](docs/assets/skill-verify.png)
+
+[`/verify`](skills/verify/SKILL.md) exercises each acceptance criterion in the plan end to end, records pass or fail in the issue, confirms every task was done, and lists the gaps. It reports; it does not fix.
+
+### The Review Skill
+
+![/review: the diff checked through seven lenses, findings verified, trivial ones fixed, the rest reported by severity.](docs/assets/skill-review.png)
+
+[`/review`](skills/review/SKILL.md) reviews the diff against the main branch for correctness, readability, architecture, security, performance, dead code, and docs currency. It outputs findings with severity, fixes the trivial ones, and reports the rest.
+
+### The Ship Skill
+
+![/ship: push, draft PR, follow CI until green, mark ready.](docs/assets/skill-ship.png)
+
+[`/ship`](skills/ship/SKILL.md) delivers as you specified. By default it pushes the branch, opens a draft PR that summarizes the changes and links the issue, and marks it ready when the work is fully done.
+
+### The UX Psychology Review Skill
+
+![/review-ux-psychology: a flow reviewed against behavioral principles for a named metric.](docs/assets/skill-review-ux-psychology.png)
+
+[`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
+behavior-and-conversion counterpart to `review`: it targets conversion rather than code quality. It. It reviews a screen,
+flow, path, or branch diff against behavioral principles for a named product
+metric, using rendered evidence when available and independently verifying each
+finding. It can apply approved fixes or iterate behind the project's lint and
+build gate; no `gh` or remote is required.
+
+### The Batch PR Merge Skill
+
+![/batch-merge-prs: named PRs merged onto one new local branch, then tested and reviewed.](docs/assets/skill-batch-merge-prs.png)
+
+[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) merges the pull requests
+you name onto one new local branch (`batch/<YYYYMMDD-HHMM>` unless you name
+it), skipping each PR main already contains and showing the evidence. When a
+PR conflicts, it resolves the conflict on that branch, keeping both sides'
+intent and recording each file's resolution, or skips the PR with a stated
+reason when it can't resolve it with confidence; the rest still merge. It
+then runs the tests the project's own docs and CI call for, skipping any suite
+marked as touching live or shared resources unless you authorize it. It names
+the PR behind each failure and reviews the merged branch with `review`.
+Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
+native subagents and the shell. Its transport guide needs no manager install.
+It answers its Herdr workers' routine permission prompts itself, logging each
+answer, and relays to you only merges, pushes and other GitHub writes,
+main-branch commits, destruction outside the run, secrets or global
+settings, the project's ask-first list, and prompts it cannot classify.
+Without a PR list it shows open PRs and waits for your selection. Nothing is
+pushed or changed on GitHub. Requires the `gh` CLI.
+
+### The Issue Filing Skill
+
+![/file-issues: each description becomes a deduplicated, code-grounded issue.](docs/assets/skill-file-issues.png)
+
+[`/file-issues`](skills/file-issues/SKILL.md) keeps a long-lived session that
+turns each description you give into one well-formed GitHub issue, reports its
+URL, and waits for the next. It searches open and closed issues first and
+links the existing one instead of filing a duplicate, grounds the issue in
+permalinks to the code, and follows the repository's title convention and
+existing labels. It files issues only: no code edits, branches, commits, or
+pull requests. Inside Herdr it labels its tab `issues <project>`, as the
+manager labels its own `manager <project>`. Requires the `gh` CLI.
+
+## Install in detail
 
 Clone the library and run its installer. It finds the agent hosts on your
 machine and shows two checklists, with everything checked by default:
@@ -59,10 +214,20 @@ reported as `KEPT`.
 | opencode | Symlinks into `~/.config/opencode/{agents,skills}/` | Yes |
 | Kilo Code | Symlinks into `~/.config/kilo/{agents,skills}/` | Yes |
 
-Restart the host afterwards (a new Claude Code session, a new Codex thread).
+**Restart the host afterwards** (a new Claude Code session, a new Codex thread).
+Until you do, the skills do not appear, even though the install reported
+success. **You are done when `/define` shows up in the slash-command list** (in Claude
+Code as `/agents-library:define`).
+Try it on a change you have in mind: type `/define` and describe it. It asks
+only what changes the plan, then writes a problem statement, scope and
+done-criteria. Carry it on with `/plan` and `/build`, or hand the whole job to
+`/manager`.
+
 In Claude Code the agents become subagents (e.g. `architect`, `refactor`,
-`testforge`) and the skills are available as `/define`, `/plan`, `/build`, `/verify`, `/review`, `/ship`,
-`/review-ux-psychology`, `/batch-merge-prs`, `/file-issues`, and `/manager`.
+`testforge`) and the skills are available as `/agents-library:define`, `/agents-library:plan`, and so on
+(this README writes the short names `/define`, `/plan`, `/build`, `/verify`, `/review`, `/ship`,
+`/review-ux-psychology`, `/batch-merge-prs`, `/file-issues`, and `/manager`).
+opencode and Kilo Code, which symlink the skills, use the short names.
 
 **Without the checklist** (scripts, CI, a remote shell), pass `--yes`. The
 installer then uses the saved selection, or everything on a first run. Flags
@@ -101,11 +266,13 @@ The plugin hosts don't need the clone. Each host takes two steps, registering
 the marketplace and then installing the plugin from it. Registering the
 marketplace does not install the plugin.
 
-Claude Code 2.1.286 uses SSH for this plugin by default, both here and through
-the installer. Provide a GitHub SSH key **or**
-[opt into HTTPS](#troubleshooting-claude-code). For the in-session commands,
-run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting `claude` if you
-want HTTPS.
+**No GitHub SSH key?** Claude Code 2.1.286 fetches this plugin over SSH by
+default, so without a key the install stops with `Permission denied
+(publickey)` after the marketplace step has already succeeded, and the plugin
+is not installed. This repository is public, so HTTPS needs no account or key:
+run `export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` before starting `claude`. The
+installer sets it for you, so only the in-session commands below need it. See
+[Troubleshooting](#troubleshooting-claude-code) if it still fails.
 
 In Claude Code, run these one at a time. Pasting both together fails: the
 prompt reads them as one command, and the second line becomes part of the
@@ -160,128 +327,6 @@ each carrying `mode: subagent`) and `skills/<name>/SKILL.md` (ten skills,
 loaded on demand via the `skill` tool) are symlinks to the canonical `agents/`
 and `skills/` at the repo root, so there is a single source of truth.
 
-## Choose a skill
-
-Pick the skill that matches the job:
-
-- **Deliver work, step by step:** [`/define`](#the-define-skill), [`/plan`](#the-plan-skill), [`/build`](#the-build-skill), [`/verify`](#the-verify-skill), [`/review`](#the-review-skill), then [`/ship`](#the-ship-skill).
-- **Deliver work, hands off:** [`/manager`](#the-manager-skill) runs plan, build, review, and test through to one PR.
-- **Review UX:** [`/review-ux-psychology`](#the-ux-psychology-review-skill).
-- **Handle project queues:** [`/batch-merge-prs`](#the-batch-pr-merge-skill) or [`/file-issues`](#the-issue-filing-skill).
-
-### The Manager Skill
-
-![Manager workflow: a manager console runs parallel work items, each with one coordinator that plans, builds, reviews and tests in the item's issue, then returns a ready PR.](docs/assets/manager-workflow.png)
-
-[`/manager`](skills/manager/SKILL.md) turns this session into a console. It
-starts **one coordinator per work item** through Herdr (else native
-subagents), tracks a status board, and never does the work itself. The
-coordinator follows the software loop **plan → review → build → review → test** in the
-item's GitHub issue: a plan with `## Progress` checkboxes, then findings and
-decisions in the issue and PR. It picks its own roles by the item's
-complexity: a small change needs few, risk (security, stored data, a public
-contract, an ask-first boundary) gets more review. It delivers one draft PR,
-then marks it ready.
-
-The session stays a console until you end it: every later message — a new
-request, a question, a skill you invoke, "start an agent" — goes to a worker
-on the same transport, and a board header records the mode so it survives a
-context summary. In Herdr it pre-grants each worker the access its role needs
-at launch; as native subagents, which share its session's permissions, it
-checks that session at intake and each read-only worker's worktree after
-it. It answers routine permission prompts itself with the host's persistent
-option, logging each on the board. Only these kinds go to you: actions the
-skill forbids such as merging or force-pushing, destruction outside the item,
-secrets or global settings, the project's ask-first list, and prompts it
-cannot classify. Planners and reviewers stay read-only and write only to the
-run directory. The manager never edits code, plans, reviews, or runs tests
-itself, even when asked. It reads each coordinator's short status, not
-transcripts. Items run concurrently while capacity allows and the rest queue,
-each in its own worktree with one PR.
-
-The PR stays a draft until the gate log, the PR head, and the CI log share
-one SHA, the gate exits 0, every required check passes, and no finding is
-open. A failing check is a finding. The PR body carries the evidence:
-Progress, the gate result, CI status, and findings. Independent reviewers
-never see the author's report. With no remote or `gh`, the manager asks
-whether a branch is acceptable; unattended, the item ends `blocked: no
-remote`.
-
-With Herdr and its skill installed, each coordinator has a tab in your
-current workspace; otherwise it uses native subagents. With neither, the
-manager refuses. In Herdr, a background watcher polls every worker every five
-seconds and records each permission prompt or question as an event in the
-run directory, so a prompt raised between turns is not missed; the manager
-learns of it through a host background command and still decides every
-answer. Herdr 0.9.5 offers no safe way to message the manager's own
-terminal, so the watcher never types into it. Native subagents get no
-watcher. Transport instructions are local to each skill so either can be
-installed alone. The manager never merges a PR.
-
-### The Define Skill
-
-[`/define`](skills/define/SKILL.md) turns the request into a problem statement, a scope (in and out), and done-criteria, and writes them to the issue. It asks only the questions whose answers change the plan, converses with you when there is no issue yet, and designs no solution.
-
-### The Plan Skill
-
-[`/plan`](skills/plan/SKILL.md) reads the definition and slices the work vertically: each task is one complete, verifiable path, written as scope, acceptance criteria and verification steps, ordered by dependency. It adds the task list to the issue, opening with a `## Progress` checklist. It writes no code.
-
-### The Build Skill
-
-[`/build`](skills/build/SKILL.md) works one task at a time: read its acceptance criteria and the code it touches, write a failing test (red), write the minimum code to pass (green), run targeted tests each cycle and the full suite per task, and make one conventional commit. When blocked, or when a criterion is wrong, it stops and updates the plan instead of widening scope.
-
-### The Verify Skill
-
-[`/verify`](skills/verify/SKILL.md) exercises each acceptance criterion in the plan end to end, records pass or fail in the issue, confirms every task was done, and lists the gaps. It reports; it does not fix.
-
-### The Review Skill
-
-[`/review`](skills/review/SKILL.md) reviews the diff against the main branch for correctness, readability, architecture, security, performance, dead code, and docs currency. It outputs findings with severity, fixes the trivial ones, and reports the rest.
-
-### The Ship Skill
-
-[`/ship`](skills/ship/SKILL.md) delivers as you specified. By default it pushes the branch, opens a draft PR that summarizes the changes and links the issue, and marks it ready when the work is fully done.
-
-### The UX Psychology Review Skill
-
-[`/review-ux-psychology`](skills/review-ux-psychology/SKILL.md) is the
-behavior-and-conversion counterpart to `review`: it targets conversion rather than code quality. It. It reviews a screen,
-flow, path, or branch diff against behavioral principles for a named product
-metric, using rendered evidence when available and independently verifying each
-finding. It can apply approved fixes or iterate behind the project's lint and
-build gate; no `gh` or remote is required.
-
-### The Batch PR Merge Skill
-
-[`/batch-merge-prs`](skills/batch-merge-prs/SKILL.md) merges the pull requests
-you name onto one new local branch (`batch/<YYYYMMDD-HHMM>` unless you name
-it), skipping each PR main already contains and showing the evidence. When a
-PR conflicts, it resolves the conflict on that branch, keeping both sides'
-intent and recording each file's resolution, or skips the PR with a stated
-reason when it can't resolve it with confidence; the rest still merge. It
-then runs the tests the project's own docs and CI call for, skipping any suite
-marked as touching live or shared resources unless you authorize it. It names
-the PR behind each failure and reviews the merged branch with `review`.
-Inside Herdr, agents get tabs and tests share a pane; otherwise it uses
-native subagents and the shell. Its transport guide needs no manager install.
-It answers its Herdr workers' routine permission prompts itself, logging each
-answer, and relays to you only merges, pushes and other GitHub writes,
-main-branch commits, destruction outside the run, secrets or global
-settings, the project's ask-first list, and prompts it cannot classify.
-Without a PR list it shows open PRs and waits for your selection. Nothing is
-pushed or changed on GitHub. Requires the `gh` CLI.
-
-### The Issue Filing Skill
-
-[`/file-issues`](skills/file-issues/SKILL.md) keeps a long-lived session that
-turns each description you give into one well-formed GitHub issue, reports its
-URL, and waits for the next. It searches open and closed issues first and
-links the existing one instead of filing a duplicate, grounds the issue in
-permalinks to the code, and follows the repository's title convention and
-existing labels. It files issues only: no code edits, branches, commits, or
-pull requests. Inside Herdr it labels its tab `issues <project>`, as the
-manager labels its own `manager <project>`. Requires the `gh` CLI.
-
 ## Update
 
 Pull the clone and rerun the installer:
@@ -318,8 +363,9 @@ Find your host: [Claude Code](#troubleshooting-claude-code),
 This repository is public: **HTTPS clone, fetch, and pull need no GitHub
 account, token, or SSH key**. SSH URLs (`git@github.com:…`) require an
 [SSH key recognized by GitHub](https://docs.github.com/en/get-started/git-basics/about-remote-repositories).
-For Claude Code's default SSH plugin install/update, provide a GitHub SSH key
-or [opt into HTTPS](#troubleshooting-claude-code).
+Claude Code's in-session plugin install/update uses SSH by default: provide a
+GitHub SSH key or [opt into HTTPS](#troubleshooting-claude-code). `./install.py`
+already requests HTTPS for its Claude Code commands.
 
 **Install or update fails to reach GitHub.** Check Git and anonymous HTTPS
 access before changing host settings:
@@ -535,14 +581,17 @@ The same command covers all four supported hosts:
 | opencode | Agent/skill symlink targets, stale or missing definitions, and installer tests. |
 | Kilo Code | Agent/skill symlink targets, stale or missing definitions, and installer tests (shared with every host via `install.py`, tested by `scripts/test-install.py` against stub host CLIs). |
 
-It also checks shell and manifest JSON syntax, shared definition names and
+It also checks shell and manifest JSON syntax, unused Python imports
+(`scripts/check-unused-imports.py`), plugin layout
+(`scripts/test-plugin-layout.py`), host-sync of the shared definitions
+(`scripts/check-host-sync.sh`, tested by `scripts/test-check-host-sync.py`), shared definition names and
 required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
 word ceilings on agent and skill roots), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
 (`scripts/test-batch-merge-approval.py`), its conflict pause and resume against
 real temporary repositories (`scripts/test-batch-merge-prs.sh`), this README's
 table of contents and the
-in-page links in README.md, AGENTS.md, and templates/AGENTS.md
+in-page links in README.md and templates/AGENTS.md
 (`scripts/test-readme-toc.py`), one slash command per fenced block in every
 Markdown file (`scripts/test-paste-blocks.py`), the manager's approval contract
 and its pi permission extension (`scripts/test-manager-approval.py`; the
@@ -573,6 +622,13 @@ The missing-version warning for Claude is intentional; Codex owns the release
 version. `claude plugin validate .` selects the marketplace in this repository,
 so it must not be treated as validation of every skill and agent. The local gate
 does not require either CLI or depend on their user-specific plugin caches.
+
+### Figures
+
+The manager diagram and the per-skill figures in `docs/assets/` are drawn by
+`scripts/render-diagrams.py` and rendered with headless Chrome. Edit the text
+or layout there and run `python3 scripts/render-diagrams.py` (or pass a name,
+such as `manager`, to redraw one); commit the regenerated PNGs.
 
 ### Skill Evals
 

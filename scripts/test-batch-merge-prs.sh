@@ -385,12 +385,8 @@ for op in --continue --skip; do
 done
 # The rule this replaced, in the places that described it.
 old_rule=$(grep -rniE 'never resolve|SKIPPED <n> conflicts|conflicting PR is aborted|uses it as-is' \
-  "$skill_dir" "$ROOT/README.md" "$ROOT/AGENTS.md" "$ROOT/docs" || true)
+  "$skill_dir" "$ROOT/README.md" "$ROOT/docs" || true)
 assert_equal '' "$old_rule" 'the abort-only conflict rule is gone everywhere'
-schema=$(grep -B1 'from merge-prs\.sh,' "$ROOT/AGENTS.md" | tr '\n' ' ')
-for line in $(sed -n 's/^#       \([A-Z]*\) .*/\1/p' "$SCRIPT" | sort -u); do
-  assert_contains "$schema" "$line" "AGENTS.md schema names $line"
-done
 
 # --- An empty conflict list fails closed -----------------------------------
 

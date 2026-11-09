@@ -424,11 +424,18 @@ def install_item(item: Item, dest: Path, target: str, excluded: bool,
     ledger.report(status, target)
 
 
-def run(command: List[str], cwd: Path) -> subprocess.CompletedProcess:
+def run(command: List[str], cwd: Path, env: Optional[dict] = None) -> subprocess.CompletedProcess:
     # Output is captured for the FAILED reason, so say what is running: a
     # plugin install over the network can take a while.
     print(f"install: running {' '.join(command)}", file=sys.stderr, flush=True)
-    return subprocess.run(command, cwd=cwd, capture_output=True, text=True)
+    return subprocess.run(command, cwd=cwd, capture_output=True, text=True, env=env)
+
+
+def claude_env() -> dict:
+    # Claude Code 2.1.286 fetches this public plugin over SSH by default, so a
+    # machine without a GitHub key fails with `Permission denied (publickey)`.
+    # Ask for HTTPS, which needs no account; a value the user already set wins.
+    return {"CLAUDE_CODE_PLUGIN_PREFER_HTTPS": "1", **os.environ}
 
 
 def claude_installed(cwd: Path, scope: str) -> bool:
@@ -494,8 +501,9 @@ def install_plugin(host_key: str, project: Optional[Path], ledger: Ledger) -> No
     if ledger.dry_run:
         ledger.report(status, target)
         return
+    env = claude_env() if host_key == "claude" else None
     for command in commands:
-        result = run(command, cwd)
+        result = run(command, cwd, env)
         # An already-registered Codex marketplace fails `marketplace add`; the
         # `plugin add` that follows is what decides the outcome. Updating has
         # no such tolerance: a failed refresh leaves the old copy in place.

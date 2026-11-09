@@ -11,7 +11,7 @@ Every shared definition must also appear in README.md: each agent gets its own
 subsection under *Choose a skill*, so a component added without its README
 section fails here too.
 
-AGENTS.md's Commands bullet is the agent's inventory of the gate, so every
+README.md's Local checks section is the inventory of the gate, so every
 script `scripts/check.sh` runs must be named there; a check added to the gate
 without its line fails here.
 
@@ -28,7 +28,7 @@ from typing import NamedTuple
 
 
 ROOT = Path(__file__).resolve().parent.parent
-LINKED_GUIDES = ("README.md", "AGENTS.md", "templates/AGENTS.md")
+LINKED_GUIDES = ("README.md", "templates/AGENTS.md")
 TOC_START = "<!-- toc:start -->"
 TOC_END = "<!-- toc:end -->"
 TOC_LABEL = "**Contents**"
@@ -323,9 +323,9 @@ def unnamed_gate_scripts(check_sh, guide):
 
 
 class GateInventoryTests(unittest.TestCase):
-    def test_agents_md_names_every_gate_script(self):
+    def test_readme_names_every_gate_script(self):
         check_sh = (ROOT / "scripts" / "check.sh").read_text(encoding="utf-8")
-        guide = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        guide = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertEqual(unnamed_gate_scripts(check_sh, guide), [])
 
     def test_unnamed_gate_script_fails(self):

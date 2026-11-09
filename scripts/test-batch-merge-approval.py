@@ -133,17 +133,13 @@ class BatchMergeApprovalTests(unittest.TestCase):
                     r"(?i)no github writes:\*\* never push, merge, close, or comment",
                     "the skill-level ban on GitHub writes is gone")
 
-    def test_agents_md_lists_the_approvals_row_schema(self):
-        # AGENTS.md's Schemas bullet inventories every in-skill record shape.
-        agents = " ".join((ROOT / "AGENTS.md").read_text(encoding="utf-8").split())
-        self.assertIn("`{time, worker, asked, option}` rows in `<run-dir>/approvals.md`", agents,
-                      "AGENTS.md's schema inventory omits the approvals log row")
+    def test_approvals_row_schema(self):
         policy = section(self.read("references/herdr.md"), "Approvals")
         header = re.search(r"`(\| time \|[^`]*\|)`", policy)
         self.assertIsNotNone(header, "herdr.md § Approvals has no `| time | ... |` row shape")
         columns = [cell.strip() for cell in header.group(1).strip("|").split("|")]
         self.assertEqual(columns, ["time", "worker", "asked", "option"],
-                         "the approvals row's columns drifted from AGENTS.md's schema")
+                         "the approvals row's columns drifted from {time, worker, asked, option}")
 
     def test_readme_names_every_escalation_case(self):
         # The README says "only", so a case it leaves out reads as auto-answered.
