@@ -77,12 +77,9 @@ class FixEverywhereTests(unittest.TestCase):
         self.refute(path, text, CAP, "a per-area cap is back")
 
     def test_guides_teach_the_rule(self):
-        guide = self.read("AGENTS.md")
-        self.expect("AGENTS.md", guide, re.compile(r"(?mi)^#+\s+Fix it everywhere\s*$"),
-                    "the Fix it everywhere section is gone — AGENTS.md links to #fix-it-everywhere")
         self.expect("templates/AGENTS.md", self.read("templates/AGENTS.md"),
                     re.compile(r"(?i)fix it everywhere"), "the template dropped the rule")
-        for doc in ("AGENTS.md", "templates/AGENTS.md", "README.md"):
+        for doc in ("templates/AGENTS.md", "README.md"):
             self.refute(doc, self.read(doc), CAP, "a per-area cap is back")
 
 

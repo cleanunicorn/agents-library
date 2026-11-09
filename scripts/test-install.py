@@ -10,6 +10,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -24,6 +25,7 @@ INSTALLER = REPO / "install.py"
 
 STUB = """#!/bin/sh
 echo "{name} $*" >> "$STUB_DIR/calls.log"
+echo "{name} ${{CLAUDE_CODE_PLUGIN_PREFER_HTTPS:-unset}}" >> "$STUB_DIR/https.log"
 case "$*" in
   "plugin list"*) cat "$STUB_DIR/{name}-list.json" 2>/dev/null || echo '{empty}'; exit 0 ;;
 esac
@@ -435,6 +437,16 @@ class PluginHostTests(Sandbox):
                       "--scope user", self.calls())
         self.assertIn("codex plugin marketplace add cleanunicorn/agents-library", self.calls())
         self.assertIn("codex plugin add agents-library@agents-library", self.calls())
+
+    def test_claude_install_prefers_https_so_no_ssh_key_is_needed(self):
+        self.run_installer("--yes", "--hosts", "claude,codex")
+        lines = (self.stubs / "https.log").read_text().splitlines()
+        self.assertIn("claude 1", lines)
+        self.assertNotIn("codex 1", lines)
+
+    def test_claude_install_keeps_a_preference_the_user_already_set(self):
+        with mock.patch.dict(os.environ, {"CLAUDE_CODE_PLUGIN_PREFER_HTTPS": "0"}):
+            self.assertEqual(installer.claude_env()["CLAUDE_CODE_PLUGIN_PREFER_HTTPS"], "0")
 
     def test_each_plugin_command_is_announced_before_it_runs(self):
         code, _, stderr = self.run_installer("--yes", "--hosts", "claude,codex")
