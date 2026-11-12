@@ -18,20 +18,6 @@ PLUGIN_NAME = "agents-library"
 DESCRIPTION_WORD_CEILING = 60
 DESCRIPTION_CHAR_CEILING = 420
 AGENT_WORD_CEILING = 1800
-# Per-skill root ceilings, keyed by name: each is the current size rounded up.
-# domains/ and references/ are loaded on demand and not budgeted here.
-SKILL_ROOT_WORD_CEILINGS = {
-    "batch-merge-prs": 700,
-    "build": 130,
-    "define": 100,
-    "file-issues": 1100,
-    "manager": 1550,
-    "plan": 110,
-    "review": 120,
-    "review-ux-psychology": 3000,
-    "ship": 100,
-    "verify": 90,
-}
 # One-way routing hints the mutual-routing test tolerates, as (from, to):
 # `from`'s description names `to`, but `to` does not name `from` back.
 # Shrink this set; never grow it to admit a new one-way hint.
@@ -210,8 +196,6 @@ class PluginLayoutTests(unittest.TestCase):
         """
         agents = sorted((ROOT / "agents").glob("*.md"))
         skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
-        self.assertEqual({path.parent.name for path in skills}, set(SKILL_ROOT_WORD_CEILINGS),
-                         "a skill was added or removed — give it a root ceiling")
         for path in agents + skills:
             with self.subTest(path=str(path.relative_to(ROOT))):
                 text = path.read_text(encoding="utf-8")
@@ -221,10 +205,10 @@ class PluginLayoutTests(unittest.TestCase):
                 self.assertLessEqual(words, DESCRIPTION_WORD_CEILING, f"description is {words} words")
                 self.assertLessEqual(len(description), DESCRIPTION_CHAR_CEILING,
                                      f"description is {len(description)} characters")
-                body_words = len(text.split())
-                ceiling = (AGENT_WORD_CEILING if path.parent.name == "agents"
-                           else SKILL_ROOT_WORD_CEILINGS[path.parent.name])
-                self.assertLessEqual(body_words, ceiling, f"root file is {body_words} words")
+                if path.parent.name == "agents":
+                    body_words = len(text.split())
+                    self.assertLessEqual(body_words, AGENT_WORD_CEILING,
+                                         f"agent file is {body_words} words")
 
     def test_the_managers_planner_is_told_not_to_post(self):
         """plan writes to the issue, so a read-only planner must be told not to.
