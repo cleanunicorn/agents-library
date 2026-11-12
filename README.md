@@ -585,8 +585,8 @@ It also checks shell and manifest JSON syntax, unused Python imports
 (`scripts/check-unused-imports.py`), plugin layout
 (`scripts/test-plugin-layout.py`), host-sync of the shared definitions
 (`scripts/check-host-sync.sh`, tested by `scripts/test-check-host-sync.py`), shared definition names and
-required frontmatter fields, context ceilings (descriptions ≤ 60 words, per-file
-word ceilings on agent and skill roots), the fix-everywhere contract
+required frontmatter fields, context ceilings (descriptions ≤ 60 words, a word
+ceiling on agent files), the fix-everywhere contract
 (`scripts/test-fix-everywhere.py`), batch-merge-prs' approval contract
 (`scripts/test-batch-merge-approval.py`), its conflict pause and resume against
 real temporary repositories (`scripts/test-batch-merge-prs.sh`), this README's
